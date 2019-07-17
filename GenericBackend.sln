@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29102.190
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GenericBackend", "GenericBackend\GenericBackend.csproj", "{A2B64D1E-CB33-4F4E-8058-EE2AC5224122}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Kull.GenericBackend", "Kull.GenericBackend\Kull.GenericBackend.csproj", "{E602611D-CD56-4E75-9751-71F15B744BD2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kull.GenericBackend.Test", "Kull.GenericBackend.Test\Kull.GenericBackend.Test.csproj", "{C763F98E-5D9D-4A26-9719-8C245BC281F8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2B64D1E-CB33-4F4E-8058-EE2AC5224122}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2B64D1E-CB33-4F4E-8058-EE2AC5224122}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2B64D1E-CB33-4F4E-8058-EE2AC5224122}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2B64D1E-CB33-4F4E-8058-EE2AC5224122}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E602611D-CD56-4E75-9751-71F15B744BD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E602611D-CD56-4E75-9751-71F15B744BD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E602611D-CD56-4E75-9751-71F15B744BD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E602611D-CD56-4E75-9751-71F15B744BD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C763F98E-5D9D-4A26-9719-8C245BC281F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C763F98E-5D9D-4A26-9719-8C245BC281F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C763F98E-5D9D-4A26-9719-8C245BC281F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C763F98E-5D9D-4A26-9719-8C245BC281F8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EE943398-66D0-4A70-8489-B2D4CCACB50F}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 4
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://tfs.kull.ch/kullprojects
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = GenericBackend\\GenericBackend.csproj
+		SccProjectName1 = GenericBackend
+		SccLocalPath1 = GenericBackend
+		SccProjectUniqueName2 = Kull.GenericBackend\\Kull.GenericBackend.csproj
+		SccProjectName2 = Kull.GenericBackend
+		SccLocalPath2 = Kull.GenericBackend
+		SccProjectUniqueName3 = Kull.GenericBackend.Test\\Kull.GenericBackend.Test.csproj
+		SccProjectName3 = Kull.GenericBackend.Test
+		SccLocalPath3 = Kull.GenericBackend.Test
+	EndGlobalSection
+EndGlobal
