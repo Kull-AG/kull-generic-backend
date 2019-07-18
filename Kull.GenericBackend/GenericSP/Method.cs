@@ -13,12 +13,12 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class Method
     {
-        public string Name { get; }
+        public string HttpMethod { get; }
         public Kull.Data.DBObjectName SP { get; }
 
-        public Method(string name, string sp)
+        public Method(string httpMethod, string sp)
         {
-            this.Name = name;
+            this.HttpMethod = httpMethod;
             this.SP = sp;
         }
         public static Method GetFromSection(IConfigurationSection section)

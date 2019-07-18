@@ -37,6 +37,7 @@ namespace Kull.GenericBackend.GenericSP
         private readonly SPParametersProvider sPParametersProvider;
 
         private readonly ILogger<GenericSPMiddleware> logger;
+        private readonly GenericSPSerializer genericSPSerializer;
         private SPMiddlewareOptions options;
 
         public GenericSPMiddleware(IConfiguration conf,
@@ -44,9 +45,11 @@ namespace Kull.GenericBackend.GenericSP
                 SystemParameters systemParameters,
                 SqlHelper sqlHelper,
                 NamingMappingHandler namingMappingHandler,
-                ILogger<GenericSPMiddleware> logger)
+                ILogger<GenericSPMiddleware> logger,
+                GenericSPSerializer genericSPSerializer)
         {
             this.logger = logger;
+            this.genericSPSerializer = genericSPSerializer;
             this.sPParametersProvider = sPParametersProvider;
             this.systemParameters = systemParameters;
             this.sqlHelper = sqlHelper;
@@ -61,7 +64,7 @@ namespace Kull.GenericBackend.GenericSP
         /// </summary>
         /// <param name="options">The options</param>
         /// <param name="routeBuilder">The routebuilder</param>
-        internal void RegisterMiddleware(SPMiddlewareOptions options,
+        protected internal void RegisterMiddleware(SPMiddlewareOptions options,
                 IRouteBuilder routeBuilder)
         {
             this.options = options;
@@ -107,7 +110,7 @@ namespace Kull.GenericBackend.GenericSP
             return url;
         }
 
-        private DbConnection GetDbConnection()
+        protected DbConnection GetDbConnection()
         {
             if (!string.IsNullOrEmpty(options.ConnectionString))
             {
@@ -137,7 +140,7 @@ namespace Kull.GenericBackend.GenericSP
                     queryParameters = new Dictionary<string, object>();
                 }
                 var cmd = GetCommandWithParameters(context, con, ent, method, queryParameters);
-                await ReadResultToBody(context, cmd);
+                await genericSPSerializer.ReadResultToBody(context, cmd, method, ent);
             }
         }
 
@@ -164,7 +167,7 @@ namespace Kull.GenericBackend.GenericSP
                 string json = streamReader.ReadToEnd();
                 var js = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
                 var cmd = GetCommandWithParameters(context, con, ent, method, js);
-                await ReadResultToBody(context, cmd);
+                await genericSPSerializer.ReadResultToBody(context, cmd, method, ent);
             }
         }
 
@@ -315,39 +318,6 @@ namespace Kull.GenericBackend.GenericSP
             cmd.Parameters.Add(cmdPrm);
         }
 
-        private async Task ReadResultToBody(HttpContext context, System.Data.Common.DbCommand cmd)
-        {
-            //TODO: When available use the new UTF8-Json Writer of .Net Core
-
-            using (var rdr = await cmd.ExecuteReaderAsync())
-            {
-                context.Response.StatusCode = 200;
-                context.Response.ContentType = "application/json";
-                using (JsonWriter jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, System.Text.Encoding.UTF8)))
-                {
-
-                    string[] fieldNames = new string[rdr.FieldCount];
-                    for (int i = 0; i < fieldNames.Length; i++)
-                    {
-                        fieldNames[i] = rdr.GetName(i);
-                    }
-                    fieldNames = this.namingMappingHandler.GetNames(fieldNames).ToArray();
-                    jsonWriter.WriteStartArray();
-                    while (rdr.Read())
-                    {
-                        jsonWriter.WriteStartObject();
-                        for (int p = 0; p < fieldNames.Length; p++)
-                        {
-                            jsonWriter.WritePropertyName(fieldNames[p]);
-                            object vl = rdr.GetValue(p);
-                            jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
-                        }
-                        jsonWriter.WriteEndObject();
-                    }
-                    jsonWriter.WriteEndArray();
-                }
-            }
-        }
 
     }
 }

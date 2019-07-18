@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>0.10.2</VersionPrefix>
+    <VersionPrefix>0.10.3</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 
@@ -20,10 +20,6 @@
 
   <ItemGroup>
     <None Remove="README.md" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="README.md" />
   </ItemGroup>
   <ItemGroup>
 

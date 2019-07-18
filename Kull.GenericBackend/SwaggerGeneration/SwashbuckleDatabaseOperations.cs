@@ -185,7 +185,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 operationType == OperationType.Put ? "Update" :
                 operationType == OperationType.Delete ? "Delete" :
                 operationType == OperationType.Get ? "Get" :
-                method.Name)
+                method.HttpMethod)
                 + ent.GetDisplayString();
             OpenApiResponse response = new OpenApiResponse();
             response.Content.Add("application/json", new OpenApiMediaType()
@@ -224,7 +224,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         Reference = new OpenApiReference()
                         {
                             Type = ReferenceType.Schema,
-                            Id = sqlHelper.GetParameterObjectName(ent, method.Name, method)
+                            Id = sqlHelper.GetParameterObjectName(ent, method.HttpMethod, method)
                         }
                     }
                 });

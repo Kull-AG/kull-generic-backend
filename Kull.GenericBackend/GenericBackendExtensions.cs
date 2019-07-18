@@ -33,6 +33,7 @@ namespace Kull.GenericBackend
             services.AddSingleton<Model.SPParametersProvider>();
             services.AddSingleton<Model.NamingMappingHandler>();
             services.AddSingleton<GenericSP.SystemParameters>();
+            services.AddSingleton<GenericSP.GenericSPSerializer>();
             services.AddSingleton<GenericSP.GenericSPMiddleware>();
 
             var opts = options ??

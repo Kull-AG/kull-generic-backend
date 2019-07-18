@@ -112,7 +112,7 @@ namespace Kull.GenericBackend.GenericSP
         {
             return new Entity(section.Key, section.GetChildren()
                     .Select(s => Method.GetFromSection(s))
-                    .ToDictionary(s => s.Name, s => s, StringComparer.CurrentCultureIgnoreCase));
+                    .ToDictionary(s => s.HttpMethod, s => s, StringComparer.CurrentCultureIgnoreCase));
         }
 
 
