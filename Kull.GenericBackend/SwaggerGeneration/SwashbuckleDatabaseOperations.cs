@@ -23,6 +23,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly SwaggerFromSPOptions options;
         private readonly SqlHelper sqlHelper;
         private readonly ILogger logger;
+        private readonly DbConnection dbConnection;
         private readonly Model.SPParametersProvider sPParametersProvider;
 
         public DatabaseOperations(Microsoft.Extensions.Configuration.IConfiguration conf,
@@ -30,96 +31,89 @@ namespace Kull.GenericBackend.SwaggerGeneration
          SwaggerFromSPOptions options,
          SqlHelper sqlHelper,
          ILogger<DatabaseOperations> logger,
+         DbConnection dbConnection,
          Model.SPParametersProvider sPParametersProvider)
         {
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.options = options;
             this.sqlHelper = sqlHelper;
             this.logger = logger;
+            this.dbConnection = dbConnection;
             this.sPParametersProvider = sPParametersProvider;
             var ent = conf.GetSection("Entities");
             entities = ent.GetChildren()
                    .Select(s => Entity.GetFromSection(s)).ToList();
         }
 
-        private DbConnection GetDbConnection()
-        {
-            if (!string.IsNullOrEmpty(options.ConnectionString))
-            {
-                return DatabaseUtils.GetConnectionFromEFString(options.ConnectionString, true);
-            }
-            return DatabaseUtils.GetConnectionFromConfig(options.ConnectionStringKey);
-        }
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
-            using (var con = GetDbConnection())
+
+            foreach (var ent in entities)
             {
-                foreach (var ent in entities)
+                if (ent.Methods.Any())
                 {
-                    if (ent.Methods.Any())
-                    {
-                        OpenApiPathItem openApiPathItem = new OpenApiPathItem();
-                        if (openApiPathItem.Operations == null)
-                            openApiPathItem.Operations = new Dictionary<OperationType, OpenApiOperation>();
+                    OpenApiPathItem openApiPathItem = new OpenApiPathItem();
+                    if (openApiPathItem.Operations == null)
+                        openApiPathItem.Operations = new Dictionary<OperationType, OpenApiOperation>();
 
-                        foreach (var method in ent.Methods)
-                        {
-                            var opType = (OperationType)Enum.Parse(typeof(OperationType), method.Key, true);
-                            OpenApiOperation bodyOperation = new OpenApiOperation();
-                            WriteBodyPath(con, bodyOperation, ent, opType, method.Value);
-                            openApiPathItem.Operations.Add(opType, bodyOperation);
-                        }
-                        swaggerDoc.Paths.Add(ent.GetUrl(this.sPMiddlewareOptions.Prefix, false), openApiPathItem);
-                    }
-                }
-
-
-                var allModels = entities.SelectMany(e => e.Methods)
-                        .Select(s => s.Value.SP)
-                       .Distinct();
-                foreach (var model in allModels)
-                {
-                    OpenApiSchema resultSchema = new OpenApiSchema();
-                    ISqlMappedData[] dataToWrite = sqlHelper.GetSPResultSet(con, model);
-                    WriteJsonSchema(resultSchema, dataToWrite);
-                    swaggerDoc.Components.Schemas.Add(model.Name + "Result", resultSchema);
-
-                }
-
-                foreach (var ent in entities)
-                {
                     foreach (var method in ent.Methods)
                     {
-                        ISqlMappedData[] props = GetBodyOrQueryStringParameters(con, ent, method.Value.SP);
-
-                        foreach (var up in props.Where(p => p.UserDefinedType != null))
-                        {
-                            string name = GetSqlTypeWebApiName(up.UserDefinedType);
-                            if (!swaggerDoc.Components.Schemas.ContainsKey(name))
-                            {
-                                OpenApiSchema tableTypeSchema = new OpenApiSchema();
-                                var tableCols = sqlHelper.GetTableTypeFields(con, up.UserDefinedType);
-                                WriteJsonSchema(tableTypeSchema, tableCols);
-                                swaggerDoc.Components.Schemas.Add(name,
-                                    tableTypeSchema);
-                            }
-                        }
-                        if (props.Any())
-                        {
-                            OpenApiSchema parameterSchema = new OpenApiSchema();
-                            WriteJsonSchema(parameterSchema, props);
-                            swaggerDoc.Components.Schemas.Add(sqlHelper.GetParameterObjectName(ent, method.Key, method.Value),
-                                parameterSchema);
-                        }
+                        var opType = (OperationType)Enum.Parse(typeof(OperationType), method.Key, true);
+                        OpenApiOperation bodyOperation = new OpenApiOperation();
+                        WriteBodyPath(dbConnection, bodyOperation, ent, opType, method.Value);
+                        openApiPathItem.Operations.Add(opType, bodyOperation);
                     }
+                    swaggerDoc.Paths.Add(ent.GetUrl(this.sPMiddlewareOptions.Prefix, false), openApiPathItem);
                 }
-
             }
 
 
+            var allModels = entities.SelectMany(e => e.Methods)
+                    .Select(s => s.Value.SP)
+                   .Distinct();
+            foreach (var model in allModels)
+            {
+                OpenApiSchema resultSchema = new OpenApiSchema();
+                ISqlMappedData[] dataToWrite = sqlHelper.GetSPResultSet(dbConnection, model);
+                WriteJsonSchema(resultSchema, dataToWrite);
+                swaggerDoc.Components.Schemas.Add(model.Name + "Result", resultSchema);
+
+            }
+
+            foreach (var ent in entities)
+            {
+                foreach (var method in ent.Methods)
+                {
+                    ISqlMappedData[] props = GetBodyOrQueryStringParameters(dbConnection, ent, method.Value.SP);
+
+                    foreach (var up in props.Where(p => p.UserDefinedType != null))
+                    {
+                        string name = GetSqlTypeWebApiName(up.UserDefinedType);
+                        if (!swaggerDoc.Components.Schemas.ContainsKey(name))
+                        {
+                            OpenApiSchema tableTypeSchema = new OpenApiSchema();
+                            var tableCols = sqlHelper.GetTableTypeFields(dbConnection, up.UserDefinedType);
+                            WriteJsonSchema(tableTypeSchema, tableCols);
+                            swaggerDoc.Components.Schemas.Add(name,
+                                tableTypeSchema);
+                        }
+                    }
+                    if (props.Any())
+                    {
+                        OpenApiSchema parameterSchema = new OpenApiSchema();
+                        WriteJsonSchema(parameterSchema, props);
+                        swaggerDoc.Components.Schemas.Add(sqlHelper.GetParameterObjectName(ent, method.Key, method.Value),
+                            parameterSchema);
+                    }
+                }
+            }
 
         }
+
+
+
+
 
         private static string GetSqlTypeWebApiName(DBObjectName userDefinedType)
         {

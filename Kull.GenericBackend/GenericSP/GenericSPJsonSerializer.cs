@@ -11,17 +11,19 @@ namespace Kull.GenericBackend.GenericSP
     /// <summary>
     /// Helper class for writing the result of a command to the body of the response
     /// </summary>
-    public class GenericSPSerializer
+    public class GenericSPJsonSerializer :  IGenericSPSerializer
     {
+        public bool SupportContentType(Microsoft.Net.Http.Headers.MediaTypeHeaderValue contentType)
+        {
+            return contentType.MediaType == "application/json";
+        }
 
-        private readonly SPMiddlewareOptions options;
 
         private readonly Model.NamingMappingHandler namingMappingHandler;
 
-        public GenericSPSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options)
+        public GenericSPJsonSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options)
         {
             this.namingMappingHandler = namingMappingHandler;
-            this.options = options;
         }
 
         /// <summary>

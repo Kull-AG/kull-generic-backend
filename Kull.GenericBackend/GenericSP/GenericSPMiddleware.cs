@@ -17,131 +17,95 @@ using Kull.GenericBackend.SwaggerGeneration;
 
 namespace Kull.GenericBackend.GenericSP
 {
-    public class SPMiddlewareOptions
-    {
-        public string Prefix { get; set; } = "/api/";
-        public string ConnectionStringKey { get; set; } = "Default";
-
-        public string ConnectionString { get; set; }
-    }
 
     /// <summary>
     /// The middleware doing the actual execution
     /// </summary>
-    public class GenericSPMiddleware
+    public class GenericSPMiddleware : IGenericSPMiddleware
     {
-        private readonly IReadOnlyCollection<Entity> entities;
         private readonly SystemParameters systemParameters;
         private readonly SqlHelper sqlHelper;
-        private readonly NamingMappingHandler namingMappingHandler;
         private readonly SPParametersProvider sPParametersProvider;
 
         private readonly ILogger<GenericSPMiddleware> logger;
-        private readonly GenericSPSerializer genericSPSerializer;
-        private SPMiddlewareOptions options;
+        private readonly IEnumerable<IGenericSPSerializer> serializers;
+        private readonly SPMiddlewareOptions sPMiddlewareOptions;
+        private readonly DbConnection dbConnection;
 
-        public GenericSPMiddleware(IConfiguration conf,
+        public GenericSPMiddleware(
             SPParametersProvider sPParametersProvider,
                 SystemParameters systemParameters,
                 SqlHelper sqlHelper,
-                NamingMappingHandler namingMappingHandler,
                 ILogger<GenericSPMiddleware> logger,
-                GenericSPSerializer genericSPSerializer)
+                IEnumerable<IGenericSPSerializer> serializers,
+                SPMiddlewareOptions sPMiddlewareOptions,
+                DbConnection dbConnection)
         {
             this.logger = logger;
-            this.genericSPSerializer = genericSPSerializer;
+            this.serializers = serializers;
+            this.sPMiddlewareOptions = sPMiddlewareOptions;
+            this.dbConnection = dbConnection;
             this.sPParametersProvider = sPParametersProvider;
             this.systemParameters = systemParameters;
             this.sqlHelper = sqlHelper;
-            this.namingMappingHandler = namingMappingHandler;
-            var ent = conf.GetSection("Entities");
-            entities = ent.GetChildren()
-                   .Select(s => Entity.GetFromSection(s)).ToList();
         }
 
-        /// <summary>
-        /// Registers the actual middlware
-        /// </summary>
-        /// <param name="options">The options</param>
-        /// <param name="routeBuilder">The routebuilder</param>
-        protected internal void RegisterMiddleware(SPMiddlewareOptions options,
-                IRouteBuilder routeBuilder)
+        public Task HandleRequest(HttpContext context, Entity ent)
         {
-            this.options = options;
-            foreach (var ent in entities)
-            {
-                if (ent.Methods.ContainsKey("GET"))
-                {
+            IGenericSPSerializer serializer = null;
+            var accept = context.Request.GetTypedHeaders().Accept ??
+                   new List<Microsoft.Net.Http.Headers.MediaTypeHeaderValue>() {
+                     new Microsoft.Net.Http.Headers.MediaTypeHeaderValue("application/json")
+                     };
 
-                    routeBuilder.MapGet(GetUrlForMvcRouting(ent), context =>
-                    {
-                        return HandleGetRequest(context, ent);
-                    });
-                }
-                if (ent.Methods.ContainsKey("PUT"))
+            foreach (var ser in serializers)
+            {
+                if (accept.Any(a => ser.SupportContentType(a)))
                 {
-                    routeBuilder.MapPut(GetUrlForMvcRouting(ent), context =>
-                    {
-                        return HandleBodyRequest(context, ent.Methods["PUT"], ent);
-                    });
-                }
-                if (ent.Methods.ContainsKey("POST"))
-                {
-                    routeBuilder.MapPost(GetUrlForMvcRouting(ent), context =>
-                    {
-                        return HandleBodyRequest(context, ent.Methods["POST"], ent);
-                    });
-                }
-                if (ent.Methods.ContainsKey("DELETE"))
-                {
-                    routeBuilder.MapDelete(GetUrlForMvcRouting(ent), context =>
-                    {
-                        return HandleBodyRequest(context, ent.Methods["DELETE"], ent);
-                    });
+                    serializer = ser;
+                    break;
                 }
             }
-        }
-
-        private string GetUrlForMvcRouting(Entity ent)
-        {
-            var url = ent.GetUrl(options.Prefix, true);
-            if (url.StartsWith("/"))
-                return url.Substring(1);
-            return url;
-        }
-
-        protected DbConnection GetDbConnection()
-        {
-            if (!string.IsNullOrEmpty(options.ConnectionString))
+            if (serializer == null)
             {
-                return DatabaseUtils.GetConnectionFromEFString(options.ConnectionString, true);
+                context.Response.StatusCode = 415;
+                return Task.CompletedTask;
             }
-            return DatabaseUtils.GetConnectionFromConfig(options.ConnectionStringKey);
+            if (this.sPMiddlewareOptions.RequireAuthenticated && context.User?.Identity == null)
+            {
+                context.Response.StatusCode = 401;
+                return Task.CompletedTask;
+            }
+            if (context.Request.Method == "GET")
+            {
+                return HandleGetRequest(context, ent, serializer);
+            }
+            var method = ent.Methods[context.Request.Method];
+            return HandleBodyRequest(context, method, ent, serializer);
         }
-
-        private async Task HandleGetRequest(HttpContext context, Entity ent)
+        private async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
         {
             var method = ent.Methods["Get"];
             var request = context.Request;
-            using (var con = GetDbConnection())
+
+            Dictionary<string, object> queryParameters;
+
+            if (request.QueryString.HasValue)
             {
-                Dictionary<string, object> queryParameters;
+                var queryDictionary = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value);
+                queryParameters = queryDictionary
+                        .ToDictionary(kv => kv.Key,
+                            kv => string.Join(",", kv.Value) as object);
 
-                if (request.QueryString.HasValue)
-                {
-                    var queryDictionary = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value);
-                    queryParameters = queryDictionary
-                            .ToDictionary(kv => kv.Key,
-                                kv => string.Join(",", kv.Value) as object);
-
-                }
-                else
-                {
-                    queryParameters = new Dictionary<string, object>();
-                }
-                var cmd = GetCommandWithParameters(context, con, ent, method, queryParameters);
-                await genericSPSerializer.ReadResultToBody(context, cmd, method, ent);
             }
+            else
+            {
+                queryParameters = new Dictionary<string, object>();
+            }
+            var cmd = GetCommandWithParameters(context, dbConnection, ent, method, queryParameters);
+
+            await serializer.ReadResultToBody(context, cmd, method, ent);
+
         }
 
         private XElement ToXml(IDictionary<string, object> input)
@@ -158,17 +122,16 @@ namespace Kull.GenericBackend.GenericSP
         }
 
 
-        private async Task HandleBodyRequest(HttpContext context, Method method, Entity ent)
+        private async Task HandleBodyRequest(HttpContext context, Method method, Entity ent, IGenericSPSerializer serializer)
         {
             var request = context.Request;
-            using (var con = GetDbConnection())
-            {
-                var streamReader = new System.IO.StreamReader(request.Body);
-                string json = streamReader.ReadToEnd();
-                var js = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
-                var cmd = GetCommandWithParameters(context, con, ent, method, js);
-                await genericSPSerializer.ReadResultToBody(context, cmd, method, ent);
-            }
+
+            var streamReader = new System.IO.StreamReader(request.Body);
+            string json = streamReader.ReadToEnd();
+            var js = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+            var cmd = GetCommandWithParameters(context, dbConnection, ent, method, js);
+            await serializer.ReadResultToBody(context, cmd, method, ent);
+
         }
 
         private DbCommand GetCommandWithParameters(HttpContext context,
@@ -276,15 +239,15 @@ namespace Kull.GenericBackend.GenericSP
             System.Data.DataTable dt;
 
             ISqlMappedData[] cols;
-            using (var con = GetDbConnection())
+
+
+            cols = sqlHelper.GetTableTypeFields(dbConnection, spPrm.UserDefinedType);
+            dt = new System.Data.DataTable();
+            foreach (var col in cols)
             {
-                cols = sqlHelper.GetTableTypeFields(con, spPrm.UserDefinedType);
-                dt = new System.Data.DataTable();
-                foreach (var col in cols)
-                {
-                    dt.Columns.Add(col.SqlName, col.DbType.NetType);
-                }
+                dt.Columns.Add(col.SqlName, col.DbType.NetType);
             }
+
 
             foreach (var row in rowData)
             {
@@ -298,7 +261,7 @@ namespace Kull.GenericBackend.GenericSP
                 dt.Rows.Add(values);
             }
             var cmdPrm = cmd.CreateParameter();
-            if (cmdPrm.GetType().FullName == "System.Data.SqlClient.SqlParameter"||
+            if (cmdPrm.GetType().FullName == "System.Data.SqlClient.SqlParameter" ||
                 cmdPrm.GetType().FullName == "Microsoft.Data.SqlClient.SqlParameter")
             {
 

@@ -33,8 +33,10 @@ namespace Kull.GenericBackend
             services.AddSingleton<Model.SPParametersProvider>();
             services.AddSingleton<Model.NamingMappingHandler>();
             services.AddSingleton<GenericSP.SystemParameters>();
-            services.AddSingleton<GenericSP.GenericSPSerializer>();
-            services.AddSingleton<GenericSP.GenericSPMiddleware>();
+            services.AddSingleton<GenericSP.MiddlewareRegistration>();
+
+            services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPJsonSerializer>();
+            services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
 
             var opts = options ??
                     new GenericSP.SPMiddlewareOptions();
@@ -48,7 +50,7 @@ namespace Kull.GenericBackend
             IRouteBuilder routeBuilder
             )
         {
-            var service = applicationBuilder.ApplicationServices.GetService<GenericSP.GenericSPMiddleware>();
+            var service = applicationBuilder.ApplicationServices.GetService<GenericSP.MiddlewareRegistration>();
             var opts = applicationBuilder.ApplicationServices.GetService<GenericSP.SPMiddlewareOptions>();
 
             service.RegisterMiddleware(opts, routeBuilder);

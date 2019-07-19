@@ -17,6 +17,14 @@ public void ConfigureServices(IServiceCollection services)
 		services.AddGenericBackend(null, new Kull.GenericBackend.SwaggerGeneration.SwaggerFromSPOptions() {
 
 		});
+		
+		// You have to inject a DbConnection somehow
+        services.AddTransient(typeof(DbConnection), (s) =>
+        {
+            var conf = s.GetRequiredService<IConfiguration>();
+            var constr = conf["ConnectionStrings:DefaultConnection"];
+            return new System.Data.SqlClient.SqlConnection(constr);
+        });
 		services.AddSwaggerGen(c=> {
 			c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
 			c.AddGenericBackend();

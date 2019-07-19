@@ -350,3 +350,4 @@ MigrationBackup/
 
 pushToKullNuget.bat
 nuget.exe
+/Kull.GenericBackend.IntegrationTest/ResultSets
