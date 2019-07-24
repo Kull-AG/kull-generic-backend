@@ -7,11 +7,9 @@ namespace Kull.GenericBackend.Model
     /// <summary>
     /// Represents a parameter for a Stored Proc
     /// </summary>
-    public class SPParameter: ISqlMappedData
+    public class SPParameter
     {
         public string SqlName { get; }
-
-        public string WebApiName { get; set; }
 
         public SqlType DbType { get; }
 
@@ -23,7 +21,6 @@ namespace Kull.GenericBackend.Model
                 DBObjectName userDefinedType)
         {
             this.SqlName = prmName;
-            this.WebApiName = webApiName;
             this.DbType = SqlType.GetSqlType(db_type);
             this.UserDefinedType = userDefinedType;
             if (this.SqlName.EndsWith("Json", StringComparison.CurrentCultureIgnoreCase)

@@ -29,10 +29,11 @@ namespace Kull.GenericBackend
             SwaggerGeneration.SwaggerFromSPOptions swaggerFromSPOptions=null )
         {
             services.AddRouting();
-            services.AddSingleton<Model.SqlHelper>();
+            services.AddTransient<Model.SqlHelper>();
             services.AddSingleton<Model.SPParametersProvider>();
             services.AddSingleton<Model.NamingMappingHandler>();
-            services.AddSingleton<GenericSP.SystemParameters>();
+            services.AddSingleton<GenericSP.ParameterProvider>();
+            services.AddSingleton<Filter.SystemParameters>();
             services.AddSingleton<GenericSP.MiddlewareRegistration>();
 
             services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPJsonSerializer>();

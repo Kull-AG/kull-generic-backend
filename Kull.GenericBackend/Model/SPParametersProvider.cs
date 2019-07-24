@@ -11,15 +11,7 @@ namespace Kull.GenericBackend.Model
     public class SPParametersProvider
     {
         private readonly ConcurrentDictionary<string, SPParameter[]> spParameters = new ConcurrentDictionary<string, SPParameter[]>();
-        private readonly GenericSP.SystemParameters systemParameters;
-        private readonly NamingMappingHandler namingMappingHandler;
 
-        public SPParametersProvider(GenericSP.SystemParameters systemParameters,
-                NamingMappingHandler namingMappingHandler)
-        {
-            this.namingMappingHandler = namingMappingHandler;
-            this.systemParameters = systemParameters;
-        }
 
         /// <summary>
         /// Get all parameter names of a Stored Procedure
@@ -41,7 +33,7 @@ WHERE SPECIFIC_NAME = @SPName  AND SPECIFIC_SCHEMA=@Schema AND PARAMETER_NAME<>'
             cmd.AddCommandParameter("@SPName", storedProcedure.Name)
                 .AddCommandParameter("@Schema", storedProcedure.Schema ?? DBObjectName.DefaultSchema);
             List<SPParameter> resultL = new List<SPParameter>();
-            
+
             using (var reader = cmd.ExecuteReader())
             {
                 if (reader.HasRows)
@@ -54,19 +46,12 @@ WHERE SPECIFIC_NAME = @SPName  AND SPECIFIC_SCHEMA=@Schema AND PARAMETER_NAME<>'
                         (string userDefinedSchema, string userDefinedName) = (reader.GetNString(2), reader.GetNString(3));
                         DBObjectName userDefinedType = type == "table type" ?
                             new DBObjectName(userDefinedSchema, userDefinedName) : null;
-                        if (systemParameters.IsSystemParameter(name))
-                        {
-                            // Null -> no mapping
-                            resultL.Add(new SPParameter(name, null, type, userDefinedType));
-                        }
-                        else
-                        {
-                            resultL.Add(new SPParameter(name, name, type, userDefinedType));
-                        }
+
+                        resultL.Add(new SPParameter(name, name, type, userDefinedType));
+
                     }
                 }
             }
-            namingMappingHandler.SetNames(resultL);
             var result = resultL.ToArray();
 
             spParameters.TryAdd(storedProcedure.ToString(), result);

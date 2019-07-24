@@ -19,28 +19,28 @@ namespace Kull.GenericBackend.Model
     /// </summary>
     public class SqlHelper
     {
-        private readonly NamingMappingHandler namingMappingHandler;
         private readonly IHostingEnvironment hostingEnvironment;
         private readonly ILogger<SqlHelper> logger;
         private readonly SwaggerFromSPOptions swaggerFromSPOptions;
+        private readonly DbConnection dbConnection;
 
         public string GetParameterObjectName(Entity ent, string HttpMethod, Method method) =>
                  ent.GetDisplayString() + ToCamelCase(HttpMethod) + "Parameters";
 
         private string ToCamelCase(string key)=> key[0].ToString().ToUpper() + key.Substring(1).ToLower();
 
-        public SqlHelper(NamingMappingHandler namingMappingHandler, IHostingEnvironment hostingEnvironment,
+        public SqlHelper(IHostingEnvironment hostingEnvironment,
                 ILogger<SqlHelper> logger,
-                SwaggerFromSPOptions swaggerFromSPOptions)
+                SwaggerFromSPOptions swaggerFromSPOptions,
+                DbConnection dbConnection)
         {
-            this.namingMappingHandler = namingMappingHandler;
             this.hostingEnvironment = hostingEnvironment;
             this.logger = logger;
             this.swaggerFromSPOptions = swaggerFromSPOptions;
+            this.dbConnection = dbConnection;
         }
 
-        public ISqlMappedData[] GetTableTypeFields(DbConnection dbConnection,
-         DBObjectName tableType)
+        public SqlFieldDescription[] GetTableTypeFields(DBObjectName tableType)
         {
             string sql = $@"
 SELECT c.name as ColumnName,
@@ -68,18 +68,17 @@ WHERE object_id IN (
                     {
                         IsNullable = rdr.GetBoolean("is_nullable"),
                         Name = rdr.GetNString("ColumnName"),
-                        TypeName = SqlType.GetSqlType(rdr.GetNString("TypeName"))
+                        DbType = SqlType.GetSqlType(rdr.GetNString("TypeName"))
                     });
                 }
             }
-            namingMappingHandler.SetNames(list);
             return list.ToArray();
         }
 
-        public ISqlMappedData[] GetSPResultSet(
-            DbConnection con, DBObjectName model)
+        public Model.SqlFieldDescription[] GetSPResultSet(
+           DBObjectName model)
         {
-            ISqlMappedData[] dataToWrite = null;
+            Model.SqlFieldDescription[] dataToWrite = null;
             var sp_desc_paths = swaggerFromSPOptions.PersistResultSets ? System.IO.Path.Combine(hostingEnvironment.ContentRootPath,
                                 "ResultSets") : null;
             var cachejsonFile = swaggerFromSPOptions.PersistResultSets ? System.IO.Path.Combine(sp_desc_paths,
@@ -87,7 +86,7 @@ WHERE object_id IN (
             try
             {
                 List<Model.SqlFieldDescription> resultSet = new List<SqlFieldDescription>();
-                using (var rdr = con.AssureOpen().CreateSP("sp_describe_first_result_set")
+                using (var rdr = dbConnection.AssureOpen().CreateSP("sp_describe_first_result_set")
                     .AddCommandParameter("tsql", model.ToString())
                     .ExecuteReader())
                 {
@@ -96,7 +95,7 @@ WHERE object_id IN (
                         resultSet.Add(new SqlFieldDescription()
                         {
                             Name = rdr.GetNString("name"),
-                            TypeName = SqlType.GetSqlType(rdr.GetNString("system_type_name")),
+                            DbType = SqlType.GetSqlType(rdr.GetNString("system_type_name")),
                             IsNullable = rdr.GetBoolean("is_nullable")
                         });
                     }
@@ -125,14 +124,14 @@ WHERE object_id IN (
                     }
                 }
                 dataToWrite = resultSet
-                    .Cast<Model.ISqlMappedData>()
+                    .Cast<Model.SqlFieldDescription>()
                     .ToArray();
 
             }
             catch (Exception err)
             {
                 logger.LogError(err, $"Error getting result set from {model}");
-                dataToWrite = new ISqlMappedData[] { };
+                dataToWrite = new Model.SqlFieldDescription[] { };
 
             }
 
@@ -144,15 +143,13 @@ WHERE object_id IN (
                     var json = System.IO.File.ReadAllText(cachejsonFile);
                     var resJS = JsonConvert.DeserializeObject<JArray>(json);
                     var res = resJS.Select(s => SqlFieldDescription.FromJObject((JObject)s)).ToArray();
-                    namingMappingHandler.SetNames(res);
-                    return res.Cast<ISqlMappedData>().ToArray();
+                    return res.Cast<Model.SqlFieldDescription>().ToArray();
                 }
                 catch (Exception err)
                 {
                     logger.LogWarning("Could not get cache {0}. Reason:\r\n{1}", model, err);
                 }
             }
-            namingMappingHandler.SetNames(dataToWrite);
             return dataToWrite;
         }
     }

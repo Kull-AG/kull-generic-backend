@@ -26,9 +26,5 @@ namespace Kull.GenericBackend.GenericSP
             return new Method(section.Key, section.Value);
         }
 
-        public Model.SPParameter[] GetParameters(DbConnection con, Model.SPParametersProvider sPParametersProvider)
-        {
-            return sPParametersProvider.GetSPParameters(this.SP, con);
-        }
     }
 }

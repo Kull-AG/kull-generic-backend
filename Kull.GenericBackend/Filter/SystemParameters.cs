@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Kull.GenericBackend.SwaggerGeneration;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Filter
 {
-    public class SystemParameters
+    public class SystemParameters: IParameterInterceptor
     {
         private Dictionary<string, Func<HttpContext, object>> getFns = new Dictionary<string, Func<HttpContext, object>>(
             StringComparer.CurrentCultureIgnoreCase)
@@ -48,5 +49,24 @@ namespace Kull.GenericBackend.GenericSP
         {
             this.getFns.Add(name, valueAccessor);
         }
+
+        public void Intercept(ICollection<WebApiParameter> apiParams)
+        {
+            List<WebApiParameter> toRemove = new List<WebApiParameter>();
+            List<WebApiParameter> toAdd = new List<WebApiParameter>();
+            foreach(var param in apiParams)
+            {
+                if(param.SqlName != null && IsSystemParameter(param.SqlName))
+                {
+                    toRemove.Add(param);
+                    toAdd.Add(new SwaggerGeneration.SystemParameter(param.SqlName,
+                            getFns[param.SqlName]));
+                }
+            }
+            foreach (var i in toRemove) apiParams.Remove(i);
+            foreach (var a in toAdd) apiParams.Add(a);
+        }
+
+        
     }
 }
