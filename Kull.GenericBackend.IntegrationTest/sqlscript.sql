@@ -2,7 +2,7 @@
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
-INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(1)
+INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(2)
 GO
 INSERT INTO dbo.Pets(PetId, PetName, IsNice)
 SELECT 1, 'Dog', 0
@@ -48,4 +48,19 @@ CREATE PROCEDURE spSearchPets
 AS
 BEGIN 	
 	SELECT* FROM Pets WHERE PetName LIKE '%' + @SearchString + '%'
+END
+GO
+CREATE TYPE dbo.IdNameType AS TABLE 
+(
+	Id bigint, 
+	Name nvarchar(1000), 
+    PRIMARY KEY (Id)
+)
+GO
+CREATE PROCEDURE dbo.spTestBackend
+	@SomeId int,
+	@Ids dbo.IdNameType readonly
+AS
+BEGIN
+	SELECT * FROM @Ids
 END
