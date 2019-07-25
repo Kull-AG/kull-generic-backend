@@ -12,9 +12,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
         public SystemParameter(string sqlName,
               Func<HttpContext, object> getParameterValue)
-            :base(sqlName, null)
+            : base(sqlName, null)
         {
-            this.getParameterValue = getParameterValue;
+            this.getParameterValue = getParameterValue ?? throw new ArgumentNullException(nameof(getParameterValue));
         }
         public override OpenApiSchema GetSchema()
         {
@@ -23,7 +23,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
         public override object GetValue(HttpContext http, object valueProvided)
         {
-            return getParameterValue(http);
+            var vl = getParameterValue(http);
+            return vl;
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
-        [InlineData("/api/Pet")]
+        [InlineData("/api/Pet?searchString=blub")]
         public async Task GetPets(string url)
         {
             // Arrange

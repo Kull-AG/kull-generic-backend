@@ -13,7 +13,7 @@ namespace Kull.GenericBackend.Filter
         {
             { "NTLogin", s=> GetUserName(s) },
             { "ADLogin", s=> GetUserName(s) },
-            { "IPAddress", c=>c.Connection.RemoteIpAddress.ToString() },
+            { "IPAddress", c=>c.Connection?.RemoteIpAddress?.ToString() ?? "No ip"},
             { "UserAgent", c=>c.Request.Headers["User-Agent"].ToString() }
         };
 

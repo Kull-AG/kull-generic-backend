@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using System.Linq;
 
 namespace Kull.GenericBackend.IntegrationTest
 {
-    public class SwaggerTest 
+    public class SwaggerTest
         : IClassFixture<TestWebApplicationFactory>
     {
         private readonly TestWebApplicationFactory _factory;
@@ -31,6 +34,24 @@ namespace Kull.GenericBackend.IntegrationTest
                 response.Content.Headers.ContentType.ToString());
             var resp = await response.Content.ReadAsStringAsync();
             // TODO: Check result
+            var jObj = JsonConvert.DeserializeObject<JObject>(resp);
+            var petParameter = (JArray)jObj["paths"]["/api/Pet"]["get"]["parameters"];
+            Assert.Equal(2, petParameter.Count);
+            var onlyNiceParam = 
+                petParameter.Children<JObject>()
+                .Single(p=>p.Value<string>("name") == "onlyNice");
+            Assert.Equal("boolean", onlyNiceParam.Value<string>("type"));
+            if (onlyNiceParam.TryGetValue("required", out var token))
+            {
+                var vl = (bool)((JValue)token).Value;
+                Assert.False(vl);
+            }
+
+            var searchStringParam =
+                petParameter.Children<JObject>()
+                .Single(p => p.Value<string>("name") == "searchString");
+            Assert.Equal("string", searchStringParam.Value<string>("type"));
+
         }
     }
 }

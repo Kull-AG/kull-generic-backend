@@ -26,14 +26,14 @@ namespace Kull.GenericBackend
     {
         public static void AddGenericBackend(this IServiceCollection services,
             GenericSP.SPMiddlewareOptions options = null,
-            SwaggerGeneration.SwaggerFromSPOptions swaggerFromSPOptions=null )
+            SwaggerGeneration.SwaggerFromSPOptions swaggerFromSPOptions = null)
         {
             services.AddRouting();
             services.AddTransient<Model.SqlHelper>();
             services.AddSingleton<Model.SPParametersProvider>();
             services.AddSingleton<Model.NamingMappingHandler>();
-            services.AddSingleton<GenericSP.ParameterProvider>();
-            services.AddSingleton<Filter.SystemParameters>();
+            services.AddSingleton<Filter.IParameterInterceptor, Filter.SystemParameters>();
+            services.AddTransient<GenericSP.ParameterProvider>();
             services.AddSingleton<GenericSP.MiddlewareRegistration>();
 
             services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPJsonSerializer>();

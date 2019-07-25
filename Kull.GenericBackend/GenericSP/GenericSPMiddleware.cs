@@ -129,14 +129,16 @@ namespace Kull.GenericBackend.GenericSP
             if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(); }
             var cmd = con.AssureOpen().CreateSP(method.SP);
             var parameters = parameterProvider.GetApiParameters(ent, method.SP);
-            foreach (var prm in parameterOfUser)
+            foreach (var spPrm in parameters)
             {
-                var spPrm = parameters.FirstOrDefault(p => p.WebApiName != null && p.WebApiName.Equals(prm.Key, StringComparison.CurrentCultureIgnoreCase));
-                if (spPrm == null || ent.ContainsPathParameter(spPrm.WebApiName))
-                {
-                    logger.LogWarning("Extra body parameter {0}", prm.Key);
-                }
-                object value = spPrm.GetValue(context, prm.Value);
+                var prm = spPrm.WebApiName ==  null ? null 
+                        :
+                        ent.ContainsPathParameter(spPrm.WebApiName) ? 
+                        context.GetRouteValue(spPrm.WebApiName) :
+                        parameterOfUser.FirstOrDefault(p => p.Key.Equals(spPrm.WebApiName, 
+                            StringComparison.CurrentCultureIgnoreCase)).Value;
+                
+                object value = spPrm.GetValue(context, prm);
                 if(value is System.Data.DataTable dt)
                 {
 
@@ -162,14 +164,8 @@ namespace Kull.GenericBackend.GenericSP
                 }
                 else
                 {
-                    cmd.AddCommandParameter(spPrm.SqlName, value);
+                    cmd.AddCommandParameter(spPrm.SqlName, value ?? System.DBNull.Value);
                 }
-            }
-            foreach (var item in parameters.Where(p => p.WebApiName != null && ent.ContainsPathParameter(p.WebApiName)))
-            {
-                var value = context.GetRouteValue(item.WebApiName);
-                var transformedValue = item.GetValue(context, value);
-                cmd.AddCommandParameter(item.SqlName, transformedValue);
             }
             return cmd;
         }

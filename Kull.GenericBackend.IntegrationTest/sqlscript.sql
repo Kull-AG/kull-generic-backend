@@ -10,7 +10,9 @@ UNION ALL
 SELECT 2, 'Dog 2', 1
 GO
 CREATE PROCEDURE spGetPets
-	@OnlyNice bit=0
+	@OnlyNice bit=0,
+	@SearchString varchar(100),
+	@IpAddress varchar(100)
 AS
 BEGIN
 	SELECT * FROM dbo.Pets
