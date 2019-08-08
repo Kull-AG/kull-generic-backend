@@ -16,14 +16,20 @@ namespace Kull.GenericBackend.GenericSP
         public string HttpMethod { get; }
         public Kull.Data.DBObjectName SP { get; }
 
-        public Method(string httpMethod, string sp)
+        public string OperationId { get; }
+
+        public Method(string httpMethod, string sp, string operationId)
         {
             this.HttpMethod = httpMethod;
             this.SP = sp;
+            this.OperationId = operationId;
         }
         public static Method GetFromSection(IConfigurationSection section)
         {
-            return new Method(section.Key, section.Value);
+            if (section.Value != null)
+                return new Method(section.Key, section.Value, null);
+            return new Method(section.Key, section.GetSection("SP").Value, section.GetSection("OperationId")?.Value);
+            
         }
 
     }

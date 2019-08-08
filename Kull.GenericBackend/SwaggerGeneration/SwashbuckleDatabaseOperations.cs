@@ -163,18 +163,24 @@ namespace Kull.GenericBackend.SwaggerGeneration
             if (operation.Tags == null)
                 operation.Tags = new List<OpenApiTag>();
             operation.Tags.Add(new OpenApiTag() { Name = ent.GetDisplayString() });
-            operation.OperationId = (
-                operationType == OperationType.Post &&
-                    (method.SP.Name.StartsWith("spAddUpdate") ||
-                     method.SP.Name.StartsWith("sp_AddUpdate") ||
-                     method.SP.Name.EndsWith("_AddUpdate")
-                    ) ? "AddUpdate" :
-                operationType == OperationType.Post ? "Add" :
-                operationType == OperationType.Put ? "Update" :
-                operationType == OperationType.Delete ? "Delete" :
-                operationType == OperationType.Get ? "Get" :
-                method.HttpMethod)
-                + ent.GetDisplayString();
+
+            var operationId = method.OperationId;
+            if(method.OperationId == null)
+            {
+                operationId = (
+               operationType == OperationType.Post &&
+                   (method.SP.Name.StartsWith("spAddUpdate") ||
+                    method.SP.Name.StartsWith("sp_AddUpdate") ||
+                    method.SP.Name.EndsWith("_AddUpdate")
+                   ) ? "AddUpdate" :
+               operationType == OperationType.Post ? "Add" :
+               operationType == OperationType.Put ? "Update" :
+               operationType == OperationType.Delete ? "Delete" :
+               operationType == OperationType.Get ? "Get" :
+               method.HttpMethod)
+               + ent.GetDisplayString();
+            }
+            operation.OperationId = operationId;
             OpenApiResponse response = new OpenApiResponse();
             response.Content.Add("application/json", new OpenApiMediaType()
             {

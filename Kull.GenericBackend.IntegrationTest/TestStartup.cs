@@ -30,7 +30,7 @@ namespace Kull.GenericBackend.IntegrationTest
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
                 c.AddGenericBackend();
             });
-            services.AddTransient(typeof(DbConnection), (s) =>
+            services.AddScoped(typeof(DbConnection), (s) =>
             {
                 var conf = s.GetRequiredService<IConfiguration>();
                 var hostenv = s.GetRequiredService<IHostingEnvironment>();

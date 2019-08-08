@@ -52,6 +52,10 @@ namespace Kull.GenericBackend.IntegrationTest
                 .Single(p => p.Value<string>("name") == "searchString");
             Assert.Equal("string", searchStringParam.Value<string>("type"));
 
+
+            var postAsGetOp = (JObject)jObj["paths"]["/api/Test"]["post"];
+            string opId = postAsGetOp.Value<string>("operationId");
+            Assert.Equal("GetBackend", opId);
         }
     }
 }
