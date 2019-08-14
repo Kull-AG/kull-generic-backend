@@ -3,6 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Kull.DatabaseMetadata;
 
 namespace Kull.GenericBackend.Test
 {

@@ -18,6 +18,12 @@ namespace Kull.GenericBackend.GenericSP
 
         public string OperationId { get; }
 
+
+        public static string GetParameterObjectName(Entity ent, string HttpMethod, Method method) =>
+                 ent.GetDisplayString() + ToCamelCase(HttpMethod) + "Parameters";
+        private static string ToCamelCase(string key) => key[0].ToString().ToUpper() + key.Substring(1).ToLower();
+
+
         public Method(string httpMethod, string sp, string operationId)
         {
             this.HttpMethod = httpMethod;

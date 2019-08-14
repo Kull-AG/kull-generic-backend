@@ -10,6 +10,7 @@ using Kull.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Kull.GenericBackend.Model;
+using Kull.DatabaseMetadata;
 
 namespace Kull.GenericBackend.SwaggerGeneration
 {
@@ -78,7 +79,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             foreach (var model in allModels)
             {
                 OpenApiSchema resultSchema = new OpenApiSchema();
-                var dataToWrite = sqlHelper.GetSPResultSet(model);
+                var dataToWrite = sqlHelper.GetSPResultSet(model, options.PersistResultSets);
                 WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
                 swaggerDoc.Components.Schemas.Add(model.Name + "Result", resultSchema);
 
@@ -106,7 +107,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         OpenApiSchema parameterSchema = new OpenApiSchema();
                         WriteJsonSchema(parameterSchema, parameters);
 
-                        swaggerDoc.Components.Schemas.Add(sqlHelper.GetParameterObjectName(ent, method.Key, method.Value),
+
+                        swaggerDoc.Components.Schemas.Add(Method.GetParameterObjectName(ent, method.Key, method.Value),
                             parameterSchema);
                     }
                 }
@@ -218,7 +220,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         Reference = new OpenApiReference()
                         {
                             Type = ReferenceType.Schema,
-                            Id = sqlHelper.GetParameterObjectName(ent, method.HttpMethod, method)
+                            Id = Method.GetParameterObjectName(ent, method.HttpMethod, method)
                         }
                     }
                 });

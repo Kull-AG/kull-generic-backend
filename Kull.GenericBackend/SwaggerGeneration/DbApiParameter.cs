@@ -1,4 +1,5 @@
 ﻿using Kull.Data;
+using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
@@ -14,13 +15,13 @@ namespace Kull.GenericBackend.SwaggerGeneration
     {
         private TableValuedParameter TableParameter;
 
-        public Model.SqlType DbType { get; }
+        public SqlType DbType { get; }
         public bool IsNullable { get; }
 
         public DBObjectName UserDefinedType { get; }
 
         public DbApiParameter(string sqlName, string webApiName,
-                Model.SqlType sqlType, bool isNullable,
+                SqlType sqlType, bool isNullable,
                 DBObjectName userDefinedType,
                 SqlHelper sqlHelper,
                 NamingMappingHandler namingMappingHandler) : base(sqlName, webApiName)

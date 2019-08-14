@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Kull.DatabaseMetadata;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -29,8 +30,7 @@ namespace Kull.GenericBackend
             SwaggerGeneration.SwaggerFromSPOptions swaggerFromSPOptions = null)
         {
             services.AddRouting();
-            services.AddTransient<Model.SqlHelper>();
-            services.AddSingleton<Model.SPParametersProvider>();
+            services.AddKullDatabaseMetadata();
             services.AddSingleton<Model.NamingMappingHandler>();
             services.AddSingleton<Filter.IParameterInterceptor, Filter.SystemParameters>();
             services.AddTransient<GenericSP.ParameterProvider>();

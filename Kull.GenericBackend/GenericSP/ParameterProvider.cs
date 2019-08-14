@@ -1,4 +1,5 @@
 ﻿using Kull.Data;
+using Kull.DatabaseMetadata;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -11,15 +12,15 @@ namespace Kull.GenericBackend.GenericSP
     {
         public IEnumerable<Filter.IParameterInterceptor> parameterInterceptors;
         private readonly DbConnection dbConnection;
-        private readonly Model.SPParametersProvider sPParametersProvider;
+        private readonly SPParametersProvider sPParametersProvider;
         private readonly Model.NamingMappingHandler namingMappingHandler;
-        private readonly Model.SqlHelper sqlHelper;
+        private readonly SqlHelper sqlHelper;
 
         public ParameterProvider(IEnumerable<Filter.IParameterInterceptor> parameterInterceptors,
             DbConnection dbConnection,
-            Model.SPParametersProvider sPParametersProvider,
+            SPParametersProvider sPParametersProvider,
             Model.NamingMappingHandler namingMappingHandler,
-            Model.SqlHelper sqlHelper)
+            SqlHelper sqlHelper)
         {
             this.parameterInterceptors = parameterInterceptors;
             this.dbConnection = dbConnection;
