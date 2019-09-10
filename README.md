@@ -7,7 +7,7 @@ It uses Swashbuckle, Version 5+
 
 In Startup.cs, add the following services:
 
-```CSharp
+```csharp
 using Kull.GenericBackend;
 // ...
 
@@ -18,7 +18,7 @@ public void ConfigureServices(IServiceCollection services)
 
 		});
 		
-		// You have to inject a DbConnection somehow
+		// IMPORTANT: You have to inject a DbConnection somehow
         services.AddTransient(typeof(DbConnection), (s) =>
         {
             var conf = s.GetRequiredService<IConfiguration>();
@@ -50,30 +50,30 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 
 }
 ```
-In appsettings.json, set the connection string and the URI's:
+In appsettings.json, set the URI's:
 
 ```json
 {
-  "ConnectionStrings": {
-    "Default": "Data Source=SOMESERVER;Initial Catalog=SOMEDB;Integrated Security=True"
-  },
-  "Entities": {
-    "Cases": {
-      "Get": "api.spGetSomeCases"
-    },
-    "Cases/{CaseId|int}/Brands": {
-      "Get": "api.spGetBrands",
-      "Post": "api.spAddUpdateBrands"
+   "Entities": {
+        "Cases": {
+            "Get": "api.spGetSomeCases"
+        },
+        "Cases/{CaseId|int}/Brands": {
+            "Get": "api.spGetBrands",
+            "Post": {
+                "SP": "api.spAddUpdateBrands",
+                "OperationId": "AddOrUpdateBrands"
+            }
+        }
     }
-  }
 }
 ```
 
 In the "Entities" Section, the URL's are configured. Each entry correspondends to a URL.
-Each URL can be accessed by multiple HTTP Methods. Allowed are:
+Each URL can be accessed by multiple HTTP Methods. Common methods are:
 
 - GET	for getting data, shoud NEVER update something
-- POST	for adding/updating. Maybe misused for getting data if the url gets longer then 2000 chars otherwise)
+- POST	for adding/updating. Maybe misused for getting data if the url gets longer then 2000 chars otherwise), but then set the OperationId as seen above
 - PUT	for updating data
 - DELETE for deleting data
 
@@ -120,7 +120,7 @@ as seen above.
 The other part is the middleware that is responsible for generating a swagger.json file
 out of the information of the database. This is done by using the 
 [sp_describe_first_result_set](https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-describe-first-result-set-transact-sql?view=sql-server-2017)
-and INFORMATION_SCHEMA.parameters
+and INFORMATION_SCHEMA.parameters. There is a separate Package for the Metadata: [Kull-AG/kull-databasemetadata](https://github.com/Kull-AG/kull-databasemetadata)
 
 It works by adding an IDocumentFilter to Swashbuckle. Swashbuckle generates the swagger.json
 This means you can mix this backend and your own Controllers and it will just work in the swagger.json.
