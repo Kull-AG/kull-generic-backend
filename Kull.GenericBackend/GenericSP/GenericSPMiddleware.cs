@@ -128,19 +128,19 @@ namespace Kull.GenericBackend.GenericSP
             if (ent == null) throw new ArgumentNullException(nameof(ent));
             if (method == null) throw new ArgumentNullException(nameof(method));
             if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(); }
-            var cmd = con.AssureOpen().CreateSP(method.SP);
+            var cmd = con.AssureOpen().CreateSPCommand(method.SP);
             var parameters = parameterProvider.GetApiParameters(ent, method.SP);
             foreach (var spPrm in parameters)
             {
-                var prm = spPrm.WebApiName ==  null ? null 
+                var prm = spPrm.WebApiName == null ? null
                         :
-                        ent.ContainsPathParameter(spPrm.WebApiName) ? 
+                        ent.ContainsPathParameter(spPrm.WebApiName) ?
                         context.GetRouteValue(spPrm.WebApiName) :
-                        parameterOfUser.FirstOrDefault(p => p.Key.Equals(spPrm.WebApiName, 
+                        parameterOfUser.FirstOrDefault(p => p.Key.Equals(spPrm.WebApiName,
                             StringComparison.CurrentCultureIgnoreCase)).Value;
-                
+
                 object value = spPrm.GetValue(context, prm);
-                if(value is System.Data.DataTable dt)
+                if (value is System.Data.DataTable dt)
                 {
 
                     var cmdPrm = cmd.CreateParameter();

@@ -16,9 +16,15 @@ namespace Kull.GenericBackend.Model
         {
             CamelCaseNamingStrategy strat = new CamelCaseNamingStrategy();
             var setNames = new List<string>();
+            int nullCount = 0;
             foreach (var item in dt)
             {
                 string name = strat.GetPropertyName(item, false);
+                if(name == null)
+                {
+                    name = "column" + (nullCount == 0 ? "" : nullCount.ToString());
+                    nullCount++;
+                }
                 var origName = name;
                 int i = 1;
                 while (setNames.Contains(name))

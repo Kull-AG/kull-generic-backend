@@ -36,7 +36,7 @@ namespace Kull.GenericBackend.IntegrationTest
                         }
                     }
 
-                    if (version < 2)
+                    if (version < 3)
                     {
                         using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
                         {

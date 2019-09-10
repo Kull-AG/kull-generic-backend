@@ -2,7 +2,7 @@
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
-INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(2)
+INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(3)
 GO
 INSERT INTO dbo.Pets(PetId, PetName, IsNice)
 SELECT 1, 'Dog', 0
@@ -63,4 +63,10 @@ CREATE PROCEDURE dbo.spTestBackend
 AS
 BEGIN
 	SELECT * FROM @Ids
+END
+GO
+CREATE PROCEDURE dbo.spTestNoColumnName
+AS
+BEGIN
+	SELECT GETDATE(), 'TestResult'
 END

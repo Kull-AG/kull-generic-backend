@@ -33,7 +33,7 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.Equal("application/json; charset=utf-8",
                 response.Content.Headers.ContentType.ToString());
             var resp = await response.Content.ReadAsStringAsync();
-            // TODO: Check result
+
             var jObj = JsonConvert.DeserializeObject<JObject>(resp);
             var petParameter = (JArray)jObj["paths"]["/api/Pet"]["get"]["parameters"];
             Assert.Equal(2, petParameter.Count);
@@ -56,6 +56,11 @@ namespace Kull.GenericBackend.IntegrationTest
             var postAsGetOp = (JObject)jObj["paths"]["/api/Test"]["post"];
             string opId = postAsGetOp.Value<string>("operationId");
             Assert.Equal("GetBackend", opId);
+
+            /*
+            var testResult = (JObject)jObj["paths"]["/api/Test"]["patch"];
+            string opId = testResult.Value<string>("operationId");
+            Assert.Equal("GetBackend", opId);*/
         }
     }
 }
