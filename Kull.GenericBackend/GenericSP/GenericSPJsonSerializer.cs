@@ -36,7 +36,7 @@ namespace Kull.GenericBackend.GenericSP
         protected Task PrepareHeader(HttpContext context, Method method, Entity ent)
         {
             context.Response.StatusCode = 200;
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = "application/json; charset=utf-8";
             context.Response.Headers["Cache-Control"] = "no-store";
             context.Response.Headers["Expires"] = "0";
             return Task.CompletedTask;
