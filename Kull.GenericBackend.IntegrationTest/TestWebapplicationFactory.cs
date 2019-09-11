@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -36,7 +36,7 @@ namespace Kull.GenericBackend.IntegrationTest
                         }
                     }
 
-                    if (version < 3)
+                    if (version < 4)
                     {
                         using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
                         {

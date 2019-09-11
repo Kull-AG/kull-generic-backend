@@ -2,7 +2,7 @@
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
-INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(3)
+INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(4)
 GO
 INSERT INTO dbo.Pets(PetId, PetName, IsNice)
 SELECT 1, 'Dog', 0
@@ -69,4 +69,11 @@ CREATE PROCEDURE dbo.spTestNoColumnName
 AS
 BEGIN
 	SELECT GETDATE(), 'TestResult'
+END
+GO
+CREATE PROCEDURE dbo.spTestDate
+	 @DateParam datetime2
+AS
+BEGIN
+	SELECT @DateParam as [Date]
 END

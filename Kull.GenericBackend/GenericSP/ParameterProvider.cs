@@ -1,4 +1,4 @@
-﻿using Kull.Data;
+using Kull.Data;
 using Kull.DatabaseMetadata;
 using System;
 using System.Collections.Generic;

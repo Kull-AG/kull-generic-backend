@@ -30,6 +30,7 @@ namespace Kull.GenericBackend.GenericSP
         private readonly ILogger<GenericSPMiddleware> logger;
         private readonly IEnumerable<IGenericSPSerializer> serializers;
         private readonly SPMiddlewareOptions sPMiddlewareOptions;
+        private readonly SPParametersProvider sPParametersProvider;
         private readonly DbConnection dbConnection;
 
         public GenericSPMiddleware(
@@ -37,7 +38,8 @@ namespace Kull.GenericBackend.GenericSP
                 SqlHelper sqlHelper,
                 ILogger<GenericSPMiddleware> logger,
                 IEnumerable<IGenericSPSerializer> serializers,
-                SPMiddlewareOptions sPMiddlewareOptions,
+             SPParametersProvider sPParametersProvider,
+        SPMiddlewareOptions sPMiddlewareOptions,
                 DbConnection dbConnection)
         {
             this.logger = logger;
@@ -46,6 +48,7 @@ namespace Kull.GenericBackend.GenericSP
             this.dbConnection = dbConnection;
             this.parameterProvider = parameterProvider;
             this.sqlHelper = sqlHelper;
+            this.sPParametersProvider = sPParametersProvider;
         }
 
         public Task HandleRequest(HttpContext context, Entity ent)
@@ -130,21 +133,22 @@ namespace Kull.GenericBackend.GenericSP
             if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(); }
             var cmd = con.AssureOpen().CreateSPCommand(method.SP);
             var parameters = parameterProvider.GetApiParameters(ent, method.SP);
-            foreach (var spPrm in parameters)
+            SPParameter[] sPParameters = null;
+            foreach (var apiPrm in parameters)
             {
-                var prm = spPrm.WebApiName == null ? null
+                var prm = apiPrm.WebApiName == null ? null
                         :
-                        ent.ContainsPathParameter(spPrm.WebApiName) ?
-                        context.GetRouteValue(spPrm.WebApiName) :
-                        parameterOfUser.FirstOrDefault(p => p.Key.Equals(spPrm.WebApiName,
+                        ent.ContainsPathParameter(apiPrm.WebApiName) ?
+                        context.GetRouteValue(apiPrm.WebApiName) :
+                        parameterOfUser.FirstOrDefault(p => p.Key.Equals(apiPrm.WebApiName,
                             StringComparison.CurrentCultureIgnoreCase)).Value;
 
-                object value = spPrm.GetValue(context, prm);
+                object value = apiPrm.GetValue(context, prm);
                 if (value is System.Data.DataTable dt)
                 {
 
                     var cmdPrm = cmd.CreateParameter();
-                    cmdPrm.ParameterName = "@" + spPrm.SqlName;
+                    cmdPrm.ParameterName = "@" + apiPrm.SqlName;
                     cmdPrm.Value = value;
                     if (cmdPrm.GetType().FullName == "System.Data.SqlClient.SqlParameter" ||
                         cmdPrm.GetType().FullName == "Microsoft.Data.SqlClient.SqlParameter")
@@ -163,9 +167,20 @@ namespace Kull.GenericBackend.GenericSP
                     }
                     cmd.Parameters.Add(cmdPrm);
                 }
+                else if (value as string == "")
+                {
+                    sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
+                    var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
+                    if (spPrm.DbType.NetType == typeof(System.DateTime)
+                        || spPrm.DbType.JsType == "number"
+                         || spPrm.DbType.JsType == "integer")
+                    {
+                        cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value);
+                    }
+                }
                 else
                 {
-                    cmd.AddCommandParameter(spPrm.SqlName, value ?? System.DBNull.Value);
+                    cmd.AddCommandParameter(apiPrm.SqlName, value ?? System.DBNull.Value);
                 }
             }
             return cmd;
