@@ -1,4 +1,4 @@
-﻿using Kull.DatabaseMetadata;
+using Kull.DatabaseMetadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,6 +37,7 @@ namespace Kull.GenericBackend
             services.AddSingleton<GenericSP.MiddlewareRegistration>();
 
             services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPJsonSerializer>();
+            services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPXmlSerializer>();
             services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
 
             var opts = options ??

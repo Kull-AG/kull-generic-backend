@@ -1,4 +1,4 @@
-﻿using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.GenericSP;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using System;
@@ -142,6 +142,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             schema.Type = "object";
             var names = namingMappingHandler.GetNames(props.Select(p => p.Name))
                 .GetEnumerator();
+            schema.Xml.Name = "tr";//it's always tr
             foreach (var prop in props)
             {
 
@@ -167,7 +168,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             operation.Tags.Add(new OpenApiTag() { Name = ent.GetDisplayString() });
 
             var operationId = method.OperationId;
-            if(method.OperationId == null)
+            if (method.OperationId == null)
             {
                 operationId = (
                operationType == OperationType.Post &&
@@ -190,6 +191,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     new OpenApiSchema()
                     {
                         Type = "array",
+                        Xml = new OpenApiXml()
+                        {
+                            Name = "table"
+                        },
                         UniqueItems = false,
                         Items = new OpenApiSchema()
                         {
@@ -231,7 +236,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 foreach (var item in props.Where(p => p.WebApiName != null && !ent.ContainsPathParameter(p.WebApiName)))
                 {
                     var schema = item.GetSchema();
-                    
+
                     operation.Parameters.Add(new OpenApiParameter()
                     {
                         Name = item.WebApiName,

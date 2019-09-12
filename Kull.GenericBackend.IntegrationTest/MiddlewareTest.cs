@@ -35,6 +35,47 @@ namespace Kull.GenericBackend.IntegrationTest
 
         }
 
+        [Theory]
+        [InlineData("/api/Pet?searchString=blub")]
+        public async Task GetPetsXml(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/xml"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/xml",
+                response.Content.Headers.ContentType.MediaType);
+            var content = await response.Content.ReadAsStringAsync();
+            var xml = System.Xml.Linq.XElement.Parse(content);
+        }
+
+        [Theory]
+        [InlineData("/api/Pet?searchString=blub")]
+        public async Task GetPetsXHtml(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/xhtml+xml"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/xhtml+xml",
+                response.Content.Headers.ContentType.MediaType);
+            var content = await response.Content.ReadAsStringAsync();
+            var xml = System.Xml.Linq.XElement.Parse(content);
+        }
+
+
 
         [Theory]
         [InlineData("/api/Date?dateParam=")]
