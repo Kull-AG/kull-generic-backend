@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -13,17 +13,20 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class GenericSPJsonSerializer :  IGenericSPSerializer
     {
+
         public bool SupportContentType(Microsoft.Net.Http.Headers.MediaTypeHeaderValue contentType)
         {
-            return contentType.MediaType == "application/json";
+            return contentType.MediaType == "application/json" || contentType.MediaType == "*/*";
         }
 
 
         private readonly Model.NamingMappingHandler namingMappingHandler;
+        private readonly SPMiddlewareOptions options;
 
         public GenericSPJsonSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options)
         {
             this.namingMappingHandler = namingMappingHandler;
+            this.options = options;
         }
 
         /// <summary>
@@ -36,7 +39,7 @@ namespace Kull.GenericBackend.GenericSP
         protected Task PrepareHeader(HttpContext context, Method method, Entity ent)
         {
             context.Response.StatusCode = 200;
-            context.Response.ContentType = "application/json; charset=utf-8";
+            context.Response.ContentType = "application/json; charset=" + options.Encoding.BodyName;
             context.Response.Headers["Cache-Control"] = "no-store";
             context.Response.Headers["Expires"] = "0";
             return Task.CompletedTask;
@@ -57,7 +60,7 @@ namespace Kull.GenericBackend.GenericSP
             using (var rdr = await cmd.ExecuteReaderAsync())
             {
                 await PrepareHeader(context, method, ent);
-                using (JsonWriter jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, System.Text.Encoding.UTF8)))
+                using (JsonWriter jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, options.Encoding)))
                 {
                     string[] fieldNames = new string[rdr.FieldCount];
                     for (int i = 0; i < fieldNames.Length; i++)

@@ -22,6 +22,8 @@ namespace Kull.GenericBackend.IntegrationTest
         {
             // Arrange
             var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
             
             // Act
             var response = await client.GetAsync(url);
