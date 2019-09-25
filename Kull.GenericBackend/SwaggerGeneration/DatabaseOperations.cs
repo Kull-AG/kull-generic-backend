@@ -142,6 +142,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             schema.Type = "object";
             var names = namingMappingHandler.GetNames(props.Select(p => p.Name))
                 .GetEnumerator();
+            if (schema.Xml == null) schema.Xml = new OpenApiXml();
             schema.Xml.Name = "tr";//it's always tr
             foreach (var prop in props)
             {
