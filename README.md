@@ -3,6 +3,15 @@
 This package allows Integration of a generic Stored Procedure-based Backend to Asp.Net MVC Core
 It uses Swashbuckle, Version 5+
 
+## Installation
+
+It's on Nuget: https://www.nuget.org/packages/Kull.GenericBackend/
+Basically, just use:
+
+```
+dotnet add package Kull.GenericBackend
+```
+
 ## Configuration
 
 In Startup.cs, add the following services:
