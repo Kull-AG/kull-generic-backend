@@ -1,6 +1,11 @@
 using Kull.DatabaseMetadata;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
+#if NETSTD2
+using Microsoft.AspNetCore.Routing;
+#else
+using IRouteBuilder = Microsoft.AspNetCore.Routing.IEndpointRouteBuilder;
+#endif
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;

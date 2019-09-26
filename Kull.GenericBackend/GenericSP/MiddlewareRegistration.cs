@@ -1,4 +1,9 @@
-﻿using Microsoft.AspNetCore.Routing;
+#if NETSTD2
+using Microsoft.AspNetCore.Routing;
+#else 
+using Microsoft.AspNetCore.Builder;
+using IRouteBuilder = Microsoft.AspNetCore.Routing.IEndpointRouteBuilder;
+#endif
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;

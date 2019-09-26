@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +17,7 @@ namespace Kull.GenericBackend.IntegrationTest
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddRouting();
             services.AddMvc(config =>
             {
             });
@@ -49,10 +50,20 @@ namespace Kull.GenericBackend.IntegrationTest
                 o.SerializeAsV2 = true;
             });
 
+#if NETSTD2
             app.UseMvc(routeBuilder =>
             {
                 app.UseGenericBackend(routeBuilder);
             });
+#else
+            app.UseRouting();
+            app.UseEndpoints(endpoints =>
+            {
+                app.UseGenericBackend(endpoints);
+                endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+            });
+
+#endif
             app.UseStaticFiles();
             app.UseDefaultFiles();
 

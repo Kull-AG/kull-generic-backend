@@ -113,9 +113,13 @@ namespace Kull.GenericBackend.IntegrationTest
 
             builder.ConfigureServices(services =>
             {
-                var hostEnv = (IHostingEnvironment)services.First(f => f.ServiceType == typeof(IHostingEnvironment)).ImplementationInstance;
+#if NETSTD2
+                var hostEnv = (IHostingEnvironment)services.FirstOrDefault(f => f.ServiceType == typeof(IHostingEnvironment)).ImplementationInstance;
+#else
+                var hostEnv = (IWebHostEnvironment)services.FirstOrDefault(f => f.ServiceType == typeof(IWebHostEnvironment)).ImplementationInstance;
+#endif
                 var config = (IConfiguration)services.First(f => f.ServiceType == typeof(IConfiguration)).ImplementationInstance;
-
+                
                 var constr = config["ConnectionStrings:DefaultConnection"];
                 constr = constr.Replace("{{workdir}}", hostEnv.ContentRootPath);
 
@@ -127,5 +131,5 @@ namespace Kull.GenericBackend.IntegrationTest
             });
         }
     }
-    #endregion
+#endregion
 }
