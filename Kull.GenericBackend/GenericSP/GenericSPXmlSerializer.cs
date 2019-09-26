@@ -46,7 +46,7 @@ namespace Kull.GenericBackend.GenericSP
             if (isHtml)
             {
                 contentType = "application/xhtml+xml";
-            } 
+            }
             context.Response.ContentType = $"{contentType}; charset={options.Encoding.BodyName}";
             context.Response.Headers["Cache-Control"] = "no-store";
             context.Response.Headers["Expires"] = "0";
@@ -64,7 +64,13 @@ namespace Kull.GenericBackend.GenericSP
         public async Task ReadResultToBody(HttpContext context, System.Data.Common.DbCommand cmd, Method method, Entity ent)
         {
             bool html = IsHtmlRequest(context);
-
+#if !NETSTD2
+            var syncIOFeature = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpBodyControlFeature>();
+            if (syncIOFeature != null)
+            {
+                syncIOFeature.AllowSynchronousIO = true;
+            }
+#endif
             using (var rdr = await cmd.ExecuteReaderAsync())
             {
                 await PrepareHeader(context, method, ent);

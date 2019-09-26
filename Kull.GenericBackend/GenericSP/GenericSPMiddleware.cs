@@ -54,10 +54,15 @@ namespace Kull.GenericBackend.GenericSP
         public Task HandleRequest(HttpContext context, Entity ent)
         {
             IGenericSPSerializer serializer = null;
-            var accept = context.Request.GetTypedHeaders().Accept ??
-                   new List<Microsoft.Net.Http.Headers.MediaTypeHeaderValue>() {
+            var defaultAccept = new List<Microsoft.Net.Http.Headers.MediaTypeHeaderValue>() {
                      new Microsoft.Net.Http.Headers.MediaTypeHeaderValue("application/json")
                      };
+            var accept = context.Request.GetTypedHeaders().Accept ?? defaultAccept;
+            if (accept.Count == 0)
+            {
+                // .Net Core 3 seems to use length 0 instead of null
+                accept = defaultAccept;
+            }
 
             foreach (var ser in serializers)
             {

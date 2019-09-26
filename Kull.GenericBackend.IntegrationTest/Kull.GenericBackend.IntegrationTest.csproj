@@ -3,17 +3,21 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.0;netcoreapp2.1</TargetFrameworks>
   </PropertyGroup>
-  <ItemGroup Condition="$(TargetFramework)=='netcoreapp2.1'">
-    <PackageReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
     <PackageReference Include="Kull.Data" Version="5.1.0" />
     <PackageReference Include="System.Data.SqlClient"></PackageReference>
     <PackageReference Include="Kull.DatabaseMetadata" Version="0.9.0" />
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework)=='netcoreapp2.1'">
+    <PackageReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="2.1.0" />
+  </ItemGroup>
+  
+  <ItemGroup  Condition="$(TargetFramework) !='netcoreapp2.1'">
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="3.0.0" />
   </ItemGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp2.1' ">

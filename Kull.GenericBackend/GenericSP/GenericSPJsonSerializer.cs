@@ -109,7 +109,7 @@ namespace Kull.GenericBackend.GenericSP
                             {
                                 jsonWriter.WriteNull(fieldNamesToUse[p]);
                             }
-                            else if(types[p] == typeof(String))
+                            else if (types[p] == typeof(String))
                             {
                                 jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
                             }
@@ -158,7 +158,7 @@ namespace Kull.GenericBackend.GenericSP
                                 string vl = rdr.GetValue(p).ToString();
                                 jsonWriter.WriteString(fieldNamesToUse[p], vl);
                             }
-                            
+
 #endif
 
 
@@ -167,6 +167,7 @@ namespace Kull.GenericBackend.GenericSP
                         jsonWriter.WriteEndObject();
                     }
                     jsonWriter.WriteEndArray();
+                    await jsonWriter.FlushAsync();
                 }
             }
         }

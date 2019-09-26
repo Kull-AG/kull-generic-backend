@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.IntegrationTest
 {
-    #region snippet1
     public class TestWebApplicationFactory
         : Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<TestStartup>
     {
@@ -119,17 +118,22 @@ namespace Kull.GenericBackend.IntegrationTest
                 var hostEnv = (IWebHostEnvironment)services.FirstOrDefault(f => f.ServiceType == typeof(IWebHostEnvironment)).ImplementationInstance;
 #endif
                 var config = (IConfiguration)services.First(f => f.ServiceType == typeof(IConfiguration)).ImplementationInstance;
-                
+                // Not nice, but it seems as of .net core 3 this is required
+                if (config == null)
+                {
+                    config = new ConfigurationBuilder()
+                        .AddJsonFile("appsettings.json", true, true)
+                        .Build();
+                }
                 var constr = config["ConnectionStrings:DefaultConnection"];
                 constr = constr.Replace("{{workdir}}", hostEnv.ContentRootPath);
 
 
                 SetupDb(hostEnv.ContentRootPath, constr);
 
-        // Build the service provider.
-        var sp = services.BuildServiceProvider();
+                // Build the service provider.
+                var sp = services.BuildServiceProvider();
             });
         }
     }
-#endregion
 }
