@@ -150,7 +150,7 @@ and replace the default implementation by using Asp.Net Core Dependency Injectio
 
 # Possible futher development
 
-- Port to .Net Core 3.0
 - Direct manipulation of tables/views without Stored Procedures
 - Support for other databases, eg Sqlite for Testing
+- Support for Return Codes and Output Parameters
 - More Unit Tests
