@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>0.14.0</VersionPrefix>
+    <VersionPrefix>0.14.1</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -32,6 +32,8 @@
     <PackageReference Include="Kull.Data" Version="5.1.0" />
     <PackageReference Include="Kull.DatabaseMetadata" Version="0.9.0" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.0.0-rc4" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.6.0" />
+  
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='netstandard2.0'">
 

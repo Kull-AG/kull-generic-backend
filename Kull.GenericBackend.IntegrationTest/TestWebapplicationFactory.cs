@@ -13,6 +13,8 @@ namespace Kull.GenericBackend.IntegrationTest
     public class TestWebApplicationFactory
         : Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<TestStartup>
     {
+        const int expectedVersion = 5; // sync this with sqlscript.sql
+         
         static object setupObj = new object();
         private static void SetupDb(string dataPath, string constr)
         {
@@ -35,7 +37,7 @@ namespace Kull.GenericBackend.IntegrationTest
                         }
                     }
 
-                    if (version < 4)
+                    if (version < expectedVersion)
                     {
                         using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
                         {

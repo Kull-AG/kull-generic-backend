@@ -2,7 +2,7 @@
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
-INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(4)
+INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(5) -- sync this value with the TestWebApplicationFactory.expectedVersion
 GO
 INSERT INTO dbo.Pets(PetId, PetName, IsNice)
 SELECT 1, 'Dog', 0
@@ -76,4 +76,18 @@ CREATE PROCEDURE dbo.spTestDate
 AS
 BEGIN
 	SELECT @DateParam as [Date]
+END
+GO
+CREATE PROCEDURE dbo.spBuggyProc
+AS
+BEGIN
+	SELECT 1/CONVERT(INT, 0) AS ZeroException
+END
+GO
+CREATE PROCEDURE dbo.spUserNotPermitted
+AS
+BEGIN
+	RAISERROR('You are not permitted', 16,1,1);
+	RETURN;
+	SELECT 'hallo' AS Test
 END

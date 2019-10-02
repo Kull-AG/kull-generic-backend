@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -24,11 +25,17 @@ namespace Kull.GenericBackend.GenericSP
 
         private readonly Model.NamingMappingHandler namingMappingHandler;
         private readonly SPMiddlewareOptions options;
+        private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
+        private readonly ILogger logger;
 
-        public GenericSPXmlSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options)
+        public GenericSPXmlSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+                IEnumerable<Error.IResponseExceptionHandler> errorHandlers,
+                ILogger<GenericSPXmlSerializer> logger)
         {
             this.namingMappingHandler = namingMappingHandler;
             this.options = options;
+            this.errorHandlers = errorHandlers;
+            this.logger = logger;
         }
 
         /// <summary>
@@ -38,9 +45,9 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns></returns>
-        protected Task PrepareHeader(HttpContext context, Method method, Entity ent)
+        protected Task PrepareHeader(HttpContext context, Method method, Entity ent, int statusCode)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = statusCode;
             var isHtml = IsHtmlRequest(context);
             string contentType = "application/xml";
             if (isHtml)
@@ -71,55 +78,95 @@ namespace Kull.GenericBackend.GenericSP
                 syncIOFeature.AllowSynchronousIO = true;
             }
 #endif
-            using (var rdr = await cmd.ExecuteReaderAsync())
+            try
             {
-                await PrepareHeader(context, method, ent);
-                using (var xmlWriter = new System.Xml.XmlTextWriter(context.Response.Body, options.Encoding))
+                using (var rdr = await cmd.ExecuteReaderAsync())
                 {
-                    string[] fieldNames = new string[rdr.FieldCount];
-                    for (int i = 0; i < fieldNames.Length; i++)
+                    bool firstRead = rdr.Read();
+                    await PrepareHeader(context, method, ent, 200);
+                    using (var xmlWriter = new System.Xml.XmlTextWriter(context.Response.Body, options.Encoding))
                     {
-                        fieldNames[i] = rdr.GetName(i);
-                    }
-                    fieldNames = this.namingMappingHandler.GetNames(fieldNames).ToArray();
-
-                    xmlWriter.WriteStartElement("table");
-                    {
-                        if (html)
+                        string[] fieldNames = new string[rdr.FieldCount];
+                        for (int i = 0; i < fieldNames.Length; i++)
                         {
-                            xmlWriter.WriteStartElement("thead");
+                            fieldNames[i] = rdr.GetName(i);
+                        }
+                        fieldNames = this.namingMappingHandler.GetNames(fieldNames).ToArray();
+
+                        xmlWriter.WriteStartElement("table");
+                        {
+                            if (html)
                             {
-                                xmlWriter.WriteStartElement("tr");
-                                foreach (var field in fieldNames)
+                                xmlWriter.WriteStartElement("thead");
                                 {
-                                    xmlWriter.WriteStartElement("th");
-                                    xmlWriter.WriteValue(field);
+                                    xmlWriter.WriteStartElement("tr");
+                                    foreach (var field in fieldNames)
+                                    {
+                                        xmlWriter.WriteStartElement("th");
+                                        xmlWriter.WriteValue(field);
+                                        xmlWriter.WriteEndElement();
+                                    }
+                                    xmlWriter.WriteEndElement();
+                                }
+                                xmlWriter.WriteEndElement();//thead
+                                xmlWriter.WriteStartElement("tbody");
+                            }
+                            while (firstRead || rdr.Read())
+                            {
+                                firstRead = false;
+                                xmlWriter.WriteStartElement("tr");
+                                for (int p = 0; p < fieldNames.Length; p++)
+                                {
+                                    xmlWriter.WriteStartElement(html ? "td" : fieldNames[p]);
+                                    object vl = rdr.GetValue(p);
+                                    xmlWriter.WriteValue(vl == DBNull.Value ? null : vl);
                                     xmlWriter.WriteEndElement();
                                 }
                                 xmlWriter.WriteEndElement();
                             }
-                            xmlWriter.WriteEndElement();//thead
-                            xmlWriter.WriteStartElement("tbody");
-                        }
-                        while (rdr.Read())
-                        {
-                            xmlWriter.WriteStartElement("tr");
-                            for (int p = 0; p < fieldNames.Length; p++)
+                            if (html)
                             {
-                                xmlWriter.WriteStartElement(html ? "td" : fieldNames[p]);
-                                object vl = rdr.GetValue(p);
-                                xmlWriter.WriteValue(vl == DBNull.Value ? null : vl);
                                 xmlWriter.WriteEndElement();
                             }
-                            xmlWriter.WriteEndElement();
                         }
-                        if (html)
-                        {
-                            xmlWriter.WriteEndElement();
-                        }
+                        xmlWriter.WriteEndElement();
                     }
-                    xmlWriter.WriteEndElement();
                 }
+            }
+            catch (Exception err)
+            {
+                logger.LogWarning(err, $"Error executing {cmd.CommandText}");
+                bool handled = false;
+                foreach (var hand in errorHandlers)
+                {
+                    if (hand.CanHandle(err))
+                    {
+                        (int status, object content) = hand.GetContent(err);
+                        if (!context.Response.HasStarted)
+                        {
+                            await PrepareHeader(context, method, ent, status);
+                            if (content != null)
+                            {
+                                var ser = new System.Xml.Serialization.XmlSerializer(content.GetType());
+                                string xml;
+                                using (var strW = new System.IO.StringWriter())
+                                {
+                                    ser.Serialize(strW, content);
+                                    xml = strW.ToString();
+                                }
+                                await context.Response.WriteAsync(xml);
+                            }
+                        }
+                        else
+                        {
+                            logger.LogError(err, $"Could not execute {cmd.CommandText} and could not handle error");
+                        }
+                        handled = true;
+                        break;
+                    }
+                }
+                if (!handled)
+                    throw;
             }
         }
 

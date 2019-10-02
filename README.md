@@ -147,10 +147,16 @@ Built-in are the following System Parameters:
 If you would like to add something to this, you can Subclass the SystemParameters class
 and replace the default implementation by using Asp.Net Core Dependency Injection.
 
+# Error Handling 
+
+In order to inform the client about an error, use `RAISERROR('SOMEERROR', 16,1,1);`
+If there is another exception on the server, code 500 is sent whenever possible. However, 
+when the error occurs during execution and not right at the start, the response will be aborted
+and the status code cannot be guaranteed. In this case the result will be invalid JSON.
 
 # Possible futher development
 
 - Direct manipulation of tables/views without Stored Procedures
 - Support for other databases, eg Sqlite for Testing
-- Support for Return Codes and Output Parameters
+- Support for multiple Result Sets,  Return Codes and Output Parameters
 - More Unit Tests

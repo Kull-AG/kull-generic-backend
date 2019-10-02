@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Xunit;
 
 namespace Kull.GenericBackend.IntegrationTest
@@ -97,6 +98,72 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.Single(ar);
             var obj = (JObject)ar[0];
             Assert.Null(obj.Value<string>("date"));
+        }
+
+
+
+        [Theory]
+        [InlineData("/api/Confidential")]
+        public async Task GetNotPermittedConfidential(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // User Error
+            Assert.InRange((int)response.StatusCode, 400, 499);
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+
+            var resp = await response.Content.ReadAsStringAsync();
+            var obj = Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(resp);
+            
+        }
+
+
+        [Theory]
+        [InlineData("/api/Confidential")]
+        public async Task GetNotPermittedConfidentialXml(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/xhtml+xml"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // User Error
+            Assert.InRange((int)response.StatusCode, 400, 499);
+            Assert.Equal("application/xhtml+xml",
+                response.Content.Headers.ContentType.MediaType);
+
+            var resp = await response.Content.ReadAsStringAsync();
+            XElement e = XElement.Parse(resp);
+
+        }
+
+
+        [Theory]
+        [InlineData("/api/Bug")]
+        public async Task TestBuggyApi(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // App Error
+            Assert.InRange((int)response.StatusCode, 500, 599);
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+
+            var resp = await response.Content.ReadAsStringAsync();
+            var obj = Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(resp);
+
         }
     }
 }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 #if NETSTD2
 using Newtonsoft.Json;
 #else 
@@ -26,11 +27,17 @@ namespace Kull.GenericBackend.GenericSP
 
         private readonly Model.NamingMappingHandler namingMappingHandler;
         private readonly SPMiddlewareOptions options;
+        private readonly ILogger logger;
+        private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
 
-        public GenericSPJsonSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options)
+        public GenericSPJsonSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+                ILogger<GenericSPJsonSerializer> logger,
+                IEnumerable<Error.IResponseExceptionHandler> errorHandlers)
         {
             this.namingMappingHandler = namingMappingHandler;
             this.options = options;
+            this.logger = logger;
+            this.errorHandlers = errorHandlers;
         }
 
         /// <summary>
@@ -40,9 +47,9 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns></returns>
-        protected Task PrepareHeader(HttpContext context, Method method, Entity ent)
+        protected Task PrepareHeader(HttpContext context, Method method, Entity ent, int statusCode)
         {
-            context.Response.StatusCode = 200;
+            context.Response.StatusCode = statusCode;
             context.Response.ContentType = "application/json; charset=" + options.Encoding.BodyName;
             context.Response.Headers["Cache-Control"] = "no-store";
             context.Response.Headers["Expires"] = "0";
@@ -65,45 +72,47 @@ namespace Kull.GenericBackend.GenericSP
                 throw new NotSupportedException("Only utf8 is supported");
             }
 #endif
-            using (var rdr = await cmd.ExecuteReaderAsync())
+            try
             {
-                await PrepareHeader(context, method, ent);
-#if NETSTD2
-                using (var jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, options.Encoding)))
-#else
-                using (var jsonWriter = new Utf8JsonWriter(context.Response.Body))
-#endif
+                using (var rdr = await cmd.ExecuteReaderAsync())
                 {
-                    string[] fieldNames = new string[rdr.FieldCount];
-
-                    // Will store the types of the fields. Nullable datatypes will map to normal types
-                    Type[] types = new Type[fieldNames.Length];
-                    for (int i = 0; i < fieldNames.Length; i++)
-                    {
-                        fieldNames[i] = rdr.GetName(i);
-                        types[i] = rdr.GetFieldType(i);
-                        var nnType = Nullable.GetUnderlyingType(types[i]);
-                        if (nnType != null)
-                            types[i] = nnType;
-                    }
-                    fieldNames = this.namingMappingHandler.GetNames(fieldNames).ToArray();
-#if !NETSTD2
-                    var fieldNamesToUse = fieldNames.Select(f => JsonEncodedText.Encode(f)).ToArray();
-
-
-#else
-                    var fieldNamesToUse = fieldNames;
-#endif
-                    jsonWriter.WriteStartArray();
-                    while (rdr.Read())
-                    {
-                        jsonWriter.WriteStartObject();
-                        for (int p = 0; p < fieldNamesToUse.Length; p++)
-                        {
+                    bool firstRead = rdr.Read();
+                    await PrepareHeader(context, method, ent, 200);
 #if NETSTD2
-                            jsonWriter.WritePropertyName(fieldNamesToUse[p]);
-                            var vl = rdr.GetValue(p);
-                            jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
+                    using (var jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, options.Encoding)))
+#else
+                    using (var jsonWriter = new Utf8JsonWriter(context.Response.Body))
+#endif
+                    {
+                        string[] fieldNames = new string[rdr.FieldCount];
+
+                        // Will store the types of the fields. Nullable datatypes will map to normal types
+                        Type[] types = new Type[fieldNames.Length];
+                        for (int i = 0; i < fieldNames.Length; i++)
+                        {
+                            fieldNames[i] = rdr.GetName(i);
+                            types[i] = rdr.GetFieldType(i);
+                            var nnType = Nullable.GetUnderlyingType(types[i]);
+                            if (nnType != null)
+                                types[i] = nnType;
+                        }
+                        fieldNames = this.namingMappingHandler.GetNames(fieldNames).ToArray();
+#if !NETSTD2
+                        var fieldNamesToUse = fieldNames.Select(f => JsonEncodedText.Encode(f)).ToArray();
+#else
+                        var fieldNamesToUse = fieldNames;
+#endif
+                        jsonWriter.WriteStartArray();
+                        while (firstRead || rdr.Read())
+                        {
+                            firstRead = false;
+                            jsonWriter.WriteStartObject();
+                            for (int p = 0; p < fieldNamesToUse.Length; p++)
+                            {
+#if NETSTD2
+                                jsonWriter.WritePropertyName(fieldNamesToUse[p]);
+                                var vl = rdr.GetValue(p);
+                                jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
 #else
                             if (rdr.IsDBNull(p))
                             {
@@ -163,12 +172,43 @@ namespace Kull.GenericBackend.GenericSP
 
 
 
+                            }
+                            jsonWriter.WriteEndObject();
                         }
-                        jsonWriter.WriteEndObject();
+                        jsonWriter.WriteEndArray();
+                        await jsonWriter.FlushAsync();
                     }
-                    jsonWriter.WriteEndArray();
-                    await jsonWriter.FlushAsync();
                 }
+
+            }
+            catch (Exception err)
+            {
+                logger.LogWarning(err, $"Error executing {cmd.CommandText}");
+                bool handled = false;
+                foreach (var hand in errorHandlers)
+                {
+                    if (hand.CanHandle(err))
+                    {
+                        (int status, object content) = hand.GetContent(err);
+                        if (!context.Response.HasStarted)
+                        {
+                            await PrepareHeader(context, method, ent, status);
+                            if (content != null)
+                            {
+                                string json = Newtonsoft.Json.JsonConvert.SerializeObject(content);
+                                await context.Response.WriteAsync(json);
+                            }
+                        }
+                        else
+                        {
+                            logger.LogError(err, $"Could not execute {cmd.CommandText} and could not handle error");
+                        }
+                        handled = true;
+                        break;
+                    }
+                }
+                if (!handled)
+                    throw;
             }
         }
     }
