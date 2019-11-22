@@ -81,8 +81,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 OpenApiSchema resultSchema = new OpenApiSchema();
                 var dataToWrite = sqlHelper.GetSPResultSet(model, options.PersistResultSets);
                 WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
-                swaggerDoc.Components.Schemas.Add(model.Name + "Result", resultSchema);
-
+                if (swaggerDoc.Components.Schemas.ContainsKey(model.Name + "Result"))
+                {
+                    logger.LogWarning($"Type {model.Name + "Result"} already exists in Components. Assuming it's the same");
+                }
+                else
+                {
+                    swaggerDoc.Components.Schemas.Add(model.Name + "Result", resultSchema);
+                }
             }
 
             foreach (var ent in entities)
