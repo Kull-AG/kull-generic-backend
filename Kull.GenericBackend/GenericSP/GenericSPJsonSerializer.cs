@@ -74,7 +74,7 @@ namespace Kull.GenericBackend.GenericSP
 #endif
             try
             {
-                using (var rdr = await cmd.ExecuteReaderAsync())
+                using (var rdr = await cmd.ExecuteReaderAsync(context.RequestAborted))
                 {
                     bool firstRead = rdr.Read();
                     await PrepareHeader(context, method, ent, 200);
