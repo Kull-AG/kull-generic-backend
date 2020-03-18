@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>0.15.1</VersionPrefix>
+    <VersionPrefix>0.15.3</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/Kull-AG/kull-data</RepositoryUrl>
+    <RepositoryUrl>https://github.com/Kull-AG/kull-generic-backend</RepositoryUrl>
     <LangVersion>preview</LangVersion>
     <Copyright>Kull AG</Copyright>
   </PropertyGroup>
