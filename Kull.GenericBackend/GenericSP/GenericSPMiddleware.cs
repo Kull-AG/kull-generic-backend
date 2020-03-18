@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
@@ -141,14 +141,16 @@ namespace Kull.GenericBackend.GenericSP
             SPParameter[] sPParameters = null;
             foreach (var apiPrm in parameters)
             {
-                var prm = apiPrm.WebApiName == null ? null
+                var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */ 
                         :
                         ent.ContainsPathParameter(apiPrm.WebApiName) ?
                         context.GetRouteValue(apiPrm.WebApiName) :
                         parameterOfUser.FirstOrDefault(p => p.Key.Equals(apiPrm.WebApiName,
                             StringComparison.CurrentCultureIgnoreCase)).Value;
-
+                if (apiPrm.SqlName == null)
+                    continue;
                 object value = apiPrm.GetValue(context, prm);
+                
                 if (value is System.Data.DataTable dt)
                 {
 
