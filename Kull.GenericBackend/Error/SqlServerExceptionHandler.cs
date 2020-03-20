@@ -25,7 +25,7 @@ namespace Kull.GenericBackend.Error
             else
             {
                 return (400, new SqlExceptionInfo(
-                    errors.Select(s =>s.Message).ToArray()
+                    errors.Select(s => s.Message).ToArray()
                 ));
 
             }
@@ -33,6 +33,14 @@ namespace Kull.GenericBackend.Error
 
         public class SqlExceptionInfo
         {
+            [Obsolete("Use for api only")]
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+            public SqlExceptionInfo()
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+            {
+
+            }
+
             public SqlExceptionInfo(string[] errors)
             {
                 this.Errors = errors;
