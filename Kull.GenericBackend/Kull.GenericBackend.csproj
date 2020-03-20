@@ -7,7 +7,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/Kull-AG/kull-generic-backend</RepositoryUrl>
-    <LangVersion>preview</LangVersion>
+    <LangVersion>8.0</LangVersion>
+    <Nullable>enable</Nullable>
     <Copyright>Kull AG</Copyright>
   </PropertyGroup>
   <PropertyGroup Label="Globals">

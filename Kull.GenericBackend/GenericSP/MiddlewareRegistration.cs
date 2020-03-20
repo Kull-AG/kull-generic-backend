@@ -15,7 +15,7 @@ namespace Kull.GenericBackend.GenericSP
     class MiddlewareRegistration
     {
         private List<Entity> entities;
-        private SPMiddlewareOptions options;
+        private SPMiddlewareOptions? options;
 
         public MiddlewareRegistration(IConfiguration conf)
         {
@@ -63,6 +63,7 @@ namespace Kull.GenericBackend.GenericSP
 
         private string GetUrlForMvcRouting(Entity ent)
         {
+            if (options == null) throw new InvalidOperationException("Must register first");
             var url = ent.GetUrl(options.Prefix, true);
             if (url.StartsWith("/"))
                 return url.Substring(1);

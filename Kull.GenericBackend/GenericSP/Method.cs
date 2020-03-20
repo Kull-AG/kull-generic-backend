@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ namespace Kull.GenericBackend.GenericSP
         public string HttpMethod { get; }
         public Kull.Data.DBObjectName SP { get; }
 
-        public string OperationId { get; }
+        public string? OperationId { get; }
 
 
         public static string GetParameterObjectName(Entity ent, string HttpMethod, Method method) =>
@@ -24,7 +24,7 @@ namespace Kull.GenericBackend.GenericSP
         private static string ToCamelCase(string key) => key[0].ToString().ToUpper() + key.Substring(1).ToLower();
 
 
-        public Method(string httpMethod, string sp, string operationId)
+        public Method(string httpMethod, string sp, string? operationId)
         {
             this.HttpMethod = httpMethod;
             this.SP = sp;

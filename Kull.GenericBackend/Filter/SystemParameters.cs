@@ -1,4 +1,4 @@
-﻿using Kull.GenericBackend.SwaggerGeneration;
+using Kull.GenericBackend.SwaggerGeneration;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ namespace Kull.GenericBackend.Filter
 {
     public class SystemParameters: IParameterInterceptor
     {
-        private Dictionary<string, Func<HttpContext, object>> getFns = new Dictionary<string, Func<HttpContext, object>>(
+        private Dictionary<string, Func<HttpContext, object?>> getFns = new Dictionary<string, Func<HttpContext, object?>>(
             StringComparer.CurrentCultureIgnoreCase)
         {
             { "NTLogin", s=> GetUserName(s) },
@@ -19,7 +19,7 @@ namespace Kull.GenericBackend.Filter
 
 
 
-        private static string GetUserName(HttpContext context)
+        private static string? GetUserName(HttpContext context)
         {
 #if DEBUG
             if (System.Diagnostics.Debugger.IsAttached)
@@ -35,7 +35,7 @@ namespace Kull.GenericBackend.Filter
             return getFns.Keys.ToArray();
         }
 
-        public object GetValue(string key, HttpContext context)
+        public object? GetValue(string key, HttpContext context)
         {
             return getFns[key](context);
         }

@@ -1,4 +1,4 @@
-﻿using Kull.Data;
+using Kull.Data;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Model;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +13,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 {
     public class DbApiParameter : WebApiParameter
     {
-        private TableValuedParameter TableParameter;
+        private readonly TableValuedParameter? TableParameter;
 
         public SqlType DbType { get; }
         public bool IsNullable { get; }
@@ -77,7 +77,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     Reference = new OpenApiReference()
                     {
                         Type = ReferenceType.Schema,
-                        Id = TableParameter.WebApiName
+                        Id = TableParameter!.WebApiName
                     }
                 };
             }
@@ -98,17 +98,17 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 input.Select(s => ToXml(s)));
         }
 
-        public override object GetValue(HttpContext http, object valueProvided)
+        public override object? GetValue(HttpContext http, object? valueProvided)
         {
             if (valueProvided is IDictionary<string, object> obj)
             {
-                if (this.SqlName.EndsWith("Xml") || this.DbType.DbType == "xml")
+                if (this.SqlName!.EndsWith("Xml") || this.DbType.DbType == "xml")
                 {
                     return ToXml(obj)?.ToString();
                 }
                 else if (this.UserDefinedType != null)
                 {
-                    return this.TableParameter.GetValue(http, new IDictionary<string, object>[] { obj });
+                    return this.TableParameter!.GetValue(http, new IDictionary<string, object>[] { obj });
                 }
                 else
                 {
@@ -117,13 +117,13 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
             else if (valueProvided is IEnumerable<Dictionary<string, object>> objAr)
             {
-                if (this.SqlName.EndsWith("Xml") || this.DbType.DbType == "xml")
+                if (this.SqlName!.EndsWith("Xml") || this.DbType.DbType == "xml")
                 {
                     return ToXml(objAr)?.ToString();
                 }
                 else if (this.UserDefinedType != null)
                 {
-                    return TableParameter.GetValue(http, objAr);
+                    return TableParameter!.GetValue(http, objAr);
                 }
                 else
                 {
@@ -138,7 +138,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         .Select(oo => oo.Properties()
                             .ToDictionary(p => p.Name, p => p.Value.ToObject<object>())
                             ).ToArray();
-                    return TableParameter.GetValue(http, jobjAr);
+                    return TableParameter!.GetValue(http, jobjAr);
                 }
                 else
                 {
@@ -155,7 +155,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                                 .ToDictionary(p => p.Name, p => p.Value.ToObject<object>())
 
                     };
-                    return TableParameter.GetValue(http, jar_ob);
+                    return TableParameter!.GetValue(http, jar_ob);
                 }
                 else
                 {

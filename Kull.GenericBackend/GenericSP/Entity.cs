@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Linq;
@@ -32,7 +32,7 @@ namespace Kull.GenericBackend.GenericSP
         /// <returns></returns>
         public string GetDisplayString()
         {
-            List<string> result = new List<string>();
+            List<string?> result = new List<string?>();
             bool lastWasBy = false;
             
             foreach (var part in UrlParts)
@@ -49,10 +49,10 @@ namespace Kull.GenericBackend.GenericSP
                     if (!lastWasBy)
                     {
                         lastWasBy = true;
-                        string lastUrlPart = result.LastOrDefault();
+                        string? lastUrlPart = result.LastOrDefault();
                         
-                        string entnameprm = name.EndsWith("Id") ? name.Substring(0, name.Length - "Id".Length) : null;
-                        string entnamepart = lastUrlPart != null && lastUrlPart.EndsWith("s") ?
+                        string? entnameprm = name.EndsWith("Id") ? name.Substring(0, name.Length - "Id".Length) : null;
+                        string? entnamepart = lastUrlPart != null && lastUrlPart.EndsWith("s") ?
                             lastUrlPart.Substring(0, lastUrlPart.Length - "s".Length) : null;
                         if (entnameprm != null &&
                             entnameprm.Equals(entnamepart, StringComparison.CurrentCultureIgnoreCase))
@@ -79,7 +79,7 @@ namespace Kull.GenericBackend.GenericSP
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
-        private (string name, string type) ParseTemplatePart(string input)
+        private (string name, string? type) ParseTemplatePart(string input)
         {
             CamelCaseNamingStrategy strat = new CamelCaseNamingStrategy();
             if (input.Contains(":"))
@@ -94,7 +94,7 @@ namespace Kull.GenericBackend.GenericSP
         /// Gets the names and the types of all Path parameters
         /// </summary>
         /// <returns></returns>
-        public IReadOnlyCollection<(string name, string type)> GetPathParameters()
+        public IReadOnlyCollection<(string name, string? type)> GetPathParameters()
         {
             return this.UrlParts
                 .Where(s => s.StartsWith("{") && s.EndsWith("}"))
@@ -132,7 +132,7 @@ namespace Kull.GenericBackend.GenericSP
             return string.Join("/", new string[] { prefix }.Concat(this.UrlParts).ToArray()).Replace("//", "/");
         }
 
-        private string[] pathParameters;
+        private string[]? pathParameters;
 
         /// <summary>
         /// Gets a boolean wheter this path does contains template with the given parameter name

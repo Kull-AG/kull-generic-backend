@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -8,20 +8,20 @@ namespace Kull.GenericBackend.SwaggerGeneration
 {
     public class SystemParameter : WebApiParameter
     {
-        private readonly Func<HttpContext, object> getParameterValue;
+        private readonly Func<HttpContext, object?> getParameterValue;
 
         public SystemParameter(string sqlName,
-              Func<HttpContext, object> getParameterValue)
+              Func<HttpContext, object?> getParameterValue)
             : base(sqlName, null)
         {
             this.getParameterValue = getParameterValue ?? throw new ArgumentNullException(nameof(getParameterValue));
         }
         public override OpenApiSchema GetSchema()
         {
-            return null;
+            return null!;
         }
 
-        public override object GetValue(HttpContext http, object valueProvided)
+        public override object? GetValue(HttpContext http, object? valueProvided)
         {
             var vl = getParameterValue(http);
             return vl;

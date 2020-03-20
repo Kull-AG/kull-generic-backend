@@ -8,13 +8,13 @@ namespace Kull.GenericBackend.SwaggerGeneration
 {
     public abstract class WebApiParameter
     {
-        public string SqlName { get; }
+        public string? SqlName { get; }
 
-        public string WebApiName { get; }
+        public string? WebApiName { get; }
 
-        public abstract object GetValue(HttpContext http, object valueProvided);
+        public abstract object? GetValue(HttpContext http, object? valueProvided);
 
-        public WebApiParameter(string sqlName, string webApiName)
+        public WebApiParameter(string? sqlName, string? webApiName)
         {
             SqlName = sqlName;
             WebApiName = webApiName;

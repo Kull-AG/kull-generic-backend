@@ -29,8 +29,8 @@ namespace Kull.GenericBackend
     public static class GenericBackendExtensions
     {
         public static void AddGenericBackend(this IServiceCollection services,
-            GenericSP.SPMiddlewareOptions options = null,
-            SwaggerGeneration.SwaggerFromSPOptions swaggerFromSPOptions = null)
+            GenericSP.SPMiddlewareOptions? options = null,
+            SwaggerGeneration.SwaggerFromSPOptions? swaggerFromSPOptions = null)
         {
             services.AddRouting();
             services.AddKullDatabaseMetadata();

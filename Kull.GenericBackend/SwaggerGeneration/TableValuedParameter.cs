@@ -1,4 +1,4 @@
-﻿using Kull.Data;
+using Kull.Data;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Model;
 using Microsoft.AspNetCore.Http;
@@ -52,7 +52,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             return schema;
         }
 
-        public override object GetValue(HttpContext http, object valueProvided)
+        public override object? GetValue(HttpContext http, object? valueProvided)
         {
 
             System.Data.DataTable dt;
@@ -61,14 +61,17 @@ namespace Kull.GenericBackend.SwaggerGeneration
             {
                 dt.Columns.Add(col.Name, col.DbType.NetType);
             }
-            var rowData = (IEnumerable<IDictionary<string, object>>)valueProvided;
-
+            var rowData = (IEnumerable<IDictionary<string, object>>?)valueProvided;
+            if(rowData == null)
+            {
+                return null;
+            }
             var names = namingMappingHandler
                 .GetNames(fields.Select(f => f.Name))
                 .ToArray();
             foreach (var row in rowData)
             {
-                object[] values = new object[dt.Columns.Count];
+                object?[] values = new object[dt.Columns.Count];
                 for (int i = 0; i < values.Length; i++)
                 {
                     var colWebApiName = names[i];

@@ -141,7 +141,7 @@ namespace Kull.GenericBackend.GenericSP
                 {
                     if (hand.CanHandle(err))
                     {
-                        (int status, object content) = hand.GetContent(err);
+                        (int status, object? content) = hand.GetContent(err);
                         if (!context.Response.HasStarted)
                         {
                             await PrepareHeader(context, method, ent, status);

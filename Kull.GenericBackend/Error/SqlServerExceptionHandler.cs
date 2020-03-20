@@ -14,7 +14,7 @@ namespace Kull.GenericBackend.Error
             return err is System.Data.SqlClient.SqlException;
         }
 
-        public (int statusCode, object dataToDisplay) GetContent(Exception exp)
+        public (int statusCode, object? dataToDisplay) GetContent(Exception exp)
         {
             var err = (System.Data.SqlClient.SqlException)exp;
             var errors = err.Errors.Cast<System.Data.SqlClient.SqlError>();
@@ -24,17 +24,18 @@ namespace Kull.GenericBackend.Error
             }
             else
             {
-                return (400, new SqlExceptionInfo(){
-                    Errors = errors.Select(s =>s.Message).ToArray()
-                });
+                return (400, new SqlExceptionInfo(
+                    errors.Select(s =>s.Message).ToArray()
+                ));
 
             }
         }
 
         public class SqlExceptionInfo
         {
-            public SqlExceptionInfo()
+            public SqlExceptionInfo(string[] errors)
             {
+                this.Errors = errors;
             }
 
             public string[] Errors { get; set; }

@@ -53,7 +53,7 @@ namespace Kull.GenericBackend.GenericSP
 
         public Task HandleRequest(HttpContext context, Entity ent)
         {
-            IGenericSPSerializer serializer = null;
+            IGenericSPSerializer? serializer = null;
             var defaultAccept = new List<Microsoft.Net.Http.Headers.MediaTypeHeaderValue>() {
                      new Microsoft.Net.Http.Headers.MediaTypeHeaderValue("application/json")
                      };
@@ -138,7 +138,7 @@ namespace Kull.GenericBackend.GenericSP
             if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(); }
             var cmd = con.AssureOpen().CreateSPCommand(method.SP);
             var parameters = parameterProvider.GetApiParameters(ent, method.SP);
-            SPParameter[] sPParameters = null;
+            SPParameter[]? sPParameters = null;
             foreach (var apiPrm in parameters)
             {
                 var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */ 
@@ -149,7 +149,7 @@ namespace Kull.GenericBackend.GenericSP
                             StringComparison.CurrentCultureIgnoreCase)).Value;
                 if (apiPrm.SqlName == null)
                     continue;
-                object value = apiPrm.GetValue(context, prm);
+                object? value = apiPrm.GetValue(context, prm);
                 
                 if (value is System.Data.DataTable dt)
                 {
@@ -169,7 +169,7 @@ namespace Kull.GenericBackend.GenericSP
                         // cmdPrm.SqlDbType = System.Data.SqlDbType.Structured;
                         cmdPrm.GetType().GetProperty("SqlDbType", System.Reflection.BindingFlags.Public |
                             System.Reflection.BindingFlags.Instance |
-                            System.Reflection.BindingFlags.SetProperty)
+                            System.Reflection.BindingFlags.SetProperty)!
                             .SetValue(cmdPrm, System.Data.SqlDbType.Structured);
                     }
                     cmd.Parameters.Add(cmdPrm);
