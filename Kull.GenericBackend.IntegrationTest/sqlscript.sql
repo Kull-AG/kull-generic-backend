@@ -1,8 +1,8 @@
-﻿CREATE TABLE dbo.Pets (PetId int PRIMARY KEY , PetName varchar(100), IsNice bit)
+﻿CREATE TABLE dbo.Pets (PetId int PRIMARY KEY , PetName varchar(100), IsNice bit, ts timestamp)
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
-INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(5) -- sync this value with the TestWebApplicationFactory.expectedVersion
+INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(6) -- sync this value with the TestWebApplicationFactory.expectedVersion
 GO
 INSERT INTO dbo.Pets(PetId, PetName, IsNice)
 SELECT 1, 'Dog', 0
@@ -41,6 +41,16 @@ AS
 BEGIN
 	-- Just pretending
 	SELECT CONVERT(BIT,1) AS Success
+END
+GO
+CREATE PROCEDURE spUpdatePet
+	@Petid int,
+	@Ts timestamp
+AS
+BEGIN
+	-- Just pretending
+	SELECT CONVERT(BIT,1) AS Success
+		FROM dbo.Pets WHERE PetId=@PetId AND ts=@Ts
 END
 GO
 CREATE PROCEDURE spSearchPets

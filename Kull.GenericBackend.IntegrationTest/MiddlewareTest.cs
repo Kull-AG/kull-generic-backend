@@ -37,6 +37,42 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
+        [InlineData("/api/Pet")]
+        public async Task UpdatePetWithTimestamp(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+            var content = await response.Content.ReadAsStringAsync();
+            var ar = Newtonsoft.Json.JsonConvert.DeserializeObject<JArray>(content);
+            Assert.NotEmpty(ar);
+            var obj = (JObject)ar[0];
+            var petId = obj.Value<int>("petId");
+            var timeStamp = obj.Value<string>("ts");
+            Assert.NotEqual("System.Byte[]", timeStamp);
+            Assert.NotNull(timeStamp);
+
+            var putParameter = Newtonsoft.Json.JsonConvert.SerializeObject(
+                new { petId, ts = timeStamp });
+
+            var putResponse = await client.PutAsync(url,
+                    new System.Net.Http.StringContent(putParameter));
+            putResponse.EnsureSuccessStatusCode();
+            var putContent = await putResponse.Content.ReadAsStringAsync();
+            var resultPut = Newtonsoft.Json.JsonConvert.DeserializeObject<JArray>(putContent);
+            Assert.Single(resultPut);
+        }
+
+        [Theory]
         [InlineData("/api/Pet?searchString=blub")]
         public async Task GetPetsXml(string url)
         {

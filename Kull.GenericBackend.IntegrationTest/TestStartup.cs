@@ -31,12 +31,15 @@ namespace Kull.GenericBackend.IntegrationTest
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
                 c.AddGenericBackend();
             });
+            if (!DbProviderFactories.TryGetFactory("System.Data.SqlClient", out var _))
+                DbProviderFactories.RegisterFactory("System.Data.SqlClient", System.Data.SqlClient.SqlClientFactory.Instance);
             services.AddScoped(typeof(DbConnection), (s) =>
             {
                 var conf = s.GetRequiredService<IConfiguration>();
                 var hostenv = s.GetRequiredService<IHostingEnvironment>();
                 var constr = conf["ConnectionStrings:DefaultConnection"];
                 constr = constr.Replace("{{workdir}}", hostenv.ContentRootPath);
+
                 return Kull.Data.DatabaseUtils.GetConnectionFromEFString(constr, true);
             });
         }

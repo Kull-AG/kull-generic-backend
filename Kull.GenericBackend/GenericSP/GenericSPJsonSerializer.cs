@@ -114,59 +114,63 @@ namespace Kull.GenericBackend.GenericSP
                                 var vl = rdr.GetValue(p);
                                 jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
 #else
-                            if (rdr.IsDBNull(p))
-                            {
-                                jsonWriter.WriteNull(fieldNamesToUse[p]);
-                            }
-                            else if (types[p] == typeof(String))
-                            {
-                                jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
-                            }
-                            else if (types[p] == typeof(DateTime))
-                            {
-                                jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetDateTime(p));
-                            }
-                            else if (types[p] == typeof(DateTimeOffset))
-                            {
-                                jsonWriter.WriteString(fieldNamesToUse[p], (DateTimeOffset)rdr.GetValue(p));
-                            }
-                            else if (types[p] == typeof(bool))
-                            {
-                                jsonWriter.WriteBoolean(fieldNamesToUse[p], rdr.GetBoolean(p));
-                            }
-                            else if (types[p] == typeof(Guid))
-                            {
-                                jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetGuid(p));
-                            }
-                            else if (types[p] == typeof(short))
-                            {
-                                jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt16(p));
-                            }
-                            else if (types[p] == typeof(int))
-                            {
-                                jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt32(p));
-                            }
-                            else if (types[p] == typeof(long))
-                            {
-                                jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt64(p));
-                            }
-                            else if (types[p] == typeof(float))
-                            {
-                                jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetFloat(p));
-                            }
-                            else if (types[p] == typeof(double))
-                            {
-                                jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetDouble(p));
-                            }
-                            else if (types[p] == typeof(decimal))
-                            {
-                                jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetDecimal(p));
-                            }
-                            else
-                            {
-                                string? vl = rdr.GetValue(p)?.ToString();
-                                jsonWriter.WriteString(fieldNamesToUse[p], vl);
-                            }
+                                if (rdr.IsDBNull(p))
+                                {
+                                    jsonWriter.WriteNull(fieldNamesToUse[p]);
+                                }
+                                else if (types[p] == typeof(String))
+                                {
+                                    jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
+                                }
+                                else if (types[p] == typeof(DateTime))
+                                {
+                                    jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetDateTime(p));
+                                }
+                                else if (types[p] == typeof(DateTimeOffset))
+                                {
+                                    jsonWriter.WriteString(fieldNamesToUse[p], (DateTimeOffset)rdr.GetValue(p));
+                                }
+                                else if (types[p] == typeof(bool))
+                                {
+                                    jsonWriter.WriteBoolean(fieldNamesToUse[p], rdr.GetBoolean(p));
+                                }
+                                else if (types[p] == typeof(Guid))
+                                {
+                                    jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetGuid(p));
+                                }
+                                else if (types[p] == typeof(short))
+                                {
+                                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt16(p));
+                                }
+                                else if (types[p] == typeof(int))
+                                {
+                                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt32(p));
+                                }
+                                else if (types[p] == typeof(long))
+                                {
+                                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt64(p));
+                                }
+                                else if (types[p] == typeof(float))
+                                {
+                                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetFloat(p));
+                                }
+                                else if (types[p] == typeof(double))
+                                {
+                                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetDouble(p));
+                                }
+                                else if (types[p] == typeof(decimal))
+                                {
+                                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetDecimal(p));
+                                }
+                                else if (types[p] == typeof(byte[]))
+                                {
+                                    jsonWriter.WriteBase64String(fieldNamesToUse[p], (byte[])rdr.GetValue(p));
+                                }
+                                else
+                                {
+                                    string? vl = rdr.GetValue(p)?.ToString();
+                                    jsonWriter.WriteString(fieldNamesToUse[p], vl);
+                                }
 
 #endif
 
