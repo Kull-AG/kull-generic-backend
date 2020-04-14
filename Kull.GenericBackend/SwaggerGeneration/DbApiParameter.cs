@@ -162,6 +162,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     return JsonConvert.SerializeObject(valueProvided);
                 }
             }
+            else if(this.DbType.NetType == typeof(System.Byte[]) && valueProvided is string str)
+            {
+                return Convert.FromBase64String(str);
+            }
             else
             {
                 return valueProvided;
