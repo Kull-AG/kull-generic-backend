@@ -120,7 +120,7 @@ namespace Kull.GenericBackend.GenericSP
             var request = context.Request;
 
             var streamReader = new System.IO.StreamReader(request.Body);
-            string json = streamReader.ReadToEnd();
+            string json = await streamReader.ReadToEndAsync();
             var js = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
             var cmd = GetCommandWithParameters(context, dbConnection, ent, method, js);
             await serializer.ReadResultToBody(context, cmd, method, ent);
