@@ -5,6 +5,8 @@ It uses Swashbuckle, Version 5+
 
 ## Installation
 
+[![NuGet Badge](https://buildstats.info/nuget/Kull.GenericBackend)](https://www.nuget.org/packages/Kull.GenericBackend/)
+
 It's on Nuget: https://www.nuget.org/packages/Kull.GenericBackend/
 Basically, just use:
 
