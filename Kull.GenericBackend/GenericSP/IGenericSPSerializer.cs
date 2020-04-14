@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.GenericSP
@@ -9,11 +10,15 @@ namespace Kull.GenericBackend.GenericSP
     public interface IGenericSPSerializer
     {
         /// <summary>
-        /// Indicates wheter the given content type is supported
+        /// Indicates wheter the given content type is supported and the priority of this serializer
         /// </summary>
-        /// <param name="contentType">The content type</param>
+        /// <param name="contentTypes">The content type</param>
+        /// <param name="entity">The entity of the request</param>
+        /// <param name="method">The method of the request</param>
         /// <returns></returns>
-        bool SupportContentType(Microsoft.Net.Http.Headers.MediaTypeHeaderValue contentType);
+        int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes, 
+            Entity entity,
+            Method method);
 
         /// <summary>
         /// Writes the Result of the Command to the Body

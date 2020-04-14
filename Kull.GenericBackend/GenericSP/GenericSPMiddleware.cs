@@ -64,12 +64,17 @@ namespace Kull.GenericBackend.GenericSP
                 accept = defaultAccept;
             }
 
+            var method = ent.Methods[context.Request.Method];
+            int lastPrio = -1;
             foreach (var ser in serializers)
             {
-                if (accept.Any(a => ser.SupportContentType(a)))
+                int? prio = ser.GetSerializerPriority(accept, ent, method);
+                if (prio != null && prio > lastPrio)
                 {
                     serializer = ser;
-                    break;
+                    lastPrio = prio.Value;
+                    if (lastPrio == 0) // Cannot get any more priority
+                        break;
                 }
             }
             if (serializer == null)
@@ -86,7 +91,6 @@ namespace Kull.GenericBackend.GenericSP
             {
                 return HandleGetRequest(context, ent, serializer);
             }
-            var method = ent.Methods[context.Request.Method];
             return HandleBodyRequest(context, method, ent, serializer);
         }
         private async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
@@ -141,7 +145,7 @@ namespace Kull.GenericBackend.GenericSP
             SPParameter[]? sPParameters = null;
             foreach (var apiPrm in parameters)
             {
-                var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */ 
+                var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */
                         :
                         ent.ContainsPathParameter(apiPrm.WebApiName) ?
                         context.GetRouteValue(apiPrm.WebApiName) :
@@ -150,7 +154,7 @@ namespace Kull.GenericBackend.GenericSP
                 if (apiPrm.SqlName == null)
                     continue;
                 object? value = apiPrm.GetValue(context, prm);
-                
+
                 if (value is System.Data.DataTable dt)
                 {
 

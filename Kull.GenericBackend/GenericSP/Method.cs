@@ -30,7 +30,7 @@ namespace Kull.GenericBackend.GenericSP
             this.SP = sp;
             this.OperationId = operationId;
         }
-        public static Method GetFromSection(IConfigurationSection section)
+        internal static Method GetFromSection(IConfigurationSection section)
         {
             if (section.Value != null)
                 return new Method(section.Key, section.Value, null);

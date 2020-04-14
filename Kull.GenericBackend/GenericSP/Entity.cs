@@ -108,7 +108,7 @@ namespace Kull.GenericBackend.GenericSP
             this.Methods = methods;
         }
 
-        public static Entity GetFromSection(IConfigurationSection section)
+        internal static Entity GetFromSection(IConfigurationSection section)
         {
             return new Entity(section.Key, section.GetChildren()
                     .Select(s => Method.GetFromSection(s))

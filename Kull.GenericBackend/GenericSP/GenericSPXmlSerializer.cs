@@ -15,11 +15,13 @@ namespace Kull.GenericBackend.GenericSP
     public class GenericSPXmlSerializer : IGenericSPSerializer
     {
 
-        public bool SupportContentType(Microsoft.Net.Http.Headers.MediaTypeHeaderValue contentType)
+        public int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+            Entity entity,
+            Method method)
         {
-            return contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml"
+            return contentTypes.Any(contentType => contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml"
                     || contentType.MediaType == "application/xml"
-                    || contentType.MediaType == "text/xml";
+                    || contentType.MediaType == "text/xml") ? (int?)100: null;
         }
 
 
