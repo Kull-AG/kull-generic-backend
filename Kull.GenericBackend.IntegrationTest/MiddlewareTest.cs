@@ -66,8 +66,8 @@ namespace Kull.GenericBackend.IntegrationTest
 
             var putResponse = await client.PutAsync(url,
                     new System.Net.Http.StringContent(putParameter));
-            putResponse.EnsureSuccessStatusCode();
             var putContent = await putResponse.Content.ReadAsStringAsync();
+            putResponse.EnsureSuccessStatusCode();
             var resultPut = Newtonsoft.Json.JsonConvert.DeserializeObject<JArray>(putContent);
             Assert.Single(resultPut);
         }
