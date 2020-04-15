@@ -65,13 +65,13 @@ namespace Kull.GenericBackend.GenericSP
             }
 
             var method = ent.Methods[context.Request.Method];
-            int lastPrio = -1;
+            int lastPrio = int.MaxValue;
             foreach (var ser in serializers)
             {
-                if (method.ResultType != null && !ser.SupportsResultType(method.ResultType))
+                if (method.ResultType != null && !ser.SupportsResultType(method.ResultType.ToLower()))
                     continue;
                 int? prio = ser.GetSerializerPriority(accept, ent, method);
-                if (prio != null && prio > lastPrio)
+                if (prio != null && prio < lastPrio)
                 {
                     serializer = ser;
                     lastPrio = prio.Value;
@@ -124,11 +124,29 @@ namespace Kull.GenericBackend.GenericSP
         private async Task HandleBodyRequest(HttpContext context, Method method, Entity ent, IGenericSPSerializer serializer)
         {
             var request = context.Request;
-
-            var streamReader = new System.IO.StreamReader(request.Body);
-            string json = await streamReader.ReadToEndAsync();
-            var js = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
-            var cmd = GetCommandWithParameters(context, dbConnection, ent, method, js);
+            Dictionary<string, object> parameterObject;
+            if (request.HasFormContentType)
+            {
+                parameterObject = new Dictionary<string, object>();
+                foreach(var item in request.Form)
+                {
+                    parameterObject.Add(item.Key, string.Join(",", item.Value));
+                }
+                foreach(var file in request.Form.Files)
+                {
+                    parameterObject.Add(file.Name + "_Content",(Func<System.IO.Stream>) (()=>file.OpenReadStream()));
+                    parameterObject.Add(file.Name + "_ContentType", file.ContentType);
+                    parameterObject.Add(file.Name + "_FileName", file.FileName);
+                    parameterObject.Add(file.Name + "_Length", file.Length);
+                }
+            }
+            else
+            {
+                var streamReader = new System.IO.StreamReader(request.Body);
+                string json = await streamReader.ReadToEndAsync();
+                parameterObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+            }
+            var cmd = GetCommandWithParameters(context, dbConnection, ent, method, parameterObject);
             await serializer.ReadResultToBody(context, cmd, method, ent);
 
         }

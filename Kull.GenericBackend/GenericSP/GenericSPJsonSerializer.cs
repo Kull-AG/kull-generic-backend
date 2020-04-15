@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.OpenApi.Models;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -19,7 +20,7 @@ namespace Kull.GenericBackend.GenericSP
     public class GenericSPJsonSerializer : IGenericSPSerializer
     {
         public bool SupportsResultType(string resultType) => resultType == "json";
-        public int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+        public int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
         {
@@ -217,6 +218,10 @@ namespace Kull.GenericBackend.GenericSP
                 if (!handled)
                     throw;
             }
+        }
+
+        public void ModifyResponses(OpenApiResponses responses)
+        {
         }
     }
 }

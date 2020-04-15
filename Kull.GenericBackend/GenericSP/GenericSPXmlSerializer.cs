@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -15,7 +16,7 @@ namespace Kull.GenericBackend.GenericSP
     public class GenericSPXmlSerializer : IGenericSPSerializer
     {
         
-        public int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+        public int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
         {
@@ -178,5 +179,9 @@ namespace Kull.GenericBackend.GenericSP
         }
 
         public bool SupportsResultType(string resultType) => resultType == "xml";
+
+        public void ModifyResponses(OpenApiResponses responses)
+        {
+        }
     }
 }

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Logging;
 using Kull.GenericBackend.Model;
 using Kull.DatabaseMetadata;
+using Microsoft.Net.Http.Headers;
 
 namespace Kull.GenericBackend.SwaggerGeneration
 {
@@ -27,6 +28,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly DbConnection dbConnection;
         private readonly ParameterProvider parametersProvider;
         private readonly NamingMappingHandler namingMappingHandler;
+        private readonly IEnumerable<IGenericSPSerializer> serializers;
 
         public DatabaseOperations(Microsoft.Extensions.Configuration.IConfiguration conf,
          SPMiddlewareOptions sPMiddlewareOptions,
@@ -35,12 +37,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
          ILogger<DatabaseOperations> logger,
          DbConnection dbConnection,
          ParameterProvider parametersProvider,
+         IEnumerable<IGenericSPSerializer> serializers,
          NamingMappingHandler namingMappingHandler)
         {
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.options = options;
             this.sqlHelper = sqlHelper;
             this.logger = logger;
+            this.serializers = serializers;
             this.dbConnection = dbConnection;
             this.parametersProvider = parametersProvider;
             this.namingMappingHandler = namingMappingHandler;
@@ -81,13 +85,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 OpenApiSchema resultSchema = new OpenApiSchema();
                 var dataToWrite = sqlHelper.GetSPResultSet(model, options.PersistResultSets);
                 WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
-                if (swaggerDoc.Components.Schemas.ContainsKey(model.Name + "Result"))
+                string typeName = GetResultTypeName(model);
+                if (swaggerDoc.Components.Schemas.ContainsKey(typeName))
                 {
-                    logger.LogWarning($"Type {model.Name + "Result"} already exists in Components. Assuming it's the same");
+                    logger.LogWarning($"Type {typeName} already exists in Components. Assuming it's the same");
                 }
                 else
                 {
-                    swaggerDoc.Components.Schemas.Add(model.Name + "Result", resultSchema);
+                    swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
             }
 
@@ -166,6 +171,37 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
         }
 
+        protected string GetResultTypeName(DBObjectName name) => name.Name + "Result";
+
+        private OpenApiResponses GetDefaultResponse(string resultTypeName)
+        {
+            OpenApiResponses responses = new OpenApiResponses();
+            OpenApiResponse response = new OpenApiResponse();
+            response.Content.Add("application/json", new OpenApiMediaType()
+            {
+                Schema =
+                    new OpenApiSchema()
+                    {
+                        Type = "array",
+                        Xml = new OpenApiXml()
+                        {
+                            Name = "table"
+                        },
+                        UniqueItems = false,
+                        Items = new OpenApiSchema()
+                        {
+                            Reference = new OpenApiReference()
+                            {
+                                Type = ReferenceType.Schema,
+                                Id = resultTypeName
+                            }
+                        }
+                    }
+
+            });
+            responses.Add("200", response);
+            return responses;
+        }
 
 
         private void WriteBodyPath(DbConnection con, OpenApiOperation operation, Entity ent, OperationType operationType, Method method)
@@ -191,32 +227,25 @@ namespace Kull.GenericBackend.SwaggerGeneration
                + ent.GetDisplayString();
             }
             operation.OperationId = operationId;
-            OpenApiResponse response = new OpenApiResponse();
-            response.Content.Add("application/json", new OpenApiMediaType()
+            int lastPrio = int.MaxValue;
+            IGenericSPSerializer? serializer=null;
+            
+            foreach (var ser in serializers)
             {
-                Schema =
-                    new OpenApiSchema()
-                    {
-                        Type = "array",
-                        Xml = new OpenApiXml()
-                        {
-                            Name = "table"
-                        },
-                        UniqueItems = false,
-                        Items = new OpenApiSchema()
-                        {
-                            Reference = new OpenApiReference()
-                            {
-                                Type = ReferenceType.Schema,
-                                Id = method.SP.Name + "Result"
-                            }
-                        }
-                    }
-
-            });
-            operation.Responses.Add("200", response);
-
-
+                if (method.ResultType != null && !ser.SupportsResultType(method.ResultType))
+                    continue;
+                int? prio = ser.GetSerializerPriority(new List<MediaTypeHeaderValue>(), ent, method);
+                if (prio != null && prio < lastPrio)
+                {
+                    serializer = ser;
+                    lastPrio = prio.Value;
+                    if (lastPrio == 0) // Cannot get any more priority
+                        break;
+                }
+            }
+            operation.Responses = GetDefaultResponse(GetResultTypeName(method.SP));
+            if(serializer != null)
+                serializer.ModifyResponses(operation.Responses);
 
             var props = parametersProvider.GetApiParameters(ent, method.SP)
                                 .ToArray();

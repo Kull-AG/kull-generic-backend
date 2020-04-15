@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -23,7 +24,7 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="entity">The entity of the request</param>
         /// <param name="method">The method of the request</param>
         /// <returns></returns>
-        int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes, 
+        int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes, 
             Entity entity,
             Method method);
 
@@ -36,5 +37,11 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="ent">The entity</param>
         /// <returns></returns>
         Task ReadResultToBody(HttpContext context, System.Data.Common.DbCommand cmd, Method method, Entity ent);
+        
+        /// <summary>
+        /// Hook to allow modifing the open api schema
+        /// </summary>
+        /// <param name="responses">The respones object</param>
+        void ModifyResponses(OpenApiResponses responses);
     }
 }

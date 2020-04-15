@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.OpenApi.Models;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -19,12 +20,14 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class GenericSPFileSerializer : IGenericSPSerializer
     {
+        public const string DefaultContentType = "application/octet-stream";
+
         protected string ContentColumn { get; } = "Content";
         protected string ContentTypeColumn { get; } = "ContentType";
         protected string FileNameColumn { get; } = "FileName";
 
         public bool SupportsResultType(string resultType) => resultType == "file";
-        public int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+        public int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
         {
@@ -119,7 +122,7 @@ namespace Kull.GenericBackend.GenericSP
                     }
                     byte[] content = (byte[])rdr.GetValue(rdr.GetOrdinal(ContentColumn));
                     string? fileName = rdr.GetNString(FileNameColumn);
-                    string contentType = rdr.GetString(rdr.GetOrdinal(ContentTypeColumn));
+                    string contentType = rdr.GetNString(ContentTypeColumn) ?? DefaultContentType;
 
                     await PrepareHeader(context, method, ent, 200, contentType, fileName);
                     await context.Response.Body.WriteAsync(content, 0, content.Length);
@@ -155,6 +158,30 @@ namespace Kull.GenericBackend.GenericSP
                 if (!handled)
                     throw;
             }
+        }
+
+        public void ModifyResponses(OpenApiResponses responses)
+        {
+            responses.Remove("200");
+            responses.Add("200", new OpenApiResponse()
+            {
+                Description = "A binary file",
+                Content = new Dictionary<string, OpenApiMediaType>(){
+                        {
+                            DefaultContentType,
+                            new OpenApiMediaType()
+                            {
+                                Schema = new OpenApiSchema()
+                                {
+                                    // Actually in v3, type string would be correct, but I don't think this describes it correctly
+                                    // https://swagger.io/docs/specification/describing-responses/
+                                    Type = "file",
+                                    Format = "binary"
+                                }
+                            }
+                        }
+                    }
+            });
         }
     }
 }

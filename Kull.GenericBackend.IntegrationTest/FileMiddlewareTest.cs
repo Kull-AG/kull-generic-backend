@@ -15,26 +15,16 @@ namespace Kull.GenericBackend.IntegrationTest
         : IClassFixture<TestWebApplicationFactory>
     {
         private readonly TestWebApplicationFactory _factory;
-#if NETSTD2
-        private readonly IHostingEnvironment webHostEnvironment;
-#else
-           private readonly  IWebHostEnvironment webHostEnvironment;
-#endif
-        public FileMiddlewareTest(TestWebApplicationFactory factory,
-#if NETSTD2
-            IHostingEnvironment webHostEnvironment
-#else
-            IWebHostEnvironment webHostEnvironment
-#endif
+
+        public FileMiddlewareTest(TestWebApplicationFactory factory
             )
         {
             _factory = factory;
-            this.webHostEnvironment = webHostEnvironment;
         }
 
         [Theory]
         [InlineData("/api/File")]
-        public async Task GetPets(string url)
+        public async Task UploadFile(string url)
         {
             // Arrange
             var client = _factory.CreateClient();
@@ -44,9 +34,9 @@ namespace Kull.GenericBackend.IntegrationTest
             {
                 formContent.Headers.ContentType.MediaType = "multipart/form-data";
                 // 3. Add the filename C:\\... + fileName is the path your file
-                Stream fileStream = System.IO.File.OpenRead(System.IO.Path.Combine(webHostEnvironment.ContentRootPath, "sampleImage.jpg"));
+                Stream fileStream = System.IO.File.OpenRead("sampleImage.jpg");
                 formContent.Add(new StreamContent(fileStream), "image", "sampleImage.jpg");
-
+                formContent.Add(new StringContent("tester"), "FileDesc");
 
 
                 // 4.. Execute the MultipartPostMethod
