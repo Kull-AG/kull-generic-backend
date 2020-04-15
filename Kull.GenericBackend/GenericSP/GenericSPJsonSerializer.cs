@@ -18,7 +18,7 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class GenericSPJsonSerializer : IGenericSPSerializer
     {
-
+        public bool SupportsResultType(string resultType) => resultType == "json";
         public int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)

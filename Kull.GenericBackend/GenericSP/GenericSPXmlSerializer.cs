@@ -14,7 +14,7 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class GenericSPXmlSerializer : IGenericSPSerializer
     {
-
+        
         public int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
@@ -176,5 +176,7 @@ namespace Kull.GenericBackend.GenericSP
         {
             return context.Request.GetTypedHeaders().Accept.Any(contentType => contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml");
         }
+
+        public bool SupportsResultType(string resultType) => resultType == "xml";
     }
 }

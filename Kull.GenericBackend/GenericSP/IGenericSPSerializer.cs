@@ -10,6 +10,13 @@ namespace Kull.GenericBackend.GenericSP
     public interface IGenericSPSerializer
     {
         /// <summary>
+        /// If there is an explicity set ResultType in appsettings, check for support
+        /// </summary>
+        /// <param name="resultType">The result type</param>
+        /// <returns></returns>
+        public bool SupportsResultType(string resultType);
+
+        /// <summary>
         /// Indicates wheter the given content type is supported and the priority of this serializer
         /// </summary>
         /// <param name="contentTypes">The content type</param>

@@ -68,6 +68,8 @@ namespace Kull.GenericBackend.GenericSP
             int lastPrio = -1;
             foreach (var ser in serializers)
             {
+                if (method.ResultType != null && !ser.SupportsResultType(method.ResultType))
+                    continue;
                 int? prio = ser.GetSerializerPriority(accept, ent, method);
                 if (prio != null && prio > lastPrio)
                 {
