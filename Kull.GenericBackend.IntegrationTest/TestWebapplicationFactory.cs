@@ -13,7 +13,7 @@ namespace Kull.GenericBackend.IntegrationTest
     public class TestWebApplicationFactory
         : Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<TestStartup>
     {
-        const int expectedVersion = 6; // sync this with sqlscript.sql
+        const int expectedVersion = 7; // sync this with sqlscript.sql
          
         static object setupObj = new object();
         private static void SetupDb(string dataPath, string constr)

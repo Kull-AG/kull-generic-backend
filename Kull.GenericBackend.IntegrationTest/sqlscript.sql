@@ -101,3 +101,12 @@ BEGIN
 	RETURN;
 	SELECT 'hallo' AS Test
 END
+GO
+CREATE PROCEDURE dbo.spFile
+	@Image varbinary(MAX),
+	@Image_ContentType varchar(1000),
+	@Image_FileName varchar(1000)
+AS
+BEGIN
+	SELECT @Image AS Content, @Image_ContentType as ContentType, @Image_FileName AS [FileName]
+END
