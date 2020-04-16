@@ -127,11 +127,11 @@ namespace Kull.GenericBackend.GenericSP
             Dictionary<string, object> parameterObject;
             if (request.HasFormContentType)
             {
-                parameterObject = new Dictionary<string, object>();
+                parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
                 foreach(var item in request.Form)
                 {
                     parameterObject.Add(item.Key, string.Join(",", item.Value));
-                }
+                  }
                 foreach(var file in request.Form.Files)
                 {
                     parameterObject.Add(file.Name, file);
@@ -156,7 +156,7 @@ namespace Kull.GenericBackend.GenericSP
             if (con == null) throw new ArgumentNullException(nameof(con));
             if (ent == null) throw new ArgumentNullException(nameof(ent));
             if (method == null) throw new ArgumentNullException(nameof(method));
-            if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(); }
+            if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase); }
             var cmd = con.AssureOpen().CreateSPCommand(method.SP);
             var parameters = parameterProvider.GetApiParameters(ent, method.SP);
             SPParameter[]? sPParameters = null;
