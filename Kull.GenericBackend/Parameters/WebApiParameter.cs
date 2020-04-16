@@ -4,13 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kull.GenericBackend.SwaggerGeneration
+namespace Kull.GenericBackend.Parameters
 {
     public abstract class WebApiParameter
     {
         public string? SqlName { get; }
 
         public string? WebApiName { get; }
+        public virtual bool RequiresFormData { get; } = false;
 
         public abstract object? GetValue(HttpContext http, object? valueProvided);
 

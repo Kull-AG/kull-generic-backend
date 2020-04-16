@@ -128,14 +128,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, DBObjectName sp)
+        private Parameters.WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, DBObjectName sp)
         {
             return parametersProvider.GetApiParameters(ent, sp)
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
         }
 
-        private void WriteJsonSchema(OpenApiSchema parameterSchema, WebApiParameter[] parameters)
+        private void WriteJsonSchema(OpenApiSchema parameterSchema, Parameters.WebApiParameter[] parameters)
         {
             parameterSchema.Type = "object";
             foreach (var item in parameters)
@@ -254,7 +254,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 if (operation.RequestBody == null) operation.RequestBody = new OpenApiRequestBody();
                 operation.RequestBody.Required = true;
                 operation.RequestBody.Description = "Parameters for " + method.SP.ToString();
-                operation.RequestBody.Content.Add("application/json", new OpenApiMediaType()
+                bool requireFormData = props.Any(p => p.RequiresFormData);
+                operation.RequestBody.Content.Add( requireFormData ? "multipart/form-data": "application /json", new OpenApiMediaType()
                 {
                     Schema = new OpenApiSchema()
                     {

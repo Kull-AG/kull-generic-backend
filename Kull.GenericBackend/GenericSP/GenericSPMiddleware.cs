@@ -134,10 +134,7 @@ namespace Kull.GenericBackend.GenericSP
                 }
                 foreach(var file in request.Form.Files)
                 {
-                    parameterObject.Add(file.Name + "_Content",(Func<System.IO.Stream>) (()=>file.OpenReadStream()));
-                    parameterObject.Add(file.Name + "_ContentType", file.ContentType);
-                    parameterObject.Add(file.Name + "_FileName", file.FileName);
-                    parameterObject.Add(file.Name + "_Length", file.Length);
+                    parameterObject.Add(file.Name, file);
                 }
             }
             else

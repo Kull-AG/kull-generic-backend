@@ -29,16 +29,16 @@ namespace Kull.GenericBackend.GenericSP
             this.sqlHelper = sqlHelper;
         }
 
-        public SwaggerGeneration.WebApiParameter[] GetApiParameters(Entity ent, DBObjectName sp)
+        public Parameters.WebApiParameter[] GetApiParameters(Entity ent, DBObjectName sp)
         {
             var spParams = sPParametersProvider.GetSPParameters(sp, dbConnection);
             var webApiNames = namingMappingHandler.GetNames(spParams.Select(s => s.SqlName)).ToArray();
 
             var apiParamsRaw = spParams.Select((s, index) =>
-                (SwaggerGeneration.WebApiParameter) new SwaggerGeneration.DbApiParameter(s.SqlName, webApiNames[index],
+                (Parameters.WebApiParameter) new Parameters.DbApiParameter(s.SqlName, webApiNames[index],
                    s.DbType, s.IsNullable, s.UserDefinedType, sqlHelper, namingMappingHandler)
             );
-            var apiParams = new LinkedList<SwaggerGeneration.WebApiParameter>(apiParamsRaw);
+            var apiParams = new LinkedList<Parameters.WebApiParameter>(apiParamsRaw);
             foreach(var inter in parameterInterceptors)
             {
                 inter.Intercept(apiParams);
