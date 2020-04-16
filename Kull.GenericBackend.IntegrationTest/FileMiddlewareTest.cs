@@ -29,7 +29,6 @@ namespace Kull.GenericBackend.IntegrationTest
             // Arrange
             var client = _factory.CreateClient();
 
-            string result;
             using (var formContent = new MultipartFormDataContent("NKdKd9Yk"))
             {
                 formContent.Headers.ContentType.MediaType = "multipart/form-data";
@@ -43,22 +42,12 @@ namespace Kull.GenericBackend.IntegrationTest
                 var message = await client.PostAsync(url, formContent);
                 // 5.a Receive the response
                 message.EnsureSuccessStatusCode();
-                result = await message.Content.ReadAsStringAsync();
-
-
+                var img = await message.Content.ReadAsByteArrayAsync();
+                using var ts = SixLabors.ImageSharp.Image.Load(img);
+                Assert.Equal(360, ts.Height);
+                Assert.Equal(640, ts.Width);
             }
 
-            // Act
-            var response = await client.PostAsync(url,
-                new MultipartFormDataContent()
-                {
-                }
-                );
-
-            // Assert
-            response.EnsureSuccessStatusCode(); // Status Code 200-299
-            Assert.Equal("application/json",
-                response.Content.Headers.ContentType.MediaType);
 
         }
     }
