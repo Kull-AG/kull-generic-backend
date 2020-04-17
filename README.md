@@ -118,6 +118,34 @@ BEGIN
 END
 ```
 
+### Files
+
+### File Upload
+
+For uploading a file, name the parameters of your Stored Procedure with the following postfixes (at least two, content is required):
+
+ - NAMEOFYOURFILEPARAM_Content
+ - NAMEOFYOURFILEPARAM_ContentType
+ - NAMEOFYOURFILEPARAM_FileName
+ - NAMEOFYOURFILEPARAM_Length
+
+ This will make the Generic Backend treat the SP as File Upload SP and therefore requiring the HTTP Request to be a Multipart/form-data Request.
+
+### File Download
+
+In your appsettings.json, set the field "ResultType" to "File":
+
+```json
+    "FileDownload": {
+      "GET": {
+        "SP": "spGetFile",
+        "ResultType": "File"
+      }
+    }
+```
+
+The SP must return a field called `Content` and a field called `ContentType`. It may return a field called `FileName` as well.
+
 ## Main parts of the generic API
 
 ### Middleware for handling the requests
@@ -156,9 +184,17 @@ If there is another exception on the server, code 500 is sent whenever possible.
 when the error occurs during execution and not right at the start, the response will be aborted
 and the status code cannot be guaranteed. In this case the result will be invalid JSON.
 
+# Extension Points
+
+The whole tool is easily extensible by using the integrated Dependency Injection System of Asp.Net Core
+There are two main things you can do:
+
+- Write a IParameterInterceptor, as an example see [SystemParameters.cs](Kull.GenericBackend/Filter/SystemParameters.cs). This allows you to add or remove parameters
+- Write a IGenericSPSerializer, as an example see [GenericSPFileSerializer.cs](Kull.GenericBackend/GenericSP/GenericSPFileSerializer.cs). This allows you to make a different result.
+
 # Possible futher development
 
-- Direct manipulation of tables/views without Stored Procedures
+- Direct manipulation of tables/views without Stored Procedures (while staying secure)
 - Support for other databases, eg Sqlite for Testing
-- Support for multiple Result Sets,  Return Codes and Output Parameters
+- Support for multiple Result Sets,  Return Codes and Output Parameters (would be realized through a IGenericSPSerializer, see above)
 - More Unit Tests
