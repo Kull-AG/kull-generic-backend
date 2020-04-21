@@ -29,9 +29,10 @@ namespace Kull.GenericBackend.GenericSP
             this.sqlHelper = sqlHelper;
         }
 
-        public Parameters.WebApiParameter[] GetApiParameters(Entity ent, DBObjectName sp)
+        public Parameters.WebApiParameter[] GetApiParameters(Filter.ParameterInterceptorContext context)
         {
-            var spParams = sPParametersProvider.GetSPParameters(sp, dbConnection);
+            var method = context.Method;
+            var spParams = sPParametersProvider.GetSPParameters(method.SP, dbConnection);
             var webApiNames = namingMappingHandler.GetNames(spParams.Select(s => s.SqlName)).ToArray();
 
             var apiParamsRaw = spParams.Select((s, index) =>
@@ -41,7 +42,7 @@ namespace Kull.GenericBackend.GenericSP
             var apiParams = new LinkedList<Parameters.WebApiParameter>(apiParamsRaw);
             foreach(var inter in parameterInterceptors)
             {
-                inter.Intercept(apiParams);
+                inter.Intercept(apiParams, context);
             }
             return apiParams.ToArray();
         }

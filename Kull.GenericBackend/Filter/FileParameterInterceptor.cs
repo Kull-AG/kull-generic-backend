@@ -16,7 +16,7 @@ namespace Kull.GenericBackend.Filter
             "Length",
             "Headers"};
 
-        public void Intercept(ICollection<Parameters.WebApiParameter> apiParams)
+        public void Intercept(ICollection<Parameters.WebApiParameter> apiParams, ParameterInterceptorContext parameterInterceptorContext)
         {
             var fileParameters = apiParams.Where(p =>
                 (p.SqlName ?? "").Contains("_"))

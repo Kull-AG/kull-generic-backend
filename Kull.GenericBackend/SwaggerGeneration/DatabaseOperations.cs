@@ -69,7 +69,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     {
                         var opType = (OperationType)Enum.Parse(typeof(OperationType), method.Key, true);
                         OpenApiOperation bodyOperation = new OpenApiOperation();
-                        WriteBodyPath(dbConnection, bodyOperation, ent, opType, method.Value);
+                        WriteBodyPath(bodyOperation, ent, opType, method.Value);
                         openApiPathItem.Operations.Add(opType, bodyOperation);
                     }
                     swaggerDoc.Paths.Add(ent.GetUrl(this.sPMiddlewareOptions.Prefix, false), openApiPathItem);
@@ -100,7 +100,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             {
                 foreach (var method in ent.Methods)
                 {
-                    var parameters = GetBodyOrQueryStringParameters(ent, method.Value.SP);
+                    var parameters = GetBodyOrQueryStringParameters(ent, method.Value);
                     var addTypes = parameters.SelectMany(sm => sm.GetRequiredTypes()).Distinct();
                     foreach (var addType in addTypes)
                     {
@@ -128,9 +128,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private Parameters.WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, DBObjectName sp)
+        private Parameters.WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, Method method)
         {
-            return parametersProvider.GetApiParameters(ent, sp)
+            return parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, null, true))
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
         }
@@ -204,7 +204,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private void WriteBodyPath(DbConnection con, OpenApiOperation operation, Entity ent, OperationType operationType, Method method)
+        private void WriteBodyPath(OpenApiOperation operation, Entity ent, OperationType operationType, Method method)
         {
             if (operation.Tags == null)
                 operation.Tags = new List<OpenApiTag>();
@@ -247,7 +247,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             if(serializer != null)
                 serializer.ModifyResponses(operation.Responses);
 
-            var props = parametersProvider.GetApiParameters(ent, method.SP)
+            var props = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, null, true))
                                 .ToArray();
             if (operationType != OperationType.Get && props.Any(p => p.WebApiName != null && !ent.ContainsPathParameter(p.WebApiName)))
             {

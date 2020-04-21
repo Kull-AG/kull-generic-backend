@@ -50,7 +50,7 @@ namespace Kull.GenericBackend.Filter
             this.getFns.Add(name, valueAccessor);
         }
 
-        public void Intercept(ICollection<Parameters.WebApiParameter> apiParams)
+        public void Intercept(ICollection<Parameters.WebApiParameter> apiParams, ParameterInterceptorContext parameterInterceptorContext)
         {
             List<Parameters.WebApiParameter> toRemove = new List<Parameters.WebApiParameter>();
             List<Parameters.WebApiParameter> toAdd = new List<Parameters.WebApiParameter>();

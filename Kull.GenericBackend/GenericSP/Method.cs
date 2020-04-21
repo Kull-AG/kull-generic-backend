@@ -13,6 +13,9 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class Method
     {
+        /// <summary>
+        /// The Http Method
+        /// </summary>
         public string HttpMethod { get; }
         public Kull.Data.DBObjectName SP { get; }
 
@@ -27,7 +30,7 @@ namespace Kull.GenericBackend.GenericSP
 
         public Method(string httpMethod, string sp, string? operationId, string? resultType)
         {
-            this.HttpMethod = httpMethod;
+            this.HttpMethod = httpMethod.ToUpper();
             this.SP = sp;
             this.OperationId = operationId;
             this.ResultType = resultType;
@@ -38,6 +41,15 @@ namespace Kull.GenericBackend.GenericSP
                 return new Method(section.Key, section.Value, null, null);
             return new Method(section.Key, section.GetSection("SP").Value, section.GetSection("OperationId")?.Value, section.GetSection("ResultType")?.Value);
             
+        }
+
+        /// <summary>
+        /// Return the Http Method as string. Mainly for debugging
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            return HttpMethod + " (" + SP + ")";
         }
 
     }

@@ -146,6 +146,15 @@ namespace Kull.GenericBackend.GenericSP
             return pathParameters.Contains(name.ToLower());
 
         }
+
+        /// <summary>
+        /// Gets the url with templates. Mainly for debugging
+        /// </summary>
+        /// <returns>the url</returns>
+        public override string ToString()
+        {
+            return GetUrl("", false);
+        }
     }
 
 }

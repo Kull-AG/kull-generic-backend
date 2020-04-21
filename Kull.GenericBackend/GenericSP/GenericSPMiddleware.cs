@@ -158,7 +158,7 @@ namespace Kull.GenericBackend.GenericSP
             if (method == null) throw new ArgumentNullException(nameof(method));
             if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase); }
             var cmd = con.AssureOpen().CreateSPCommand(method.SP);
-            var parameters = parameterProvider.GetApiParameters(ent, method.SP);
+            var parameters = parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, context, false));
             SPParameter[]? sPParameters = null;
             foreach (var apiPrm in parameters)
             {
