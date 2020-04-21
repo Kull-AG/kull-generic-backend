@@ -31,7 +31,7 @@ namespace Kull.GenericBackend.GenericSP
         private readonly ParameterProvider parameterProvider;
 
         private readonly ILogger<GenericSPMiddleware> logger;
-        private readonly IEnumerable<IGenericSPSerializer> serializers;
+        private readonly SerializerResolver serializerResolver;
         private readonly SPMiddlewareOptions sPMiddlewareOptions;
         private readonly SPParametersProvider sPParametersProvider;
         private readonly DbConnection dbConnection;
@@ -40,13 +40,13 @@ namespace Kull.GenericBackend.GenericSP
             ParameterProvider parameterProvider,
                 SqlHelper sqlHelper,
                 ILogger<GenericSPMiddleware> logger,
-                IEnumerable<IGenericSPSerializer> serializers,
+                SerializerResolver serializerResolver,
              SPParametersProvider sPParametersProvider,
         SPMiddlewareOptions sPMiddlewareOptions,
                 DbConnection dbConnection)
         {
             this.logger = logger;
-            this.serializers = serializers;
+            this.serializerResolver = serializerResolver;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.dbConnection = dbConnection;
             this.parameterProvider = parameterProvider;
@@ -56,32 +56,9 @@ namespace Kull.GenericBackend.GenericSP
 
         public Task HandleRequest(HttpContext context, Entity ent)
         {
-            IGenericSPSerializer? serializer = null;
-            var defaultAccept = new List<Microsoft.Net.Http.Headers.MediaTypeHeaderValue>() {
-                     new Microsoft.Net.Http.Headers.MediaTypeHeaderValue("application/json")
-                     };
-            var accept = context.Request.GetTypedHeaders().Accept ?? defaultAccept;
-            if (accept.Count == 0)
-            {
-                // .Net Core 3 seems to use length 0 instead of null
-                accept = defaultAccept;
-            }
-
             var method = ent.Methods[context.Request.Method];
-            int lastPrio = int.MaxValue;
-            foreach (var ser in serializers)
-            {
-                if (method.ResultType != null && !ser.SupportsResultType(method.ResultType.ToLower()))
-                    continue;
-                int? prio = ser.GetSerializerPriority(accept, ent, method);
-                if (prio != null && prio < lastPrio)
-                {
-                    serializer = ser;
-                    lastPrio = prio.Value;
-                    if (lastPrio == 0) // Cannot get any more priority
-                        break;
-                }
-            }
+            IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(context.Request.GetTypedHeaders().Accept,
+                ent, method);
             if (serializer == null)
             {
                 context.Response.StatusCode = 415;
@@ -98,7 +75,7 @@ namespace Kull.GenericBackend.GenericSP
             }
             return HandleBodyRequest(context, method, ent, serializer);
         }
-        private async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
+        protected async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
         {
             var method = ent.Methods["Get"];
             var request = context.Request;
@@ -124,7 +101,7 @@ namespace Kull.GenericBackend.GenericSP
         }
 
 
-        private async Task HandleBodyRequest(HttpContext context, Method method, Entity ent, IGenericSPSerializer serializer)
+        protected async Task HandleBodyRequest(HttpContext context, Method method, Entity ent, IGenericSPSerializer serializer)
         {
             var request = context.Request;
             Dictionary<string, object> parameterObject;
@@ -144,14 +121,15 @@ namespace Kull.GenericBackend.GenericSP
             {
                 var streamReader = new System.IO.StreamReader(request.Body);
                 string json = await streamReader.ReadToEndAsync();
-                parameterObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+                parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
+                JsonConvert.PopulateObject(json, parameterObject);
             }
             var cmd = GetCommandWithParameters(context, dbConnection, ent, method, parameterObject);
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
 
         }
 
-        private DbCommand GetCommandWithParameters(HttpContext context,
+        protected DbCommand GetCommandWithParameters(HttpContext context,
                 DbConnection con,
             Entity ent,
                 Method method, Dictionary<string, object> parameterOfUser)

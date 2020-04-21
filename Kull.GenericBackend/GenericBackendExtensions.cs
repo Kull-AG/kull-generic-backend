@@ -45,6 +45,7 @@ namespace Kull.GenericBackend
             services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
             services.AddTransient<IGenericSPSerializer, GenericSPXmlSerializer>();
             services.AddTransient<IGenericSPSerializer, GenericSPFileSerializer>();
+            services.AddTransient<SerializerResolver, SerializerResolver>();
             services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
             services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
             var opts = options ??

@@ -28,10 +28,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly SwaggerFromSPOptions options;
         private readonly SqlHelper sqlHelper;
         private readonly ILogger logger;
+        private readonly SerializerResolver serializerResolver;
         private readonly DbConnection dbConnection;
         private readonly ParameterProvider parametersProvider;
         private readonly NamingMappingHandler namingMappingHandler;
-        private readonly IEnumerable<IGenericSPSerializer> serializers;
 
         public DatabaseOperations(Microsoft.Extensions.Configuration.IConfiguration conf,
          SPMiddlewareOptions sPMiddlewareOptions,
@@ -40,14 +40,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
          ILogger<DatabaseOperations> logger,
          DbConnection dbConnection,
          ParameterProvider parametersProvider,
-         IEnumerable<IGenericSPSerializer> serializers,
+         SerializerResolver serializerResolver,
          NamingMappingHandler namingMappingHandler)
         {
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.options = options;
             this.sqlHelper = sqlHelper;
             this.logger = logger;
-            this.serializers = serializers;
+            this.serializerResolver = serializerResolver;
             this.dbConnection = dbConnection;
             this.parametersProvider = parametersProvider;
             this.namingMappingHandler = namingMappingHandler;
@@ -230,22 +230,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
                + ent.GetDisplayString();
             }
             operation.OperationId = operationId;
-            int lastPrio = int.MaxValue;
-            IGenericSPSerializer? serializer=null;
+            IGenericSPSerializer? serializer=serializerResolver.GetSerialializerOrNull(null, ent, method);
             
-            foreach (var ser in serializers)
-            {
-                if (method.ResultType != null && !ser.SupportsResultType(method.ResultType))
-                    continue;
-                int? prio = ser.GetSerializerPriority(new List<MediaTypeHeaderValue>(), ent, method);
-                if (prio != null && prio < lastPrio)
-                {
-                    serializer = ser;
-                    lastPrio = prio.Value;
-                    if (lastPrio == 0) // Cannot get any more priority
-                        break;
-                }
-            }
             operation.Responses = GetDefaultResponse(GetResultTypeName(method.SP));
             if(serializer != null)
                 serializer.ModifyResponses(operation.Responses);

@@ -8,12 +8,26 @@ using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.Serialization
 {
+    /// <summary>
+    /// Provides information for the IGenericSPSerializer's
+    /// </summary>
     public class SerializationContext
     {
-        private readonly DbCommand cmd;
+        protected readonly DbCommand cmd;
         public HttpContext HttpContext { get; }
         public Method Method { get; }
         public Entity Entity { get; }
+
+        /// <summary>
+        /// Use this if you want to override this class
+        /// </summary>
+        /// <param name="baseSerializationContext"></param>
+        protected SerializationContext(SerializationContext baseSerializationContext)
+            :this(baseSerializationContext.cmd, baseSerializationContext.HttpContext,
+                    baseSerializationContext.Method, baseSerializationContext.Entity)
+        {
+
+        }
 
         internal SerializationContext(DbCommand cmd, HttpContext httpContext, Method method, Entity entity)
         {
@@ -23,7 +37,8 @@ namespace Kull.GenericBackend.Serialization
             Entity = entity;
         }
 
-        public Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync(HttpContext.RequestAborted);
+        public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync(HttpContext.RequestAborted);
+        public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync(HttpContext.RequestAborted);
 
         public override string ToString()
         {
