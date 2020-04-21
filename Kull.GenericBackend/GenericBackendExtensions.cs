@@ -1,4 +1,6 @@
 using Kull.DatabaseMetadata;
+using Kull.GenericBackend.Parameters;
+using Kull.GenericBackend.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 #if !NETSTD2
@@ -37,12 +39,12 @@ namespace Kull.GenericBackend
             services.AddSingleton<Model.NamingMappingHandler>();
             services.AddSingleton<Filter.IParameterInterceptor, Filter.SystemParameters>();
             services.AddSingleton<Filter.IParameterInterceptor, Filter.FileParameterInterceptor>();
-            services.AddTransient<GenericSP.ParameterProvider>();
+            services.AddTransient<ParameterProvider>();
             services.AddSingleton<GenericSP.MiddlewareRegistration>();
 
-            services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPJsonSerializer>();
-            services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPXmlSerializer>();
-            services.AddTransient<GenericSP.IGenericSPSerializer, GenericSP.GenericSPFileSerializer>();
+            services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
+            services.AddTransient<IGenericSPSerializer, GenericSPXmlSerializer>();
+            services.AddTransient<IGenericSPSerializer, GenericSPFileSerializer>();
             services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
             services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
             var opts = options ??

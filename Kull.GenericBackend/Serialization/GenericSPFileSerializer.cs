@@ -12,8 +12,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
+using Kull.GenericBackend.Common;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Serialization
 {
     /// <summary>
     /// Helper class for writing the result of a command to the body of the response
@@ -66,7 +67,7 @@ namespace Kull.GenericBackend.GenericSP
                 }
                 else
                 {
-                    this.SetContentAttachmentDisposition(context, fileName!);
+                    SetContentAttachmentDisposition(context, fileName!);
                 }
             }
             context.Response.Headers["Cache-Control"] = "no-store";
@@ -107,12 +108,14 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns>A Task</returns>
-        public async Task ReadResultToBody(HttpContext context, System.Data.Common.DbCommand cmd, Method method, Entity ent)
+        public async Task ReadResultToBody(SerializationContext serializationContext)
         {
-
+            var context = serializationContext.HttpContext;
+            var method = serializationContext.Method;
+            var ent = serializationContext.Entity;
             try
             {
-                using (var rdr = await cmd.ExecuteReaderAsync(context.RequestAborted))
+                using (var rdr = await serializationContext.ExecuteReaderAsync())
                 {
                     bool firstRead = rdr.Read();
                     if (!firstRead)
@@ -131,7 +134,7 @@ namespace Kull.GenericBackend.GenericSP
             }
             catch (Exception err)
             {
-                logger.LogWarning(err, $"Error executing {cmd.CommandText}");
+                logger.LogWarning(err, $"Error executing {serializationContext}");
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
@@ -149,7 +152,7 @@ namespace Kull.GenericBackend.GenericSP
                         }
                         else
                         {
-                            logger.LogError(err, $"Could not execute {cmd.CommandText} and could not handle error");
+                            logger.LogError(err, $"Could not execute {serializationContext} and could not handle error");
                         }
                         handled = true;
                         break;

@@ -1,4 +1,4 @@
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Common;
 using Microsoft.AspNetCore.Http;
 
 namespace Kull.GenericBackend.Filter

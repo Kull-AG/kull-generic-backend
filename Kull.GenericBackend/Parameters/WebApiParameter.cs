@@ -6,11 +6,25 @@ using System.Linq;
 
 namespace Kull.GenericBackend.Parameters
 {
+    /// <summary>
+    /// Base class for all parameters
+    /// </summary>
     public abstract class WebApiParameter
     {
+        /// <summary>
+        /// The name of the Parameter in SQL Server. Set this to null if you only want the parameter in OpenApi
+        /// </summary>
         public string? SqlName { get; }
 
+        /// <summary>
+        /// The name of the parameter in the OpenApi Definition / Web API.
+        /// Set this to null to get data otherwise (eg for interceptor)
+        /// </summary>
         public string? WebApiName { get; }
+
+        /// <summary>
+        /// Set this to true to use Multipart/form-data
+        /// </summary>
         public virtual bool RequiresFormData { get; } = false;
 
         public abstract object? GetValue(HttpContext http, object? valueProvided);

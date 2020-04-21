@@ -1,4 +1,5 @@
 #if NETSTD2
+using Kull.GenericBackend.Common;
 using Microsoft.AspNetCore.Routing;
 #else 
 using Microsoft.AspNetCore.Builder;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Kull.GenericBackend.Common;
 
 namespace Kull.GenericBackend.GenericSP
 {

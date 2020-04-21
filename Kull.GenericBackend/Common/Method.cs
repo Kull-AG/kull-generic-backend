@@ -6,7 +6,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Common
 {
     /// <summary>
     /// Represents an HTTP Method that is mapped to a Stored Procedure
@@ -17,7 +17,7 @@ namespace Kull.GenericBackend.GenericSP
         /// The Http Method
         /// </summary>
         public string HttpMethod { get; }
-        public Kull.Data.DBObjectName SP { get; }
+        public Data.DBObjectName SP { get; }
 
         public string? OperationId { get; }
 
@@ -30,17 +30,17 @@ namespace Kull.GenericBackend.GenericSP
 
         public Method(string httpMethod, string sp, string? operationId, string? resultType)
         {
-            this.HttpMethod = httpMethod.ToUpper();
-            this.SP = sp;
-            this.OperationId = operationId;
-            this.ResultType = resultType;
+            HttpMethod = httpMethod.ToUpper();
+            SP = sp;
+            OperationId = operationId;
+            ResultType = resultType;
         }
         internal static Method GetFromSection(IConfigurationSection section)
         {
             if (section.Value != null)
                 return new Method(section.Key, section.Value, null, null);
             return new Method(section.Key, section.GetSection("SP").Value, section.GetSection("OperationId")?.Value, section.GetSection("ResultType")?.Value);
-            
+
         }
 
         /// <summary>

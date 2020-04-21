@@ -15,6 +15,9 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Builder;
 using Kull.GenericBackend.SwaggerGeneration;
 using Kull.DatabaseMetadata;
+using Kull.GenericBackend.Common;
+using Kull.GenericBackend.Serialization;
+using Kull.GenericBackend.Parameters;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -116,7 +119,7 @@ namespace Kull.GenericBackend.GenericSP
             }
             var cmd = GetCommandWithParameters(context, dbConnection, ent, method, queryParameters);
 
-            await serializer.ReadResultToBody(context, cmd, method, ent);
+            await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
 
         }
 
@@ -128,11 +131,11 @@ namespace Kull.GenericBackend.GenericSP
             if (request.HasFormContentType)
             {
                 parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
-                foreach(var item in request.Form)
+                foreach (var item in request.Form)
                 {
                     parameterObject.Add(item.Key, string.Join(",", item.Value));
-                  }
-                foreach(var file in request.Form.Files)
+                }
+                foreach (var file in request.Form.Files)
                 {
                     parameterObject.Add(file.Name, file);
                 }
@@ -144,7 +147,7 @@ namespace Kull.GenericBackend.GenericSP
                 parameterObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
             }
             var cmd = GetCommandWithParameters(context, dbConnection, ent, method, parameterObject);
-            await serializer.ReadResultToBody(context, cmd, method, ent);
+            await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
 
         }
 

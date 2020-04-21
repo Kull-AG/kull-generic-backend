@@ -1,9 +1,10 @@
+using Kull.GenericBackend.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Serialization
 {
     /// <summary>
     /// An interface for writing the http response
@@ -24,7 +25,7 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="entity">The entity of the request</param>
         /// <param name="method">The method of the request</param>
         /// <returns></returns>
-        int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes, 
+        int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method);
 
@@ -36,8 +37,8 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="method">The method</param>
         /// <param name="ent">The entity</param>
         /// <returns></returns>
-        Task ReadResultToBody(HttpContext context, System.Data.Common.DbCommand cmd, Method method, Entity ent);
-        
+        Task ReadResultToBody(SerializationContext context);
+
         /// <summary>
         /// Hook to allow modifing the open api schema
         /// </summary>

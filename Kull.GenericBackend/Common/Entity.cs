@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Serialization;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Common
 {
 
     /// <summary>
@@ -34,7 +34,7 @@ namespace Kull.GenericBackend.GenericSP
         {
             List<string?> result = new List<string?>();
             bool lastWasBy = false;
-            
+
             foreach (var part in UrlParts)
             {
                 if (!part.StartsWith("{"))
@@ -50,7 +50,7 @@ namespace Kull.GenericBackend.GenericSP
                     {
                         lastWasBy = true;
                         string? lastUrlPart = result.LastOrDefault();
-                        
+
                         string? entnameprm = name.EndsWith("Id") ? name.Substring(0, name.Length - "Id".Length) : null;
                         string? entnamepart = lastUrlPart != null && lastUrlPart.EndsWith("s") ?
                             lastUrlPart.Substring(0, lastUrlPart.Length - "s".Length) : null;
@@ -67,13 +67,13 @@ namespace Kull.GenericBackend.GenericSP
                         }
                     }
                     name = name[0].ToString().ToUpper() + name.Substring(1);
-                    result .Add(name);
+                    result.Add(name);
                 }
             }
             return string.Join("", result);
         }
 
-       
+
         /// <summary>
         /// Gets the name and the type of a {} Template
         /// </summary>
@@ -96,7 +96,7 @@ namespace Kull.GenericBackend.GenericSP
         /// <returns></returns>
         public IReadOnlyCollection<(string name, string? type)> GetPathParameters()
         {
-            return this.UrlParts
+            return UrlParts
                 .Where(s => s.StartsWith("{") && s.EndsWith("}"))
                 .Select(s => ParseTemplatePart(s.Substring(1, s.Length - 2)))
                 .ToArray();
@@ -104,8 +104,8 @@ namespace Kull.GenericBackend.GenericSP
 
         public Entity(string urlTemplate, IDictionary<string, Method> methods)
         {
-            this.UrlParts = urlTemplate.Replace("|", ":").Split('/').Select(s => s.Trim()).ToArray();
-            this.Methods = methods;
+            UrlParts = urlTemplate.Replace("|", ":").Split('/').Select(s => s.Trim()).ToArray();
+            Methods = methods;
         }
 
         internal static Entity GetFromSection(IConfigurationSection section)
@@ -118,18 +118,18 @@ namespace Kull.GenericBackend.GenericSP
 
         public string GetUrl(string prefix, bool withTemplateType)
         {
-            if(!withTemplateType)
+            if (!withTemplateType)
             {
                 return string.Join("/", new string[] { prefix }
                     .Concat(
-                        this.UrlParts.Select(up => 
-                            up.StartsWith("{") ? 
-                                "{" + ParseTemplatePart(up.Substring(1, up.Length-2)).name + "}":
+                        UrlParts.Select(up =>
+                            up.StartsWith("{") ?
+                                "{" + ParseTemplatePart(up.Substring(1, up.Length - 2)).name + "}" :
                                 up
                             )
                     ).ToArray()).Replace("//", "/");
             }
-            return string.Join("/", new string[] { prefix }.Concat(this.UrlParts).ToArray()).Replace("//", "/");
+            return string.Join("/", new string[] { prefix }.Concat(UrlParts).ToArray()).Replace("//", "/");
         }
 
         private string[]? pathParameters;
@@ -142,7 +142,7 @@ namespace Kull.GenericBackend.GenericSP
         public bool ContainsPathParameter(string name)
         {
             if (name == null) return false;
-            pathParameters = pathParameters ?? this.GetPathParameters().Select(s => s.name.ToLower()).ToArray();
+            pathParameters = pathParameters ?? GetPathParameters().Select(s => s.name.ToLower()).ToArray();
             return pathParameters.Contains(name.ToLower());
 
         }
