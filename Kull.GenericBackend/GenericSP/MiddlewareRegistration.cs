@@ -1,5 +1,4 @@
 #if NETSTD2
-using Kull.GenericBackend.Common;
 using Microsoft.AspNetCore.Routing;
 #else 
 using Microsoft.AspNetCore.Builder;
