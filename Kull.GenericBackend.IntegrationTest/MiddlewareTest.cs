@@ -18,7 +18,7 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
-        [InlineData("/api/Pet?searchString=blub")]
+        [InlineData("/rest/Pet?searchString=blub")]
         public async Task GetPets(string url)
         {
             // Arrange
@@ -37,7 +37,7 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
-        [InlineData("/api/Pet")]
+        [InlineData("/rest/Pet")]
         public async Task UpdatePetWithTimestamp(string url)
         {
             // Arrange
@@ -73,7 +73,7 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
-        [InlineData("/api/Pet?searchString=blub")]
+        [InlineData("/rest/Pet?searchString=blub")]
         public async Task GetPetsXml(string url)
         {
             // Arrange
@@ -93,7 +93,7 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
-        [InlineData("/api/Pet?searchString=blub")]
+        [InlineData("/rest/Pet?searchString=blub")]
         public async Task GetPetsXHtml(string url)
         {
             // Arrange
@@ -115,7 +115,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
 
         [Theory]
-        [InlineData("/api/Date?dateParam=")]
+        [InlineData("/rest/Date?dateParam=")]
         public async Task GetDate(string url)
         {
             // Arrange
@@ -139,7 +139,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
 
         [Theory]
-        [InlineData("/api/Confidential")]
+        [InlineData("/rest/Confidential")]
         public async Task GetNotPermittedConfidential(string url)
         {
             // Arrange
@@ -160,7 +160,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
 
         [Theory]
-        [InlineData("/api/Confidential")]
+        [InlineData("/rest/Confidential")]
         public async Task GetNotPermittedConfidentialXml(string url)
         {
             // Arrange
@@ -183,7 +183,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
 
         [Theory]
-        [InlineData("/api/Bug")]
+        [InlineData("/rest/Bug")]
         public async Task TestBuggyApi(string url)
         {
             // Arrange

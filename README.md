@@ -25,9 +25,16 @@ using Kull.GenericBackend;
 public void ConfigureServices(IServiceCollection services)
 {
 		services.AddMvcCore().AddApiExplorer(); //Or AddMvc() depending on your needs
-		services.AddGenericBackend(null, new Kull.GenericBackend.SwaggerGeneration.SwaggerFromSPOptions() {
-
-		});
+		services.AddGenericBackend()
+            .ConfigureMiddleware(m =>
+            { // Set your options
+            })
+            .ConfigureOpenApiGeneration(o =>
+            { // Set your options
+            })
+            .AddFileSupport()
+            .AddXmlSupport()
+            .AddSystemParameters();
 		
 		// IMPORTANT: You have to inject a DbConnection somehow
         services.AddTransient(typeof(DbConnection), (s) =>

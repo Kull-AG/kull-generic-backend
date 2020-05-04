@@ -32,6 +32,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly DbConnection dbConnection;
         private readonly ParameterProvider parametersProvider;
         private readonly NamingMappingHandler namingMappingHandler;
+        private readonly CodeConvention codeConvention;
 
         public DatabaseOperations(Microsoft.Extensions.Configuration.IConfiguration conf,
          SPMiddlewareOptions sPMiddlewareOptions,
@@ -41,8 +42,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
          DbConnection dbConnection,
          ParameterProvider parametersProvider,
          SerializerResolver serializerResolver,
-         NamingMappingHandler namingMappingHandler)
+         NamingMappingHandler namingMappingHandler,
+         CodeConvention codeConvention)
         {
+            this.codeConvention = codeConvention;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.options = options;
             this.sqlHelper = sqlHelper;
@@ -88,7 +91,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 OpenApiSchema resultSchema = new OpenApiSchema();
                 var dataToWrite = sqlHelper.GetSPResultSet(model, options.PersistResultSets);
                 WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
-                string typeName = GetResultTypeName(model);
+                string typeName = codeConvention.GetResultTypeName(model);
                 if (swaggerDoc.Components.Schemas.ContainsKey(typeName))
                 {
                     logger.LogWarning($"Type {typeName} already exists in Components. Assuming it's the same");
@@ -122,7 +125,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         WriteJsonSchema(parameterSchema, parameters);
 
 
-                        swaggerDoc.Components.Schemas.Add(Method.GetParameterObjectName(ent, method.Key, method.Value),
+                        swaggerDoc.Components.Schemas.Add(codeConvention.GetParameterObjectName(ent, method.Value, method.Key),
                             parameterSchema);
                     }
                 }
@@ -133,7 +136,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
         private Parameters.WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, Method method)
         {
-            return parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, null, true))
+            return parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true))
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
         }
@@ -158,6 +161,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 .GetEnumerator();
             if (schema.Xml == null) schema.Xml = new OpenApiXml();
             schema.Xml.Name = "tr";//it's always tr
+            if (schema.Required == null)
+                schema.Required = new HashSet<string>();
             foreach (var prop in props)
             {
 
@@ -171,10 +176,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
                 names.MoveNext();
                 schema.Properties.Add(names.Current, property);
+                schema.Required.Add(names.Current);
             }
         }
 
-        protected string GetResultTypeName(DBObjectName name) => name.Name + "Result";
 
         private OpenApiResponses GetDefaultResponse(string resultTypeName)
         {
@@ -216,27 +221,16 @@ namespace Kull.GenericBackend.SwaggerGeneration
             var operationId = method.OperationId;
             if (method.OperationId == null)
             {
-                operationId = (
-               operationType == OperationType.Post &&
-                   (method.SP.Name.StartsWith("spAddUpdate") ||
-                    method.SP.Name.StartsWith("sp_AddUpdate") ||
-                    method.SP.Name.EndsWith("_AddUpdate")
-                   ) ? "AddUpdate" :
-               operationType == OperationType.Post ? "Add" :
-               operationType == OperationType.Put ? "Update" :
-               operationType == OperationType.Delete ? "Delete" :
-               operationType == OperationType.Get ? "Get" :
-               method.HttpMethod)
-               + ent.GetDisplayString();
+                operationId = codeConvention.GetOperationId(ent, method, operationType);
             }
             operation.OperationId = operationId;
-            IGenericSPSerializer? serializer=serializerResolver.GetSerialializerOrNull(null, ent, method);
-            
-            operation.Responses = GetDefaultResponse(GetResultTypeName(method.SP));
-            if(serializer != null)
+            IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, ent, method);
+
+            operation.Responses = GetDefaultResponse(codeConvention.GetResultTypeName(method.SP));
+            if (serializer != null)
                 serializer.ModifyResponses(operation.Responses);
 
-            var props = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, null, true))
+            var props = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true))
                                 .ToArray();
             if (operationType != OperationType.Get && props.Any(p => p.WebApiName != null && !ent.ContainsPathParameter(p.WebApiName)))
             {
@@ -244,14 +238,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 operation.RequestBody.Required = true;
                 operation.RequestBody.Description = "Parameters for " + method.SP.ToString();
                 bool requireFormData = props.Any(p => p.RequiresFormData);
-                operation.RequestBody.Content.Add( requireFormData ? "multipart/form-data": "application /json", new OpenApiMediaType()
+                operation.RequestBody.Content.Add(requireFormData ? "multipart/form-data" : "application /json", new OpenApiMediaType()
                 {
                     Schema = new OpenApiSchema()
                     {
                         Reference = new OpenApiReference()
                         {
                             Type = ReferenceType.Schema,
-                            Id = Method.GetParameterObjectName(ent, method.HttpMethod, method)
+                            Id = codeConvention.GetParameterObjectName(ent, method, method.HttpMethod)
                         }
                     }
                 });
@@ -292,9 +286,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     }
                 });
             }
-
-
-
         }
+
     }
 }

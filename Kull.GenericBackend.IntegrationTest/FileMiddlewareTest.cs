@@ -23,7 +23,7 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
-        [InlineData("/api/File")]
+        [InlineData("/rest/File")]
         public async Task UploadFile(string url)
         {
             // Arrange
