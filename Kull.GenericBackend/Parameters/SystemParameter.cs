@@ -4,7 +4,7 @@ using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
 
-namespace Kull.GenericBackend.SwaggerGeneration
+namespace Kull.GenericBackend.Parameters
 {
     public class SystemParameter : WebApiParameter
     {

@@ -22,10 +22,18 @@ namespace Kull.GenericBackend.IntegrationTest
             {
             });
 
-            services.AddGenericBackend(null, new Kull.GenericBackend.SwaggerGeneration.SwaggerFromSPOptions()
-            {
-
-            });
+            services.AddGenericBackend()
+                .ConfigureMiddleware(m =>
+                {
+                    m.Prefix = "/rest";
+                })
+                .ConfigureOpenApiGeneration(o =>
+                {
+                    o.PersistResultSets = true;
+                })
+                .AddFileSupport()
+                .AddXmlSupport()
+                .AddSystemParameters();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });

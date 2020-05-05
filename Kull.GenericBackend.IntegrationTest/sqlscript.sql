@@ -2,7 +2,7 @@
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
-INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(6) -- sync this value with the TestWebApplicationFactory.expectedVersion
+INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(7) -- sync this value with the TestWebApplicationFactory.expectedVersion
 GO
 INSERT INTO dbo.Pets(PetId, PetName, IsNice)
 SELECT 1, 'Dog', 0
@@ -100,4 +100,14 @@ BEGIN
 	RAISERROR('You are not permitted', 16,1,1);
 	RETURN;
 	SELECT 'hallo' AS Test
+END
+GO
+CREATE PROCEDURE dbo.spFile
+	@Image_Content varbinary(MAX),
+	@Image_ContentType varchar(1000),
+	@Image_FileName varchar(1000),
+	@FileDesc varchar(1000)
+AS
+BEGIN
+	SELECT @Image_Content AS Content, @Image_ContentType as ContentType, @Image_FileName AS [FileName]
 END

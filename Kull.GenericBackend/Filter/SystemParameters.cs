@@ -50,16 +50,16 @@ namespace Kull.GenericBackend.Filter
             this.getFns.Add(name, valueAccessor);
         }
 
-        public void Intercept(ICollection<WebApiParameter> apiParams)
+        public void Intercept(ICollection<Parameters.WebApiParameter> apiParams, ParameterInterceptorContext parameterInterceptorContext)
         {
-            List<WebApiParameter> toRemove = new List<WebApiParameter>();
-            List<WebApiParameter> toAdd = new List<WebApiParameter>();
+            List<Parameters.WebApiParameter> toRemove = new List<Parameters.WebApiParameter>();
+            List<Parameters.WebApiParameter> toAdd = new List<Parameters.WebApiParameter>();
             foreach(var param in apiParams)
             {
                 if(param.SqlName != null && IsSystemParameter(param.SqlName))
                 {
                     toRemove.Add(param);
-                    toAdd.Add(new SwaggerGeneration.SystemParameter(param.SqlName,
+                    toAdd.Add(new Parameters.SystemParameter(param.SqlName,
                             getFns[param.SqlName]));
                 }
             }

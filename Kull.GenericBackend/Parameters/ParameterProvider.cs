@@ -6,7 +6,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Parameters
 {
     public class ParameterProvider
     {
@@ -29,19 +29,20 @@ namespace Kull.GenericBackend.GenericSP
             this.sqlHelper = sqlHelper;
         }
 
-        public SwaggerGeneration.WebApiParameter[] GetApiParameters(Entity ent, DBObjectName sp)
+        public WebApiParameter[] GetApiParameters(Filter.ParameterInterceptorContext context)
         {
-            var spParams = sPParametersProvider.GetSPParameters(sp, dbConnection);
+            var method = context.Method;
+            var spParams = sPParametersProvider.GetSPParameters(method.SP, dbConnection);
             var webApiNames = namingMappingHandler.GetNames(spParams.Select(s => s.SqlName)).ToArray();
 
             var apiParamsRaw = spParams.Select((s, index) =>
-                (SwaggerGeneration.WebApiParameter) new SwaggerGeneration.DbApiParameter(s.SqlName, webApiNames[index],
+                (WebApiParameter)new DbApiParameter(s.SqlName, webApiNames[index],
                    s.DbType, s.IsNullable, s.UserDefinedType, sqlHelper, namingMappingHandler)
             );
-            var apiParams = new LinkedList<SwaggerGeneration.WebApiParameter>(apiParamsRaw);
-            foreach(var inter in parameterInterceptors)
+            var apiParams = new LinkedList<WebApiParameter>(apiParamsRaw);
+            foreach (var inter in parameterInterceptors)
             {
-                inter.Intercept(apiParams);
+                inter.Intercept(apiParams, context);
             }
             return apiParams.ToArray();
         }

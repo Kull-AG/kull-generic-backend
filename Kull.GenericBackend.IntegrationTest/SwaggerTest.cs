@@ -35,7 +35,7 @@ namespace Kull.GenericBackend.IntegrationTest
             var resp = await response.Content.ReadAsStringAsync();
 
             var jObj = JsonConvert.DeserializeObject<JObject>(resp);
-            var petParameter = (JArray)jObj["paths"]["/api/Pet"]["get"]["parameters"];
+            var petParameter = (JArray)jObj["paths"]["/rest/Pet"]["get"]["parameters"];
             Assert.Equal(2, petParameter.Count);
             var onlyNiceParam = 
                 petParameter.Children<JObject>()
@@ -53,7 +53,7 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.Equal("string", searchStringParam.Value<string>("type"));
 
 
-            var postAsGetOp = (JObject)jObj["paths"]["/api/Test"]["post"];
+            var postAsGetOp = (JObject)jObj["paths"]["/rest/Test"]["post"];
             string opId = postAsGetOp.Value<string>("operationId");
             Assert.Equal("GetBackend", opId);
 

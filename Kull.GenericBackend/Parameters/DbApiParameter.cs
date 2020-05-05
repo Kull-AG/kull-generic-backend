@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 
-namespace Kull.GenericBackend.SwaggerGeneration
+namespace Kull.GenericBackend.Parameters
 {
     public class DbApiParameter : WebApiParameter
     {
@@ -18,7 +18,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         public SqlType DbType { get; }
         public bool IsNullable { get; }
 
-        public DBObjectName UserDefinedType { get; }
+        public DBObjectName? UserDefinedType { get; }
 
         public DbApiParameter(string sqlName, string webApiName,
                 SqlType sqlType, bool isNullable,
@@ -98,6 +98,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 input.Select(s => ToXml(s)));
         }
 
+        
+
         public override object? GetValue(HttpContext http, object? valueProvided)
         {
             if (valueProvided is IDictionary<string, object> obj)
@@ -162,7 +164,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     return JsonConvert.SerializeObject(valueProvided);
                 }
             }
-            else if(this.DbType.NetType == typeof(System.Byte[]) && valueProvided is string str)
+            else if (this.DbType.NetType == typeof(System.Byte[]) && valueProvided is string str)
             {
                 return Convert.FromBase64String(str);
             }

@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Kull.GenericBackend.SwaggerGeneration
+namespace Kull.GenericBackend.Parameters
 {
     public class TableValuedParameter : WebApiParameter
     {

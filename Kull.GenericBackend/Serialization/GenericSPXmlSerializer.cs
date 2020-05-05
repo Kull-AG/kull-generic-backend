@@ -1,5 +1,8 @@
+using Kull.GenericBackend.Common;
+using Kull.GenericBackend.GenericSP;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -7,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Serialization
 {
     /// <summary>
     /// Helper class for writing the result of a command to the body of the response
@@ -15,13 +18,13 @@ namespace Kull.GenericBackend.GenericSP
     public class GenericSPXmlSerializer : IGenericSPSerializer
     {
 
-        public int? GetSerializerPriority(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+        public int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
         {
             return contentTypes.Any(contentType => contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml"
                     || contentType.MediaType == "application/xml"
-                    || contentType.MediaType == "text/xml") ? (int?)100: null;
+                    || contentType.MediaType == "text/xml") ? (int?)100 : null;
         }
 
 
@@ -70,8 +73,11 @@ namespace Kull.GenericBackend.GenericSP
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns>A Task</returns>
-        public async Task ReadResultToBody(HttpContext context, System.Data.Common.DbCommand cmd, Method method, Entity ent)
+        public async Task ReadResultToBody(SerializationContext serializationContext)
         {
+            var context = serializationContext.HttpContext;
+            var method = serializationContext.Method;
+            var ent = serializationContext.Entity;
             bool html = IsHtmlRequest(context);
 #if !NETSTD2
             var syncIOFeature = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpBodyControlFeature>();
@@ -82,7 +88,7 @@ namespace Kull.GenericBackend.GenericSP
 #endif
             try
             {
-                using (var rdr = await cmd.ExecuteReaderAsync())
+                using (var rdr = await serializationContext.ExecuteReaderAsync())
                 {
                     bool firstRead = rdr.Read();
                     await PrepareHeader(context, method, ent, 200);
@@ -93,7 +99,7 @@ namespace Kull.GenericBackend.GenericSP
                         {
                             fieldNames[i] = rdr.GetName(i);
                         }
-                        fieldNames = this.namingMappingHandler.GetNames(fieldNames).ToArray();
+                        fieldNames = namingMappingHandler.GetNames(fieldNames).ToArray();
 
                         xmlWriter.WriteStartElement("table");
                         {
@@ -137,7 +143,7 @@ namespace Kull.GenericBackend.GenericSP
             }
             catch (Exception err)
             {
-                logger.LogWarning(err, $"Error executing {cmd.CommandText}");
+                logger.LogWarning(err, $"Error executing {serializationContext}");
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
@@ -161,7 +167,7 @@ namespace Kull.GenericBackend.GenericSP
                         }
                         else
                         {
-                            logger.LogError(err, $"Could not execute {cmd.CommandText} and could not handle error");
+                            logger.LogError(err, $"Could not execute {serializationContext} and could not handle error");
                         }
                         handled = true;
                         break;
@@ -175,6 +181,12 @@ namespace Kull.GenericBackend.GenericSP
         private static bool IsHtmlRequest(HttpContext context)
         {
             return context.Request.GetTypedHeaders().Accept.Any(contentType => contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml");
+        }
+
+        public bool SupportsResultType(string resultType) => resultType == "xml";
+
+        public void ModifyResponses(OpenApiResponses responses)
+        {
         }
     }
 }
