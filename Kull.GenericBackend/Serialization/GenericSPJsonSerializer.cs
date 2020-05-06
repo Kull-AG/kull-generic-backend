@@ -90,7 +90,7 @@ namespace Kull.GenericBackend.Serialization
 #if NETSTD2
                     using (var jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, options.Encoding)))
 #else
-                    using (var jsonWriter = new Utf8JsonWriter(context.Response.Body))
+                    await using (var jsonWriter = new Utf8JsonWriter(context.Response.Body))
 #endif
                     {
                         string[] fieldNames = new string[rdr.FieldCount];
