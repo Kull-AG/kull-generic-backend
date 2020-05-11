@@ -15,7 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 	ProjectSection(FolderGlobals) = preProject
-		E_5_4Code_4Kull_4Github_4kull-generic-backend_4backconfig_1schema_1json__JsonSchema = http://json-schema.org/draft-07/schema
+		E_5_4Code_4Kull_4Github_4kull-generic-backend_4backconfig_1schema_1json__JsonSchema = http://json-schema.org/draft-04/schema
 	EndProjectSection
 EndProject
 Global
