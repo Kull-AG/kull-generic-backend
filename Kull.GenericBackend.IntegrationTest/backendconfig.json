@@ -1,4 +1,5 @@
 {
+  "$schema": "../backendconfig.schema.json",
   "Entities": {
     "Pet": {
       "GET": "spGetPets",

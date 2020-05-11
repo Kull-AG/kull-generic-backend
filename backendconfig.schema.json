@@ -4,6 +4,8 @@
   "properties": {
     "Entities": {
       "type": "object",
+      "description": "A map, the keys are the URI's. A URI does not start with a slash",
+      "title": "Entities / URI's",
       "patternProperties": {
         "^[^$_.].+$": {
           "$ref": "#/definitions/Entity"
@@ -15,7 +17,8 @@
   "definitions": {
     "EntityConfig": {
       "type": "object",
-      "description":  "Config on level Url/Entity",
+      "title": "Config on level Url/Entity",
+      "description": "Use this to configure options on level Url. If the same config exists on level Method, the Method wins",
       "properties": {
         "Tag": {
           "type": "string",
@@ -25,6 +28,8 @@
     },
     "Entity": {
       "type": "object",
+      "title": "Represents a URI / Entity",
+      "description": "Use the HTTP Verb as property, or Config for options",
       "properties": {
         "Config": {
           "$ref": "#/definitions/EntityConfig"
@@ -74,6 +79,8 @@
     },
     "MethodBase": {
       "type": "object",
+      "title": "HTTP Method to DB Mapping",
+      "description": "Represents a HTTP Method that is mapped to a Stored Procedure",
       "properties": {
         "OperationId": {
           "type": "string",
@@ -89,7 +96,8 @@
         },
         "ResultType": {
           "type": "string",
-
+          "title": "The result Content Type",
+          "description": "The content type to be return. Use only, if the Accept Header does not suit your needs",
           "enum": [ "File", "Json", "Xml" ]
         }
       }
