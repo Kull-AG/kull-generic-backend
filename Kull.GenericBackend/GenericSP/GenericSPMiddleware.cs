@@ -18,6 +18,9 @@ using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.Serialization;
 using Kull.GenericBackend.Parameters;
+using Microsoft.AspNetCore.Authorization;
+using System.Reflection.Emit;
+using Microsoft.OpenApi.Models;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -35,20 +38,23 @@ namespace Kull.GenericBackend.GenericSP
         private readonly SPMiddlewareOptions sPMiddlewareOptions;
         private readonly SPParametersProvider sPParametersProvider;
         private readonly DbConnection dbConnection;
+        private readonly IAuthorizationPolicyProvider policyProvider;
 
         public GenericSPMiddleware(
             ParameterProvider parameterProvider,
-                SqlHelper sqlHelper,
-                ILogger<GenericSPMiddleware> logger,
-                SerializerResolver serializerResolver,
-             SPParametersProvider sPParametersProvider,
-        SPMiddlewareOptions sPMiddlewareOptions,
-                DbConnection dbConnection)
+            SqlHelper sqlHelper,
+            ILogger<GenericSPMiddleware> logger,
+            SerializerResolver serializerResolver,
+            SPParametersProvider sPParametersProvider,
+            SPMiddlewareOptions sPMiddlewareOptions,
+            DbConnection dbConnection,
+            IAuthorizationPolicyProvider policyProvider)
         {
             this.logger = logger;
             this.serializerResolver = serializerResolver;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.dbConnection = dbConnection;
+            this.policyProvider = policyProvider;
             this.parameterProvider = parameterProvider;
             this.sqlHelper = sqlHelper;
             this.sPParametersProvider = sPParametersProvider;
@@ -56,7 +62,7 @@ namespace Kull.GenericBackend.GenericSP
 
         public Task HandleRequest(HttpContext context, Entity ent)
         {
-            var method = ent.Methods[context.Request.Method];
+            var method = ent.GetMethod(context.Request.Method);
             IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(context.Request.GetTypedHeaders().Accept,
                 ent, method);
             if (serializer == null)
@@ -69,7 +75,8 @@ namespace Kull.GenericBackend.GenericSP
                 context.Response.StatusCode = 401;
                 return Task.CompletedTask;
             }
-            if (context.Request.Method == "GET")
+
+            if (context.Request.Method.ToUpper() == "GET")
             {
                 return HandleGetRequest(context, ent, serializer);
             }
@@ -77,7 +84,7 @@ namespace Kull.GenericBackend.GenericSP
         }
         protected async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
         {
-            var method = ent.Methods["Get"];
+            var method = ent.Methods[OperationType.Get];
             var request = context.Request;
 
             Dictionary<string, object> queryParameters;

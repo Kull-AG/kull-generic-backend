@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Kull.GenericBackend.Common;
+using Microsoft.OpenApi.Models;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -42,21 +43,41 @@ namespace Kull.GenericBackend.GenericSP
                     var srv = (IGenericSPMiddleware)context.RequestServices.GetService(typeof(IGenericSPMiddleware));
                     return srv.HandleRequest(context, ent);
                 };
-                if (ent.Methods.ContainsKey("GET"))
+                foreach(var method in ent.Methods)
                 {
-                    routeBuilder.MapGet(GetUrlForMvcRouting(ent), requestDelegate);
-                }
-                if (ent.Methods.ContainsKey("PUT"))
-                {
-                    routeBuilder.MapPut(GetUrlForMvcRouting(ent), requestDelegate);
-                }
-                if (ent.Methods.ContainsKey("POST"))
-                {
-                    routeBuilder.MapPost(GetUrlForMvcRouting(ent), requestDelegate);
-                }
-                if (ent.Methods.ContainsKey("DELETE"))
-                {
-                    routeBuilder.MapDelete(GetUrlForMvcRouting(ent), requestDelegate);
+                    switch (method.Key)
+                    {
+                        case OperationType.Get:
+                            routeBuilder.MapGet(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Put:
+                            routeBuilder.MapPut(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Post:
+                            routeBuilder.MapPost(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Delete:
+                            routeBuilder.MapDelete(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Patch:
+                            // TODO: Testing
+
+#if NETSTD2
+                            routeBuilder.MapVerb("PATCH", GetUrlForMvcRouting(ent), requestDelegate);
+#else
+                            routeBuilder.Map(GetUrlForMvcRouting(ent), context =>
+                            {
+                                if (context.Request.Method.ToUpper() == "PATCH")
+                                {
+                                    return requestDelegate(context);
+                                }
+                                return null;
+                            });
+#endif
+                            break;
+                        default:
+                            throw new InvalidOperationException("Only Get, Pust, Post and Delete are allowed");
+                    }
                 }
             }
         }
