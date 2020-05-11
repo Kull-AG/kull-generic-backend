@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema#",
+  "type": "object",
+  "properties": {
+    "Entities": {
+      "type": "object",
+      "patternProperties": {
+        "^[^$_.].+$": {
+          "$ref": "#/definitions/Entity"
+        }
+      }
+    }
+  },
+  "required": [ "Entities" ],
+  "definitions": {
+    "EntityConfig": {
+      "type": "object",
+      "description":  "Config on level Url/Entity",
+      "properties": {
+        "Tag": {
+          "type": "string",
+          "description": "Value for the OpenApi-Tag. Use this to group your methods/entities"
+        }
+      }
+    },
+    "Entity": {
+      "type": "object",
+      "properties": {
+        "Config": {
+          "$ref": "#/definitions/EntityConfig"
+        },
+        "GET": {
+          "$ref": "#/definitions/Method"
+        },
+        "PUT": {
+          "$ref": "#/definitions/Method"
+        },
+        "POST": {
+          "$ref": "#/definitions/Method"
+        },
+        "DELETE": {
+          "$ref": "#/definitions/Method"
+        },
+        "PATCH": {
+          "$ref": "#/definitions/Method"
+        }
+      }
+    },
+    "Method": {
+      "oneOf": [
+        {
+          "type": "string",
+          "description": "The name of the procedure to call"
+        },
+        {
+          "type": "object",
+          "description": "A config object for your Http Method",
+          "allOf": [
+            {
+              "type": "object",
+              "properties": {
+                "SP": {
+                  "type": "string",
+                  "description": "The name of the procedure to call"
+                }
+              }
+            },
+            {
+              "$ref": "#/definitions/MethodBase"
+            }
+          ]
+        }
+      ]
+    },
+    "MethodBase": {
+      "type": "object",
+      "properties": {
+        "OperationId": {
+          "type": "string",
+          "description": "Value for the operationId. Must be unique amount the whole Api"
+        },
+        "OperationName": {
+          "type": "string",
+          "description":  "Value for x-operation-name as used in some client code generators (eg, ng-openapi-gen). Use this for a unique name within a tag"
+        },
+        "Tag": {
+          "type": "string",
+          "description":  "Value for the OpenApi-Tag, overwrites the Tag of the Entity. Use this to group your methods"
+        },
+        "ResultType": {
+          "type": "string",
+
+          "enum": [ "File", "Json", "Xml" ]
+        }
+      }
+    }
+  }
+}
