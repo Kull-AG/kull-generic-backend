@@ -11,21 +11,21 @@ using System.Linq;
 using System.Text;
 using Kull.GenericBackend.Common;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Linq;
+using Kull.GenericBackend.Config;
 
 namespace Kull.GenericBackend.GenericSP
 {
     class MiddlewareRegistration
     {
-        private List<Entity> entities;
+        private IReadOnlyList<Entity> entities;
         private SPMiddlewareOptions? options;
 
-        public MiddlewareRegistration(IConfiguration conf)
+        public MiddlewareRegistration(ConfigProvider configProvider)
         {
-
-            var ent = conf.GetSection("Entities");
-            entities = ent.GetChildren()
-                   .Select(s => Entity.GetFromSection(s)).ToList();
+            entities = configProvider.Entities;
         }
+        
 
         /// <summary>
         /// Registers the actual middlware
@@ -43,7 +43,7 @@ namespace Kull.GenericBackend.GenericSP
                     var srv = (IGenericSPMiddleware)context.RequestServices.GetService(typeof(IGenericSPMiddleware));
                     return srv.HandleRequest(context, ent);
                 };
-                foreach(var method in ent.Methods)
+                foreach (var method in ent.Methods)
                 {
                     switch (method.Key)
                     {
