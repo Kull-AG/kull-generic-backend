@@ -7,28 +7,32 @@ namespace Kull.GenericBackend.Error
 {
     public class SqlServerExceptionHandler : IResponseExceptionHandler
     {
-        public const int SQLServerUserError = 50000;
+        // Numbers from here: https://docs.microsoft.com/en-us/sql/t-sql/language-elements/throw-transact-sql?view=sql-server-ver15#arguments
+        public const int SQLServerUserErrorLowerBound = 50000;
+        public const int SQLServerUserErrorUpperBound = 2147483647;
 
-        public bool CanHandle(Exception err)
+        
+
+        public (int statusCode, System.Net.Http.HttpContent dataToDisplay)? GetContent(Exception exp)
         {
-            return err is System.Data.SqlClient.SqlException;
-        }
 
-        public (int statusCode, object? dataToDisplay) GetContent(Exception exp)
-        {
-            var err = (System.Data.SqlClient.SqlException)exp;
-            var errors = err.Errors.Cast<System.Data.SqlClient.SqlError>();
-            if (errors.Any(e => e.Number != SQLServerUserError))
+            if (exp is System.Data.SqlClient.SqlException err)
             {
-                return (500, null);
-            }
-            else
-            {
-                return (400, new SqlExceptionInfo(
-                    errors.Select(s => s.Message).ToArray()
-                ));
+                var errors = err.Errors.Cast<System.Data.SqlClient.SqlError>();
+                if (!errors.All(e => e.Number >= SQLServerUserErrorLowerBound && e.Number <= SQLServerUserErrorUpperBound))
+                {
+                    return (500, new System.Net.Http.StringContent(""));
+                }
+                else
+                {
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(new SqlExceptionInfo(
+                        errors.Select(s => s.Message).ToArray()
+                    ));
+                    return (400, new System.Net.Http.StringContent(json));
 
+                }
             }
+            return null;
         }
 
         public class SqlExceptionInfo

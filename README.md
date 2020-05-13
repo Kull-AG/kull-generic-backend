@@ -200,6 +200,9 @@ There are two main things you can do:
 
 - Write a IParameterInterceptor, as an example see [SystemParameters.cs](Kull.GenericBackend/Filter/SystemParameters.cs). This allows you to add or remove parameters
 - Write a IGenericSPSerializer, as an example see [GenericSPFileSerializer.cs](Kull.GenericBackend/GenericSP/GenericSPFileSerializer.cs). This allows you to make a different result.
+- Write a IRequestInterceptor, as an example see [IRequestInterceptor.cs](Kull.GenericBackend.IntegrationTest/TestRequestInterceptor.cs). This allows you to stop making a db call and return something else in special cases (eg for a permission check).
+
+If you write an extension, it's best to do so using an Extension Method to [GenericBackendBuilder](Kull.GenericBackend/Builder/GenericBackendBuilder.cs)
 
 # Possible futher development
 

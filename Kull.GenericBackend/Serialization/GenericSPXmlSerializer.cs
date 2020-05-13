@@ -143,27 +143,21 @@ namespace Kull.GenericBackend.Serialization
             }
             catch (Exception err)
             {
-                logger.LogWarning(err, $"Error executing {serializationContext}");
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
-                    if (hand.CanHandle(err))
+                    var result = hand.GetContent(err);
+                    if (result != null)
                     {
-                        (int status, object? content) = hand.GetContent(err);
+                        (var status, var content) = result.Value;
                         if (!context.Response.HasStarted)
                         {
                             await PrepareHeader(context, method, ent, status);
-                            if (content != null)
+                            foreach (var h in content.Headers)
                             {
-                                var ser = new System.Xml.Serialization.XmlSerializer(content.GetType());
-                                string xml;
-                                using (var strW = new System.IO.StringWriter())
-                                {
-                                    ser.Serialize(strW, content);
-                                    xml = strW.ToString();
-                                }
-                                await context.Response.WriteAsync(xml);
+                                context.Response.Headers.Add(h.Key, h.Value.ToArray());
                             }
+                            await content.CopyToAsync(context.Response.Body).ConfigureAwait(false);
                         }
                         else
                         {
@@ -172,6 +166,7 @@ namespace Kull.GenericBackend.Serialization
                         handled = true;
                         break;
                     }
+
                 }
                 if (!handled)
                     throw;

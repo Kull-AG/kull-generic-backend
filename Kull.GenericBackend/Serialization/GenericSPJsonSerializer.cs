@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.GenericSP;
+using System.Net.Http;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -200,17 +201,18 @@ namespace Kull.GenericBackend.Serialization
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
-                    if (hand.CanHandle(err))
+                    var result = hand.GetContent(err);
+                    if (result != null)
                     {
-                        (int status, object? content) = hand.GetContent(err);
+                        (var status, var content) = result.Value;
                         if (!context.Response.HasStarted)
                         {
                             await PrepareHeader(context, method, ent, status);
-                            if (content != null)
+                            foreach(var h in content.Headers)
                             {
-                                string json = Newtonsoft.Json.JsonConvert.SerializeObject(content);
-                                await context.Response.WriteAsync(json);
+                                context.Response.Headers.Add(h.Key, h.Value.ToArray());
                             }
+                            await content.CopyToAsync(context.Response.Body).ConfigureAwait(false);
                         }
                         else
                         {
@@ -219,6 +221,7 @@ namespace Kull.GenericBackend.Serialization
                         handled = true;
                         break;
                     }
+
                 }
                 if (!handled)
                     throw;
