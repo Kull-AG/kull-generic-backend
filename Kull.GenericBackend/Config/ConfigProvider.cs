@@ -35,7 +35,7 @@ namespace Kull.GenericBackend.Config
 
         protected virtual void ReadConfig()
         {
-            var configFile = System.IO.Path.Combine(hostingEnvironment.WebRootPath ?? "", "backendconfig.json");
+            var configFile = System.IO.Path.Combine(hostingEnvironment?.WebRootPath ?? "", "backendconfig.json");
             object configObj = System.IO.File.Exists(configFile) ?
                 (object)ReadJsonFromFile(configFile) :
                 config;

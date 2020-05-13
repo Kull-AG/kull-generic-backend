@@ -54,7 +54,7 @@ namespace Kull.GenericBackend.Config
             {
                 return dict.ToDictionary(o => o.Key, o => ConvertToDeepIDictionary(o.Value, stringComparer), stringComparer);
             }
-            if (input is IConfiguration config)
+            if (input is ConfigurationRoot config)
             {
                 return new Dictionary<string, object?>(){
                     {"Entities", ConvertToDeepIDictionary(config.GetSection("Entities"),stringComparer) } };
