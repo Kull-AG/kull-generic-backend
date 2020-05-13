@@ -15,6 +15,10 @@ using Microsoft.Net.Http.Headers;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.Serialization;
 using Kull.GenericBackend.Parameters;
+using Microsoft.OpenApi.Extensions;
+using Microsoft.OpenApi.Interfaces;
+using Microsoft.OpenApi.Any;
+using Kull.GenericBackend.Config;
 
 namespace Kull.GenericBackend.SwaggerGeneration
 {
@@ -34,7 +38,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly NamingMappingHandler namingMappingHandler;
         private readonly CodeConvention codeConvention;
 
-        public DatabaseOperations(Microsoft.Extensions.Configuration.IConfiguration conf,
+        public DatabaseOperations(
          SPMiddlewareOptions sPMiddlewareOptions,
          SwaggerFromSPOptions options,
          SqlHelper sqlHelper,
@@ -43,7 +47,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
          ParameterProvider parametersProvider,
          SerializerResolver serializerResolver,
          NamingMappingHandler namingMappingHandler,
-         CodeConvention codeConvention)
+         CodeConvention codeConvention,
+         ConfigProvider configProvider)
         {
             this.codeConvention = codeConvention;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
@@ -54,9 +59,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             this.dbConnection = dbConnection;
             this.parametersProvider = parametersProvider;
             this.namingMappingHandler = namingMappingHandler;
-            var ent = conf.GetSection("Entities");
-            entities = ent.GetChildren()
-                   .Select(s => Entity.GetFromSection(s)).ToList();
+            entities = configProvider.Entities;
         }
 
 
@@ -73,7 +76,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
                     foreach (var method in ent.Methods)
                     {
-                        var opType = (OperationType)Enum.Parse(typeof(OperationType), method.Key, true);
+                        var opType = method.Key;
                         OpenApiOperation bodyOperation = new OpenApiOperation();
                         WriteBodyPath(bodyOperation, ent, opType, method.Value);
                         openApiPathItem.Operations.Add(opType, bodyOperation);
@@ -125,7 +128,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         WriteJsonSchema(parameterSchema, parameters);
 
 
-                        swaggerDoc.Components.Schemas.Add(codeConvention.GetParameterObjectName(ent, method.Value, method.Key),
+                        swaggerDoc.Components.Schemas.Add(codeConvention.GetParameterObjectName(ent, method.Value),
                             parameterSchema);
                     }
                 }
@@ -212,27 +215,34 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private void WriteBodyPath(OpenApiOperation operation, Entity ent, OperationType operationType, Method method)
+        private void WriteBodyPath(OpenApiOperation operation, Entity entity, OperationType operationType, Method method)
         {
             if (operation.Tags == null)
                 operation.Tags = new List<OpenApiTag>();
-            operation.Tags.Add(new OpenApiTag() { Name = ent.GetDisplayString() });
+            operation.Tags.Add(new OpenApiTag() { Name = 
+                method.Tag != null ? method.Tag :
+                entity.Tag != null ? entity.Tag :
+                codeConvention.GetTag(entity, method) });
 
             var operationId = method.OperationId;
             if (method.OperationId == null)
             {
-                operationId = codeConvention.GetOperationId(ent, method, operationType);
+                operationId = codeConvention.GetOperationId(entity, method);
             }
             operation.OperationId = operationId;
-            IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, ent, method);
+            if (method.OperationName != null || method.OperationId == null)
+            {
+                operation.AddExtension("x-operation-name", new OpenApiString(method.OperationName ?? codeConvention.GetOperationName(entity, method)));
+            }
+            IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, entity, method);
 
             operation.Responses = GetDefaultResponse(codeConvention.GetResultTypeName(method.SP));
             if (serializer != null)
                 serializer.ModifyResponses(operation.Responses);
 
-            var props = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true))
+            var props = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true))
                                 .ToArray();
-            if (operationType != OperationType.Get && props.Any(p => p.WebApiName != null && !ent.ContainsPathParameter(p.WebApiName)))
+            if (operationType != OperationType.Get && props.Any(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))
             {
                 if (operation.RequestBody == null) operation.RequestBody = new OpenApiRequestBody();
                 operation.RequestBody.Required = true;
@@ -245,7 +255,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         Reference = new OpenApiReference()
                         {
                             Type = ReferenceType.Schema,
-                            Id = codeConvention.GetParameterObjectName(ent, method, method.HttpMethod)
+                            Id = codeConvention.GetParameterObjectName(entity, method)
                         }
                     }
                 });
@@ -253,7 +263,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             if (operation.Parameters == null) operation.Parameters = new List<OpenApiParameter>();
             if (operationType == OperationType.Get)
             {
-                foreach (var item in props.Where(p => p.WebApiName != null && !ent.ContainsPathParameter(p.WebApiName)))
+                foreach (var item in props.Where(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))
                 {
                     var schema = item.GetSchema();
 
@@ -271,7 +281,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 }
 
             }
-            foreach (var item in props.Where(p => p.WebApiName != null && ent.ContainsPathParameter(p.WebApiName)))
+            foreach (var item in props.Where(p => p.WebApiName != null && entity.ContainsPathParameter(p.WebApiName)))
             {
                 var schema = item.GetSchema();
                 operation.Parameters.Add(new OpenApiParameter()

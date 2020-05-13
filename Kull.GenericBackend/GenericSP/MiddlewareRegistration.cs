@@ -10,21 +10,22 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Kull.GenericBackend.Common;
+using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Linq;
+using Kull.GenericBackend.Config;
 
 namespace Kull.GenericBackend.GenericSP
 {
     class MiddlewareRegistration
     {
-        private List<Entity> entities;
+        private IReadOnlyList<Entity> entities;
         private SPMiddlewareOptions? options;
 
-        public MiddlewareRegistration(IConfiguration conf)
+        public MiddlewareRegistration(ConfigProvider configProvider)
         {
-
-            var ent = conf.GetSection("Entities");
-            entities = ent.GetChildren()
-                   .Select(s => Entity.GetFromSection(s)).ToList();
+            entities = configProvider.Entities;
         }
+        
 
         /// <summary>
         /// Registers the actual middlware
@@ -42,21 +43,41 @@ namespace Kull.GenericBackend.GenericSP
                     var srv = (IGenericSPMiddleware)context.RequestServices.GetService(typeof(IGenericSPMiddleware));
                     return srv.HandleRequest(context, ent);
                 };
-                if (ent.Methods.ContainsKey("GET"))
+                foreach (var method in ent.Methods)
                 {
-                    routeBuilder.MapGet(GetUrlForMvcRouting(ent), requestDelegate);
-                }
-                if (ent.Methods.ContainsKey("PUT"))
-                {
-                    routeBuilder.MapPut(GetUrlForMvcRouting(ent), requestDelegate);
-                }
-                if (ent.Methods.ContainsKey("POST"))
-                {
-                    routeBuilder.MapPost(GetUrlForMvcRouting(ent), requestDelegate);
-                }
-                if (ent.Methods.ContainsKey("DELETE"))
-                {
-                    routeBuilder.MapDelete(GetUrlForMvcRouting(ent), requestDelegate);
+                    switch (method.Key)
+                    {
+                        case OperationType.Get:
+                            routeBuilder.MapGet(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Put:
+                            routeBuilder.MapPut(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Post:
+                            routeBuilder.MapPost(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Delete:
+                            routeBuilder.MapDelete(GetUrlForMvcRouting(ent), requestDelegate);
+                            break;
+                        case OperationType.Patch:
+                            // TODO: Testing
+
+#if NETSTD2
+                            routeBuilder.MapVerb("PATCH", GetUrlForMvcRouting(ent), requestDelegate);
+#else
+                            routeBuilder.Map(GetUrlForMvcRouting(ent), context =>
+                            {
+                                if (context.Request.Method.ToUpper() == "PATCH")
+                                {
+                                    return requestDelegate(context);
+                                }
+                                return null;
+                            });
+#endif
+                            break;
+                        default:
+                            throw new InvalidOperationException("Only Get, Pust, Post and Delete are allowed");
+                    }
                 }
             }
         }

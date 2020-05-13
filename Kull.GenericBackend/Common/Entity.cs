@@ -6,6 +6,8 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Serialization;
+using Microsoft.OpenApi.Models;
+using Kull.GenericBackend.Config;
 
 namespace Kull.GenericBackend.Common
 {
@@ -20,58 +22,17 @@ namespace Kull.GenericBackend.Common
         /// Eg, for /Cases/{CaseId:int}/Brand the parts
         /// are ["Cases", "{CaseId:int}", "Brand"]
         /// </summary>
-        public readonly string[] UrlParts;
-
-
-        public readonly IDictionary<string, Method> Methods;
+        private readonly string[] UrlParts;
 
         /// <summary>
-        /// A string to be used for Representation in URLs or Methods
-        /// Eg for /Cases/{CaseId|int}/Brand returns GetCasesBy
+        /// A map containing all methods of this entity
         /// </summary>
-        /// <returns></returns>
-        public string GetDisplayString()
-        {
-            List<string?> result = new List<string?>();
-            bool lastWasBy = false;
+        public IDictionary<OperationType, Method> Methods { get; }
 
-            foreach (var part in UrlParts)
-            {
-                if (!part.StartsWith("{"))
-                {
-                    lastWasBy = false;
-                    result.Add(part);
-                }
-                else
-                {
-                    string name = ParseTemplatePart(part.Substring(1, part.Length - 2)).name;
-
-                    if (!lastWasBy)
-                    {
-                        lastWasBy = true;
-                        string? lastUrlPart = result.LastOrDefault();
-
-                        string? entnameprm = name.EndsWith("Id") ? name.Substring(0, name.Length - "Id".Length) : null;
-                        string? entnamepart = lastUrlPart != null && lastUrlPart.EndsWith("s") ?
-                            lastUrlPart.Substring(0, lastUrlPart.Length - "s".Length) : null;
-                        if (entnameprm != null &&
-                            entnameprm.Equals(entnamepart, StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            result.RemoveAt(result.Count - 1);
-                            result.Add(entnamepart);
-                            continue;
-                        }
-                        else
-                        {
-                            result.Add("By");
-                        }
-                    }
-                    name = name[0].ToString().ToUpper() + name.Substring(1);
-                    result.Add(name);
-                }
-            }
-            return string.Join("", result);
-        }
+        /// <summary>
+        /// The tag for Open Api
+        /// </summary>
+        public string? Tag { get; }
 
 
         /// <summary>
@@ -94,6 +55,22 @@ namespace Kull.GenericBackend.Common
         /// Gets the names and the types of all Path parameters
         /// </summary>
         /// <returns></returns>
+        public IReadOnlyCollection<(bool isParameterPart, string name, string? type)> GetUrlParts()
+        {
+            return UrlParts
+                .Select(up => new { isParameterPart = up.StartsWith("{") && up.EndsWith("}"), part = up })
+                .Select(s => (s.isParameterPart,
+                    s.isParameterPart ? ParseTemplatePart(s.part.Substring(1, s.part.Length - 2)).name : s.part,
+                    s.isParameterPart ? ParseTemplatePart(s.part.Substring(1, s.part.Length - 2)).type : s.part
+                    )
+                    )
+                .ToArray();
+        }
+
+        /// <summary>
+        /// Gets the names and the types of all Path parameters
+        /// </summary>
+        /// <returns></returns>
         public IReadOnlyCollection<(string name, string? type)> GetPathParameters()
         {
             return UrlParts
@@ -102,17 +79,36 @@ namespace Kull.GenericBackend.Common
                 .ToArray();
         }
 
-        public Entity(string urlTemplate, IDictionary<string, Method> methods)
+        public Entity(string urlTemplate, IDictionary<OperationType, Method> methods)
+            : this(urlTemplate, methods, null)
+        {
+
+        }
+
+        internal Entity(string urlTemplate, IDictionary<OperationType, Method> methods, string? tag)
         {
             UrlParts = urlTemplate.Replace("|", ":").Split('/').Select(s => s.Trim()).ToArray();
             Methods = methods;
+            Tag = tag;
         }
 
-        internal static Entity GetFromSection(IConfigurationSection section)
+        public Method GetMethod(string httpMethod)
         {
-            return new Entity(section.Key, section.GetChildren()
-                    .Select(s => Method.GetFromSection(s))
-                    .ToDictionary(s => s.HttpMethod, s => s, StringComparer.CurrentCultureIgnoreCase));
+            if (!Enum.TryParse(httpMethod, true, out OperationType operationType))
+            {
+                throw new ArgumentException("Key must be a Http Method");
+            }
+            return Methods[operationType];
+        }
+
+        internal static Entity GetFromConfig(string key, object value)
+        {
+            var childConfig = (IDictionary<string, object?>)value;
+            return new Entity(key, childConfig.Where(c => !c.Key.Equals("Config", StringComparison.CurrentCultureIgnoreCase))
+                    .Select(s => Method.GetFromConfig(s.Key, s.Value!))
+                    .ToDictionary(s => s.HttpMethod, s => s),
+                    childConfig.GetValue<IDictionary<string, object?>>("Config")?.GetValue<string>("Tag")
+                    );
         }
 
 

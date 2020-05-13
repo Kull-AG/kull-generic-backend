@@ -37,6 +37,7 @@ namespace Kull.GenericBackend
             services.AddKullDatabaseMetadata();
             services.AddSingleton<Model.NamingMappingHandler>();
             services.AddSingleton<SwaggerGeneration.CodeConvention>();
+            services.AddSingleton<Config.ConfigProvider>();
             services.AddTransient<ParameterProvider>();
             services.AddSingleton<GenericSP.MiddlewareRegistration>();
 

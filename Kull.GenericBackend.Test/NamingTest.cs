@@ -1,4 +1,5 @@
 using Kull.GenericBackend.Common;
+using Microsoft.OpenApi.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 
@@ -10,25 +11,33 @@ namespace Kull.GenericBackend.Test
         [TestMethod]
         public void TestByIdAndSecond()
         {
-            var ent = new Entity("/Cases/{CaseId:int}/Brand", new Dictionary<string, Method>());
-            var displayString = ent.GetDisplayString();
-            Assert.AreEqual(displayString, "CaseBrand");
+            string url = "/Cases/{CaseId:int}/Brand";
+            string expected = "CaseBrand";
+            TestNaming(url, expected);
+        }
+
+        private static void TestNaming(string url, string expected)
+        {
+            Method method = new Method(OperationType.Get, "");
+            var ent = new Entity(url, new Dictionary<OperationType, Method>()
+            {
+                { OperationType.Get, method }
+            });
+            var conv = new SwaggerGeneration.CodeConvention();
+            var displayString = conv.GetTag(ent, method);
+            Assert.AreEqual(expected, displayString);
         }
 
         [TestMethod]
         public void TestById()
         {
-            var ent = new Entity("/Cases/{CaseId:int}", new Dictionary<string, Method>());
-            var displayString = ent.GetDisplayString();
-            Assert.AreEqual(displayString, "Case");
+            TestNaming("/Cases/{CaseId:int}", "Case");
         }
 
         [TestMethod]
         public void TestResource()
         {
-            var ent = new Entity("/Cases", new Dictionary<string, Method>());
-            var displayString = ent.GetDisplayString();
-            Assert.AreEqual(displayString, "Cases");
+            TestNaming("/Cases", "Cases");
         }
     }
 }
