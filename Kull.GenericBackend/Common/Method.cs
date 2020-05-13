@@ -1,3 +1,4 @@
+using Kull.GenericBackend.Config;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
@@ -41,6 +42,7 @@ namespace Kull.GenericBackend.Common
             string? operationName = null,
             string? resultType = null, string? tag = null)
         {
+            if (sp == null) throw new ArgumentNullException("sp");
             HttpMethod = httpMethod;
             SP = sp;
             OperationId = operationId;
@@ -49,20 +51,20 @@ namespace Kull.GenericBackend.Common
             Tag = tag;
         }
 
-        internal static Method GetFromSection(IConfigurationSection section)
+        internal static Method GetFromConfig(string key, object value)
         {
-            if (!Enum.TryParse(section.Key, true, out OperationType operationType))
+            if (!Enum.TryParse(key, true, out OperationType operationType))
             {
                 throw new ArgumentException("Key must be a Http Method");
             }
-            if (section.Value != null)
-                return new Method(operationType, section.Value);
-            
-            return new Method(operationType, section.GetSection("SP").Value,
-                section.GetSection("OperationId")?.Value,
-                section.GetSection("OperationName")?.Value,
-                section.GetSection("ResultType")?.Value,
-                section.GetSection("Tag")?.Value);
+            if (value is string s)
+                return new Method(operationType, s);
+            var childConfig = (IDictionary<string, object?>)value;
+            return new Method(operationType, childConfig.GetValue<string>("SP"),
+                childConfig.GetValue<string?>("OperationId"),
+                childConfig.GetValue<string?>("OperationName"),
+                childConfig.GetValue<string?>("ResultType"),
+                childConfig.GetValue<string?>("Tag"));
 
         }
 

@@ -18,6 +18,7 @@ using Kull.GenericBackend.Parameters;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Any;
+using Kull.GenericBackend.Config;
 
 namespace Kull.GenericBackend.SwaggerGeneration
 {
@@ -37,7 +38,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly NamingMappingHandler namingMappingHandler;
         private readonly CodeConvention codeConvention;
 
-        public DatabaseOperations(Microsoft.Extensions.Configuration.IConfiguration conf,
+        public DatabaseOperations(
          SPMiddlewareOptions sPMiddlewareOptions,
          SwaggerFromSPOptions options,
          SqlHelper sqlHelper,
@@ -46,7 +47,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
          ParameterProvider parametersProvider,
          SerializerResolver serializerResolver,
          NamingMappingHandler namingMappingHandler,
-         CodeConvention codeConvention)
+         CodeConvention codeConvention,
+         ConfigProvider configProvider)
         {
             this.codeConvention = codeConvention;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
@@ -57,9 +59,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             this.dbConnection = dbConnection;
             this.parametersProvider = parametersProvider;
             this.namingMappingHandler = namingMappingHandler;
-            var ent = conf.GetSection("Entities");
-            entities = ent.GetChildren()
-                   .Select(s => Entity.GetFromSection(s)).ToList();
+            entities = configProvider.Entities;
         }
 
 

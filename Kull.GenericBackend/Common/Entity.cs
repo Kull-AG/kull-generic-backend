@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json.Serialization;
 using Microsoft.OpenApi.Models;
+using Kull.GenericBackend.Config;
 
 namespace Kull.GenericBackend.Common
 {
@@ -100,12 +101,13 @@ namespace Kull.GenericBackend.Common
             return Methods[operationType];
         }
 
-        internal static Entity GetFromSection(IConfigurationSection section)
+        internal static Entity GetFromConfig(string key, object value)
         {
-            return new Entity(section.Key, section.GetChildren().Where(c => !c.Key.Equals("Config", StringComparison.CurrentCultureIgnoreCase))
-                    .Select(s => Method.GetFromSection(s))
+            var childConfig = (IDictionary<string, object?>)value;
+            return new Entity(key, childConfig.Where(c => !c.Key.Equals("Config", StringComparison.CurrentCultureIgnoreCase))
+                    .Select(s => Method.GetFromConfig(s.Key, s.Value!))
                     .ToDictionary(s => s.HttpMethod, s => s),
-                    section.GetSection("Config")?.GetSection("Tag")?.Value
+                    childConfig.GetValue<IDictionary<string, object?>>("Config")?.GetValue<string>("Tag")
                     );
         }
 
