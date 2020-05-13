@@ -1,5 +1,5 @@
 {
-  "$schema": "../backendconfig.schema.json",
+  "$schema": "https://raw.githubusercontent.com/Kull-AG/kull-generic-backend/master/backendconfig.schema.json",
   "Entities": {
     "Pet": {
       "GET": "spGetPets",
@@ -38,6 +38,11 @@
       "POST": {
         "SP": "spFile",
         "ResultType": "File"
+      }
+    },
+    "htcp": {
+      "GET": {
+        "Sp": "None"
       }
     }
   }

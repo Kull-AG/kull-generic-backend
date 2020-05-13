@@ -21,6 +21,8 @@ using Kull.GenericBackend.Parameters;
 using Microsoft.AspNetCore.Authorization;
 using System.Reflection.Emit;
 using Microsoft.OpenApi.Models;
+using Kull.GenericBackend.Filter;
+using System.Net.Http;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -39,6 +41,7 @@ namespace Kull.GenericBackend.GenericSP
         private readonly SPParametersProvider sPParametersProvider;
         private readonly DbConnection dbConnection;
         private readonly IAuthorizationPolicyProvider policyProvider;
+        private readonly IEnumerable<IRequestInterceptor> requestInterceptors;
 
         public GenericSPMiddleware(
             ParameterProvider parameterProvider,
@@ -48,13 +51,15 @@ namespace Kull.GenericBackend.GenericSP
             SPParametersProvider sPParametersProvider,
             SPMiddlewareOptions sPMiddlewareOptions,
             DbConnection dbConnection,
-            IAuthorizationPolicyProvider policyProvider)
+            IAuthorizationPolicyProvider policyProvider,
+            IEnumerable<Filter.IRequestInterceptor> requestInterceptors)
         {
             this.logger = logger;
             this.serializerResolver = serializerResolver;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.dbConnection = dbConnection;
             this.policyProvider = policyProvider;
+            this.requestInterceptors = requestInterceptors;
             this.parameterProvider = parameterProvider;
             this.sqlHelper = sqlHelper;
             this.sPParametersProvider = sPParametersProvider;
@@ -63,6 +68,15 @@ namespace Kull.GenericBackend.GenericSP
         public Task HandleRequest(HttpContext context, Entity ent)
         {
             var method = ent.GetMethod(context.Request.Method);
+            foreach(var interceptor in this.requestInterceptors)
+            {
+                var shouldIntercept = interceptor.OnBeforeRequest(context, new RequestInterceptorContext(
+                    ent, method, this.dbConnection));
+                if(shouldIntercept != null)
+                {
+                    return WriteResponse(context, shouldIntercept.Value.statusCode, shouldIntercept.Value.responseContent);
+                }
+            }
             IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(context.Request.GetTypedHeaders().Accept,
                 ent, method);
             if (serializer == null)
@@ -82,6 +96,16 @@ namespace Kull.GenericBackend.GenericSP
             }
             return HandleBodyRequest(context, method, ent, serializer);
         }
+
+        protected async Task WriteResponse(HttpContext context, int statusCode, HttpContent responseContent)
+        {
+            var response = context.Response;
+            response.StatusCode = statusCode;
+            foreach (var header in responseContent.Headers)
+                response.Headers.Add(header.Key, new Microsoft.Extensions.Primitives.StringValues(header.Value.ToArray()));
+            await responseContent.CopyToAsync(response.Body).ConfigureAwait(false);
+        }
+
         protected async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
         {
             var method = ent.Methods[OperationType.Get];

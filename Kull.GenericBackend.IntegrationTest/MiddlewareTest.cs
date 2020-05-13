@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
@@ -90,6 +91,24 @@ namespace Kull.GenericBackend.IntegrationTest
                 response.Content.Headers.ContentType.MediaType);
             var content = await response.Content.ReadAsStringAsync();
             var xml = System.Xml.Linq.XElement.Parse(content);
+        }
+
+        [Theory]
+        [InlineData("/rest/htcp")]
+        public async Task TestRequestInterceptor(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.Equal(418, (int)response.StatusCode);
+            Assert.Equal("text/plain",
+                response.Content.Headers.ContentType.MediaType);
+            Assert.Equal("Hey, I am a teapot", content);
         }
 
         [Theory]
