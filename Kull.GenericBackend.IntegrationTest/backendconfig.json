@@ -12,7 +12,8 @@
     },
     "Pet/search": {
       "GET": {
-        "Sp": "spSearchPets"
+        "Sp": "spSearchPets",
+        "CommandTimeout": 360
       }
     },
     "Test": {

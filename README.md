@@ -68,10 +68,11 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 
 }
 ```
-In appsettings.json, set the URI's:
+In a File called backendconfig.json, set the URI's:
 
 ```json
 {
+   "$schema": "https://raw.githubusercontent.com/Kull-AG/kull-generic-backend/master/backendconfig.schema.json",
    "Entities": {
         "Cases": {
             "Get": "api.spGetSomeCases"
@@ -86,6 +87,7 @@ In appsettings.json, set the URI's:
     }
 }
 ```
+You can place this in appsettings.json as well if you don't like a separate file.
 
 In the "Entities" Section, the URL's are configured. Each entry correspondends to a URL.
 Each URL can be accessed by multiple HTTP Methods. Common methods are:
@@ -140,7 +142,7 @@ For uploading a file, name the parameters of your Stored Procedure with the foll
 
 ### File Download
 
-In your appsettings.json, set the field "ResultType" to "File":
+In your Settings File (appsettings.json or backendconfig.json) set the field "ResultType" to "File":
 
 ```json
     "FileDownload": {

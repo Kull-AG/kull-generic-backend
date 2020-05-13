@@ -88,17 +88,22 @@
         },
         "OperationName": {
           "type": "string",
-          "description":  "Value for x-operation-name as used in some client code generators (eg, ng-openapi-gen). Use this for a unique name within a tag"
+          "description": "Value for x-operation-name as used in some client code generators (eg, ng-openapi-gen). Use this for a unique name within a tag"
         },
         "Tag": {
           "type": "string",
-          "description":  "Value for the OpenApi-Tag, overwrites the Tag of the Entity. Use this to group your methods"
+          "description": "Value for the OpenApi-Tag, overwrites the Tag of the Entity. Use this to group your methods"
         },
         "ResultType": {
           "type": "string",
           "title": "The result Content Type",
           "description": "The content type to be return. Use only, if the Accept Header does not suit your needs",
           "enum": [ "File", "Json", "Xml" ]
+        },
+        "CommandTimeout": {
+          "type": "integer",
+          "title": "Timeout of Database Command",
+          "description":  "The timeout in seconds"
         }
       }
     }

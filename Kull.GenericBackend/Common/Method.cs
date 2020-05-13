@@ -29,7 +29,8 @@ namespace Kull.GenericBackend.Common
 
         public string? ResultType { get; }
         public string? Tag { get; }
-
+        
+        public int? CommandTimeout { get; }
 
         public Method(OperationType httpMethod, string sp)
             : this(httpMethod, sp, null, null, null)
@@ -40,7 +41,8 @@ namespace Kull.GenericBackend.Common
         private Method(OperationType httpMethod, string sp, 
             string? operationId = null,
             string? operationName = null,
-            string? resultType = null, string? tag = null)
+            string? resultType = null, string? tag = null,
+            int? commandTimeout = null)
         {
             if (sp == null) throw new ArgumentNullException("sp");
             HttpMethod = httpMethod;
@@ -49,6 +51,7 @@ namespace Kull.GenericBackend.Common
             OperationName = operationName;
             ResultType = resultType;
             Tag = tag;
+            CommandTimeout = commandTimeout;
         }
 
         internal static Method GetFromConfig(string key, object value)
@@ -64,7 +67,8 @@ namespace Kull.GenericBackend.Common
                 childConfig.GetValue<string?>("OperationId"),
                 childConfig.GetValue<string?>("OperationName"),
                 childConfig.GetValue<string?>("ResultType"),
-                childConfig.GetValue<string?>("Tag"));
+                childConfig.GetValue<string?>("Tag"),
+                childConfig.GetValue<int?>("CommandTimeout"));
 
         }
 
