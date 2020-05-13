@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Kull.GenericBackend.SwaggerGeneration;
 using System.Linq;
 using Kull.GenericBackend.GenericSP;
+using Microsoft.AspNetCore.Http;
 
 namespace Kull.GenericBackend
 {
@@ -27,6 +28,17 @@ namespace Kull.GenericBackend
             services.AddSingleton<Filter.IParameterInterceptor, T>();
         }
 
+        public void AddParameterInterceptor<T>(Func<IServiceProvider, T> func) where T : class, Filter.IParameterInterceptor
+        {
+            services.AddSingleton<Filter.IParameterInterceptor, T>(func);
+        }
+
+        public void AddRequestInterceptor<T>() where T : class, Filter.IRequestInterceptor
+        {
+            services.AddSingleton<Filter.IRequestInterceptor, T>();
+        }
+
+
         public GenericBackendBuilder AddXmlSupport()
         {
             AddSerializer<GenericSPXmlSerializer>();
@@ -40,9 +52,14 @@ namespace Kull.GenericBackend
             return this;
         }
 
-        public GenericBackendBuilder AddSystemParameters()
+        public GenericBackendBuilder AddSystemParameters(Action<Filter.SystemParameters>? configure=null)
         {
-            AddParameterInterceptor<Filter.SystemParameters>();
+            AddParameterInterceptor<Filter.SystemParameters>((sp)=>
+            {
+                var sps = new Filter.SystemParameters();
+                configure?.Invoke(sps);
+                return sps;
+            });
             return this;
         }
 
