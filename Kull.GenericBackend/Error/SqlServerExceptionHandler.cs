@@ -13,7 +13,7 @@ namespace Kull.GenericBackend.Error
 
         
 
-        public (int statusCode, System.Net.Http.HttpContent dataToDisplay)? GetContent(Exception exp)
+        public (int statusCode, System.Net.Http.HttpContent dataToDisplay)? GetContent(Exception exp, Func<object, System.Net.Http.HttpContent> format)
         {
 
             if (exp is System.Data.SqlClient.SqlException err)
@@ -21,18 +21,41 @@ namespace Kull.GenericBackend.Error
                 var errors = err.Errors.Cast<System.Data.SqlClient.SqlError>();
                 if (!errors.All(e => e.Number >= SQLServerUserErrorLowerBound && e.Number <= SQLServerUserErrorUpperBound))
                 {
-                    return (500, new System.Net.Http.StringContent(""));
+                    return (500, format(new object()));
                 }
                 else
                 {
-                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(new SqlExceptionInfo(
-                        errors.Select(s => s.Message).ToArray()
-                    ));
-                    return (400, new System.Net.Http.StringContent(json));
+                    var content = format (new SqlExceptionInfo(
+                        errors.Select(s => new SqlExceptionItem(s.State, s.Message)).ToArray()
+                    )); 
+                    int responseCode = 400;
+                    responseCode = errors.FirstOrDefault(e => e.Number >= SQLServerUserErrorLowerBound + 400 && e.Number <= SQLServerUserErrorLowerBound + 599)?.Number - SQLServerUserErrorLowerBound
+
+                        ?? responseCode;
+                    return (responseCode, content);
 
                 }
             }
             return null;
+        }
+
+        public class SqlExceptionItem
+        {
+            public int State { get; }
+            public string Message { get; }
+
+            [Obsolete("Use for api only")]
+#pragma warning disable CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+            public SqlExceptionItem()
+#pragma warning restore CS8618 // Non-nullable field is uninitialized. Consider declaring as nullable.
+            {
+
+            }
+            public SqlExceptionItem(int state, string message)
+            {
+                this.State = state;
+                this.Message = message;
+            }
         }
 
         public class SqlExceptionInfo
@@ -45,12 +68,12 @@ namespace Kull.GenericBackend.Error
 
             }
 
-            public SqlExceptionInfo(string[] errors)
+            public SqlExceptionInfo(SqlExceptionItem[] errors)
             {
                 this.Errors = errors;
             }
 
-            public string[] Errors { get; set; }
+            public SqlExceptionItem[] Errors { get; }
         }
     }
 }

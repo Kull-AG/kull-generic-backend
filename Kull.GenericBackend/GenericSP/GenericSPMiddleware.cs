@@ -74,7 +74,8 @@ namespace Kull.GenericBackend.GenericSP
                     ent, method, this.dbConnection));
                 if(shouldIntercept != null)
                 {
-                    return WriteResponse(context, shouldIntercept.Value.statusCode, shouldIntercept.Value.responseContent);
+                    context.Response.StatusCode = shouldIntercept.Value.statusCode;
+                    return HttpHandlingUtils.HttpContentToResponse(shouldIntercept.Value.responseContent, context.Response);
                 }
             }
             IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(context.Request.GetTypedHeaders().Accept,
@@ -95,15 +96,6 @@ namespace Kull.GenericBackend.GenericSP
                 return HandleGetRequest(context, ent, serializer);
             }
             return HandleBodyRequest(context, method, ent, serializer);
-        }
-
-        protected async Task WriteResponse(HttpContext context, int statusCode, HttpContent responseContent)
-        {
-            var response = context.Response;
-            response.StatusCode = statusCode;
-            foreach (var header in responseContent.Headers)
-                response.Headers.Add(header.Key, new Microsoft.Extensions.Primitives.StringValues(header.Value.ToArray()));
-            await responseContent.CopyToAsync(response.Body).ConfigureAwait(false);
         }
 
         protected async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)

@@ -201,18 +201,19 @@ namespace Kull.GenericBackend.Serialization
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
-                    var result = hand.GetContent(err);
+                    var result = hand.GetContent(err, o =>
+                    {                        string json = Newtonsoft.Json.JsonConvert.SerializeObject(o);
+                        var content = new System.Net.Http.StringContent(json);
+                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                        return content;
+                    });
                     if (result != null)
                     {
                         (var status, var content) = result.Value;
                         if (!context.Response.HasStarted)
                         {
                             await PrepareHeader(context, method, ent, status);
-                            foreach(var h in content.Headers)
-                            {
-                                context.Response.Headers.Add(h.Key, h.Value.ToArray());
-                            }
-                            await content.CopyToAsync(context.Response.Body).ConfigureAwait(false);
+                            await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
                         }
                         else
                         {
@@ -227,6 +228,7 @@ namespace Kull.GenericBackend.Serialization
                     throw;
             }
         }
+
 
         public void ModifyResponses(OpenApiResponses responses)
         {

@@ -146,18 +146,26 @@ namespace Kull.GenericBackend.Serialization
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
-                    var result = hand.GetContent(err);
+                    var result = hand.GetContent(err, o =>
+                    {
+                        var ser = new System.Xml.Serialization.XmlSerializer(o.GetType());
+                        string xml;
+                        using (var strW = new System.IO.StringWriter())
+                        {
+                            ser.Serialize(strW, o);
+                            xml = strW.ToString();
+                        }
+                        var content = new System.Net.Http.StringContent(xml);
+                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/xml");
+                        return content;
+                    });
                     if (result != null)
                     {
                         (var status, var content) = result.Value;
                         if (!context.Response.HasStarted)
                         {
                             await PrepareHeader(context, method, ent, status);
-                            foreach (var h in content.Headers)
-                            {
-                                context.Response.Headers.Add(h.Key, h.Value.ToArray());
-                            }
-                            await content.CopyToAsync(context.Response.Body).ConfigureAwait(false);
+                            await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
                         }
                         else
                         {
