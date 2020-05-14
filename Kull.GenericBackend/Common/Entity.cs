@@ -34,6 +34,7 @@ namespace Kull.GenericBackend.Common
         /// </summary>
         public string? Tag { get; }
 
+        private IDictionary<string, object?> restParameters;
 
         /// <summary>
         /// Gets the name and the type of a {} Template
@@ -80,17 +81,28 @@ namespace Kull.GenericBackend.Common
         }
 
         public Entity(string urlTemplate, IDictionary<OperationType, Method> methods)
-            : this(urlTemplate, methods, null)
+            : this(urlTemplate, methods, null, null)
         {
 
         }
 
-        internal Entity(string urlTemplate, IDictionary<OperationType, Method> methods, string? tag)
+        internal Entity(string urlTemplate, IDictionary<OperationType, Method> methods, string? tag,
+                IDictionary<string, object?>? restParameters)
         {
             UrlParts = urlTemplate.Replace("|", ":").Split('/').Select(s => s.Trim()).ToArray();
             Methods = methods;
             Tag = tag;
+            this.restParameters = restParameters ?? new Dictionary<string, object?>();
         }
+
+        /// <summary>
+        /// Use for extension to get additional config values not in this object
+        /// Returns null if not found
+        /// </summary>
+        /// <typeparam name="T">The expected type</typeparam>
+        /// <param name="name">The name of the parameter</param>
+        /// <returns></returns>
+        public T GetAdditionalConfigValue<T>(string name) => restParameters.GetValue<T>(name);
 
         public Method GetMethod(string httpMethod)
         {
@@ -107,7 +119,8 @@ namespace Kull.GenericBackend.Common
             return new Entity(key, childConfig.Where(c => !c.Key.Equals("Config", StringComparison.CurrentCultureIgnoreCase))
                     .Select(s => Method.GetFromConfig(s.Key, s.Value!))
                     .ToDictionary(s => s.HttpMethod, s => s),
-                    childConfig.GetValue<IDictionary<string, object?>>("Config")?.GetValue<string>("Tag")
+                    childConfig.GetValue<IDictionary<string, object?>>("Config")?.GetValue<string>("Tag"),
+                    childConfig
                     );
         }
 
