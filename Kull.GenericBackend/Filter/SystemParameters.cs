@@ -8,6 +8,11 @@ namespace Kull.GenericBackend.Filter
 {
     public class SystemParameters: IParameterInterceptor
     {
+        /// <summary>
+        /// Set this if you want to use always the same user while debugging
+        /// </summary>
+        public static string DebugUsername = "KULL\\Ehrsam";
+
         private Dictionary<string, Func<HttpContext, object?>> getFns = new Dictionary<string, Func<HttpContext, object?>>(
             StringComparer.CurrentCultureIgnoreCase)
         {
@@ -24,7 +29,7 @@ namespace Kull.GenericBackend.Filter
 #if DEBUG
             if (System.Diagnostics.Debugger.IsAttached)
             {
-                return "KULL\\Ehrsam";
+                return DebugUsername;
             }
 #endif
             return context.User.Identity.Name;
@@ -35,22 +40,35 @@ namespace Kull.GenericBackend.Filter
             return getFns.Keys.ToArray();
         }
 
-        public object? GetValue(string key, HttpContext context)
+        protected object? GetValue(string key, HttpContext context)
         {
             return getFns[key](context);
         }
 
-        internal bool IsSystemParameter(string parameterName)
+        protected bool IsSystemParameter(string parameterName)
         {
             return getFns.ContainsKey(parameterName);
         }
 
+        /// <summary>
+        /// Add a custom system paramters
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="valueAccessor"></param>
         public void AddSystemParameter(string name, Func<HttpContext, object> valueAccessor)
         {
             this.getFns.Add(name, valueAccessor);
         }
 
-        public void Intercept(ICollection<Parameters.WebApiParameter> apiParams, ParameterInterceptorContext parameterInterceptorContext)
+        /// <summary>
+        /// Remove all current system parameters
+        /// </summary>
+        public void Clear()
+        {
+            this.getFns.Clear();
+        }
+
+        void IParameterInterceptor.Intercept(ICollection<Parameters.WebApiParameter> apiParams, ParameterInterceptorContext parameterInterceptorContext)
         {
             List<Parameters.WebApiParameter> toRemove = new List<Parameters.WebApiParameter>();
             List<Parameters.WebApiParameter> toAdd = new List<Parameters.WebApiParameter>();
