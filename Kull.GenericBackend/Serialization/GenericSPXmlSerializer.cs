@@ -143,27 +143,29 @@ namespace Kull.GenericBackend.Serialization
             }
             catch (Exception err)
             {
-                logger.LogWarning(err, $"Error executing {serializationContext}");
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
-                    if (hand.CanHandle(err))
+                    var result = hand.GetContent(err, o =>
                     {
-                        (int status, object? content) = hand.GetContent(err);
+                        var ser = new System.Xml.Serialization.XmlSerializer(o.GetType());
+                        string xml;
+                        using (var strW = new System.IO.StringWriter())
+                        {
+                            ser.Serialize(strW, o);
+                            xml = strW.ToString();
+                        }
+                        var content = new System.Net.Http.StringContent(xml);
+                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/xml");
+                        return content;
+                    });
+                    if (result != null)
+                    {
+                        (var status, var content) = result.Value;
                         if (!context.Response.HasStarted)
                         {
                             await PrepareHeader(context, method, ent, status);
-                            if (content != null)
-                            {
-                                var ser = new System.Xml.Serialization.XmlSerializer(content.GetType());
-                                string xml;
-                                using (var strW = new System.IO.StringWriter())
-                                {
-                                    ser.Serialize(strW, content);
-                                    xml = strW.ToString();
-                                }
-                                await context.Response.WriteAsync(xml);
-                            }
+                            await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
                         }
                         else
                         {
@@ -172,6 +174,7 @@ namespace Kull.GenericBackend.Serialization
                         handled = true;
                         break;
                     }
+
                 }
                 if (!handled)
                     throw;

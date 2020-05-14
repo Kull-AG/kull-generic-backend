@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Routing;
 using IRouteBuilder = Microsoft.AspNetCore.Routing.IEndpointRouteBuilder;
 #endif
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,22 +36,22 @@ namespace Kull.GenericBackend
         {
             services.AddRouting();
             services.AddKullDatabaseMetadata();
-            services.AddSingleton<Model.NamingMappingHandler>();
-            services.AddSingleton<SwaggerGeneration.CodeConvention>();
-            services.AddSingleton<Config.ConfigProvider>();
-            services.AddTransient<ParameterProvider>();
-            services.AddSingleton<GenericSP.MiddlewareRegistration>();
+            services.TryAddSingleton<Model.NamingMappingHandler>();
+            services.TryAddSingleton<SwaggerGeneration.CodeConvention>();
+            services.TryAddSingleton<Config.ConfigProvider>();
+            services.TryAddTransient<ParameterProvider>();
+            services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
 
-            services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
-            services.AddTransient<SerializerResolver, SerializerResolver>();
-            services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
-            services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
+            services.TryAddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
+            services.TryAddTransient<SerializerResolver, SerializerResolver>();
+            services.TryAddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
+            services.TryAddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
             GenericSP.SPMiddlewareOptions? options = null;
             SwaggerFromSPOptions? swaggerFromSPOptions = null;
             var opts = options ??
                     new GenericSP.SPMiddlewareOptions();
-            services.AddSingleton(opts);
-            services.AddSingleton(swaggerFromSPOptions ?? new SwaggerGeneration.SwaggerFromSPOptions());
+            services.TryAddSingleton(opts);
+            services.TryAddSingleton(swaggerFromSPOptions ?? new SwaggerGeneration.SwaggerFromSPOptions());
             return new GenericBackendBuilder(services);
         }
 

@@ -29,7 +29,10 @@ namespace Kull.GenericBackend.Common
 
         public string? ResultType { get; }
         public string? Tag { get; }
+        
+        public int? CommandTimeout { get; }
 
+        private IDictionary<string, object?> restParameters;
 
         public Method(OperationType httpMethod, string sp)
             : this(httpMethod, sp, null, null, null)
@@ -40,7 +43,9 @@ namespace Kull.GenericBackend.Common
         private Method(OperationType httpMethod, string sp, 
             string? operationId = null,
             string? operationName = null,
-            string? resultType = null, string? tag = null)
+            string? resultType = null, string? tag = null,
+            int? commandTimeout = null,
+            IDictionary<string, object?>? restParameters = null)
         {
             if (sp == null) throw new ArgumentNullException("sp");
             HttpMethod = httpMethod;
@@ -49,7 +54,18 @@ namespace Kull.GenericBackend.Common
             OperationName = operationName;
             ResultType = resultType;
             Tag = tag;
+            CommandTimeout = commandTimeout;
+            this.restParameters = restParameters ?? new Dictionary<string, object?>();
         }
+
+        /// <summary>
+        /// Use for extension to get additional config values not in this object
+        /// Returns null if not found
+        /// </summary>
+        /// <typeparam name="T">The expected type</typeparam>
+        /// <param name="name">The name of the parameter</param>
+        /// <returns></returns>
+        public T GetAdditionalConfigValue<T>(string name) => restParameters.GetValue<T>(name);
 
         internal static Method GetFromConfig(string key, object value)
         {
@@ -64,7 +80,9 @@ namespace Kull.GenericBackend.Common
                 childConfig.GetValue<string?>("OperationId"),
                 childConfig.GetValue<string?>("OperationName"),
                 childConfig.GetValue<string?>("ResultType"),
-                childConfig.GetValue<string?>("Tag"));
+                childConfig.GetValue<string?>("Tag"),
+                childConfig.GetValue<int?>("CommandTimeout"),
+                childConfig);
 
         }
 

@@ -22,6 +22,7 @@ namespace Kull.GenericBackend.Test
             var petSearch = provider.Entities.First(e => e.ToString().StartsWith("/Pet/search", StringComparison.CurrentCultureIgnoreCase));
             Assert.AreEqual(1,petSearch.Methods.Count) ;
             Assert.AreEqual("spSearchPets", petSearch.Methods[Microsoft.OpenApi.Models.OperationType.Get].SP);
+            Assert.AreEqual(360, petSearch.Methods[Microsoft.OpenApi.Models.OperationType.Get].CommandTimeout);
         }
     }
 }

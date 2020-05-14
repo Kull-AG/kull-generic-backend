@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.GenericSP;
+using System.Net.Http;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -200,17 +201,19 @@ namespace Kull.GenericBackend.Serialization
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
-                    if (hand.CanHandle(err))
+                    var result = hand.GetContent(err, o =>
+                    {                        string json = Newtonsoft.Json.JsonConvert.SerializeObject(o);
+                        var content = new System.Net.Http.StringContent(json);
+                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                        return content;
+                    });
+                    if (result != null)
                     {
-                        (int status, object? content) = hand.GetContent(err);
+                        (var status, var content) = result.Value;
                         if (!context.Response.HasStarted)
                         {
                             await PrepareHeader(context, method, ent, status);
-                            if (content != null)
-                            {
-                                string json = Newtonsoft.Json.JsonConvert.SerializeObject(content);
-                                await context.Response.WriteAsync(json);
-                            }
+                            await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
                         }
                         else
                         {
@@ -219,11 +222,13 @@ namespace Kull.GenericBackend.Serialization
                         handled = true;
                         break;
                     }
+
                 }
                 if (!handled)
                     throw;
             }
         }
+
 
         public void ModifyResponses(OpenApiResponses responses)
         {

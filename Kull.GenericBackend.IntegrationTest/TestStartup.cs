@@ -41,6 +41,7 @@ namespace Kull.GenericBackend.IntegrationTest
             });
             if (!DbProviderFactories.TryGetFactory("System.Data.SqlClient", out var _))
                 DbProviderFactories.RegisterFactory("System.Data.SqlClient", System.Data.SqlClient.SqlClientFactory.Instance);
+            services.AddTransient<Filter.IRequestInterceptor, TestRequestInterceptor>();
             services.AddScoped(typeof(DbConnection), (s) =>
             {
                 var conf = s.GetRequiredService<IConfiguration>();

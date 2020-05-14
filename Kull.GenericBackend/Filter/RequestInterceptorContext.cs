@@ -1,12 +1,12 @@
 using Kull.GenericBackend.Common;
-using Microsoft.AspNetCore.Http;
+using System.Data.Common;
 
 namespace Kull.GenericBackend.Filter
 {
     /// <summary>
-    /// Provides information for a Parameter Interceptor
+    /// Provides information for a Request Interceptor
     /// </summary>
-    public class ParameterInterceptorContext
+    public class RequestInterceptorContext
     {
         /// <summary>
         /// The entity, representing a url
@@ -19,15 +19,15 @@ namespace Kull.GenericBackend.Filter
         public Method Method { get; }
 
         /// <summary>
-        /// True if from a request to the OpenApi Definition
+        /// The database connection that will be used for the Request/Command
         /// </summary>
-        public bool IsFromOpenApiDefinition { get; }
+        public DbConnection DbConnection { get; }
 
-        internal ParameterInterceptorContext(Entity ent, Method method, bool isFromOpenApiDefinition)
+        internal RequestInterceptorContext(Entity ent, Method method, DbConnection dbConnection)
         {
             this.Entity = ent;
             this.Method = method;
-            IsFromOpenApiDefinition = isFromOpenApiDefinition;
+            DbConnection = dbConnection;
         }
     }
 }

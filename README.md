@@ -3,6 +3,8 @@
 This package allows Integration of a generic Stored Procedure-based Backend to Asp.Net MVC Core
 It uses Swashbuckle, Version 5+
 
+Nearly everything can be customized. It's designed to be extensible.
+
 ## Installation
 
 [![NuGet Badge](https://buildstats.info/nuget/Kull.GenericBackend?includePreReleases=true)](https://www.nuget.org/packages/Kull.GenericBackend/)
@@ -74,10 +76,11 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 
 }
 ```
-In appsettings.json, set the URI's:
+In a File called backendconfig.json, set the URI's:
 
 ```json
 {
+   "$schema": "https://raw.githubusercontent.com/Kull-AG/kull-generic-backend/master/backendconfig.schema.json",
    "Entities": {
         "Cases": {
             "Get": "api.spGetSomeCases"
@@ -92,6 +95,7 @@ In appsettings.json, set the URI's:
     }
 }
 ```
+You can place this in appsettings.json as well if you don't like a separate file.
 
 In the "Entities" Section, the URL's are configured. Each entry correspondends to a URL.
 Each URL can be accessed by multiple HTTP Methods. Common methods are:
@@ -146,7 +150,7 @@ For uploading a file, name the parameters of your Stored Procedure with the foll
 
 ### File Download
 
-In your appsettings.json, set the field "ResultType" to "File":
+In your Settings File (appsettings.json or backendconfig.json) set the field "ResultType" to "File":
 
 ```json
     "FileDownload": {
@@ -187,8 +191,15 @@ Built-in are the following System Parameters:
 - IPAddress: The IP Adress of the User
 - UserAgent: The UserAgent of the Browser
 
-If you would like to add something to this, you can Subclass the SystemParameters class
-and replace the default implementation by using Asp.Net Core Dependency Injection.
+If you would like to add something to this, or remove the default ones, you can do this in startup.cs:
+
+```C#
+    .AddSystemParameters(prms=>
+    {
+        prms.Clear();
+        prms.AddSystemParameter("UserClaims", c => Newtonsoft.Json.JsonConvert.SerializeObject(c.User.Claims));
+    });
+```
 
 # Error Handling 
 
@@ -197,6 +208,11 @@ If there is another exception on the server, code 500 is sent whenever possible.
 when the error occurs during execution and not right at the start, the response will be aborted
 and the status code cannot be guaranteed. In this case the result will be invalid JSON.
 
+If you want to set the status code, use throw with code 50000 + Http Status Code between 400 and 599:
+```sql
+throw 50503, 'No access to this', 1 
+```
+
 # Extension Points
 
 The whole tool is easily extensible by using the integrated Dependency Injection System of Asp.Net Core
@@ -204,10 +220,14 @@ There are two main things you can do:
 
 - Write a IParameterInterceptor, as an example see [SystemParameters.cs](Kull.GenericBackend/Filter/SystemParameters.cs). This allows you to add or remove parameters
 - Write a IGenericSPSerializer, as an example see [GenericSPFileSerializer.cs](Kull.GenericBackend/GenericSP/GenericSPFileSerializer.cs). This allows you to make a different result.
+- Write a IRequestInterceptor, as an example see [IRequestInterceptor.cs](Kull.GenericBackend.IntegrationTest/TestRequestInterceptor.cs). This allows you to stop making a db call and return something else in special cases (eg for a permission check).
+- Write a IResponseExceptionHandler, see [SqlServerExceptionHandler.cs](Kull.GenericBackend/Error/SqlServerExceptionHandler.cs). Use this to handle exceptions for the client or for logging
+
+If you write an extension, it's best to do so using an Extension Method to [GenericBackendBuilder](Kull.GenericBackend/Builder/GenericBackendBuilder.cs)
 
 # Possible futher development
 
-- Direct manipulation of tables/views without Stored Procedures (while staying secure)
-- Support for other databases, eg Sqlite for Testing
+- Direct manipulation of views without Stored Procedures (while staying secure)
+- Support for other databases, eg Sqlite for Testing (Sqlite requires View support)
 - Support for multiple Result Sets,  Return Codes and Output Parameters (would be realized through a IGenericSPSerializer, see above)
-- More Unit Tests
+- Even More Unit Tests

@@ -13,7 +13,25 @@ namespace Kull.GenericBackend.Config
         {
             if (dictionary.ContainsKey(key))
             {
-                return (T)dictionary[key]!;
+                var value  = dictionary[key]!;
+                if (value == null) return default(T)!;
+                if (value is T t)
+                {
+                    return t;
+                }
+                else if (value is IConvertible c)
+                {
+                    // Required for appsettings.json where everything is a string
+                    if (typeof(T).GetGenericTypeDefinition() == typeof(Nullable<>))
+                    {
+                        return (T)c.ToType(Nullable.GetUnderlyingType(typeof(T)), null);
+                    }
+                    return (T)c.ToType(typeof(T), null);
+                }
+                else
+                {
+                    return (T)Convert.ChangeType(value, typeof(T));
+                }
             }
             return default(T)!;
         }

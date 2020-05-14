@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc.Testing;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
@@ -93,6 +94,24 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
         [Theory]
+        [InlineData("/rest/htcp")]
+        public async Task TestRequestInterceptor(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync(url);
+            var content = await response.Content.ReadAsStringAsync();
+
+            // Assert
+            Assert.Equal(418, (int)response.StatusCode);
+            Assert.Equal("text/plain",
+                response.Content.Headers.ContentType.MediaType);
+            Assert.Equal("Hey, I am a teapot", content);
+        }
+
+        [Theory]
         [InlineData("/rest/Pet?searchString=blub")]
         public async Task GetPetsXHtml(string url)
         {
@@ -173,8 +192,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
             // User Error
             Assert.InRange((int)response.StatusCode, 400, 499);
-            Assert.Equal("application/xhtml+xml",
-                response.Content.Headers.ContentType.MediaType);
+            Assert.True(response.Content.Headers.ContentType.MediaType.Contains("xml"));
 
             var resp = await response.Content.ReadAsStringAsync();
             XElement e = XElement.Parse(resp);
