@@ -7,7 +7,7 @@ Nearly everything can be customized. It's designed to be extensible.
 
 ## Installation
 
-[![NuGet Badge](https://buildstats.info/nuget/Kull.GenericBackend)](https://www.nuget.org/packages/Kull.GenericBackend/)
+[![NuGet Badge](https://buildstats.info/nuget/Kull.GenericBackend?includePreReleases=true)](https://www.nuget.org/packages/Kull.GenericBackend/)
 
 It's on Nuget: https://www.nuget.org/packages/Kull.GenericBackend/
 Basically, just use:
@@ -37,7 +37,11 @@ public void ConfigureServices(IServiceCollection services)
             .AddFileSupport()
             .AddXmlSupport()
             .AddSystemParameters();
-		
+	
+	// You might have to register your Provider Factory
+	if (!DbProviderFactories.TryGetFactory("System.Data.SqlClient", out var _))
+             DbProviderFactories.RegisterFactory("System.Data.SqlClient", System.Data.SqlClient.SqlClientFactory.Instance);
+	
 		// IMPORTANT: You have to inject a DbConnection somehow
         services.AddTransient(typeof(DbConnection), (s) =>
         {
@@ -54,15 +58,17 @@ public void Configure(IApplicationBuilder app, IHostingEnvironment env)
 {
 	app.UseSwagger(o =>
     {
-		// For compat with ng-swagger-gen on client. You can use ng-openapi-gen if set to false
-        o.SerializeAsV2 = true;
+	// Depending on your client, set this to true (eg, ng-swagger-gen)
+        o.SerializeAsV2 = false;
     });
-    app.UseMvc(routeBuilder=>
+    app.UseRouting();
+    app.UseEndpoints(endpoints =>
     {
-		// The package relies on integrated routing of Asp.net MVC Core
-        app.UseGenericBackend(routeBuilder);
+	app.UseGenericBackend(endpoints);
+	endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
     });
-    // If needed, Swagger UI
+
+    // If needed, Swagger UI, see https://github.com/domaindrivendev/Swashbuckle.AspNetCore
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
