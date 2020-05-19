@@ -10,7 +10,7 @@ namespace Kull.GenericBackend.Config
 {
     public class ConfigProvider
     {
-        private List<Entity> entities;
+        private IReadOnlyList<Entity>? entities;
 #if NETSTD2
         private readonly IHostingEnvironment hostingEnvironment;
 #else
@@ -18,7 +18,9 @@ namespace Kull.GenericBackend.Config
 #endif
         private readonly IConfiguration config;
 
-        public IReadOnlyList<Entity> Entities { get { return entities; } }
+        public IReadOnlyList<Entity> Entities { get {
+                entities = entities ?? ReadConfig();
+                return entities; } }
 
         public ConfigProvider(
 #if NETSTD2
@@ -33,15 +35,20 @@ namespace Kull.GenericBackend.Config
             ReadConfig();
         }
 
-        protected virtual void ReadConfig()
+        protected virtual List<Entity> ReadConfig()
         {
-            var configFile = System.IO.Path.Combine(hostingEnvironment?.WebRootPath ?? "", "backendconfig.json");
-            object configObj = System.IO.File.Exists(configFile) ?
+            var configFile = System.IO.Path.Combine(hostingEnvironment?.ContentRootPath ?? "", "backendconfig.json");
+            bool useConfigFile = System.IO.File.Exists(configFile);
+            object configObj =  useConfigFile ?
                 (object)ReadJsonFromFile(configFile) :
                 config;
             var deepCorrectConfig = (IDictionary<string, object?>)Config.DictionaryHelper.ConvertToDeepIDictionary(configObj, StringComparer.CurrentCultureIgnoreCase)!;
             var ent = (IDictionary<string, object?>)deepCorrectConfig["Entities"]!;
-            entities = ent.Select(s => Entity.GetFromConfig(s.Key, s.Value!)).ToList();
+            if(ent == null)
+            {
+                throw new InvalidOperationException("no config found");
+            }
+            return ent.Select(s => Entity.GetFromConfig(s.Key, s.Value!)).ToList();
         }
 
         private IDictionary<string, object> ReadJsonFromFile(string file)

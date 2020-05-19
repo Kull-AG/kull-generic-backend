@@ -24,7 +24,7 @@ namespace Kull.GenericBackend.Config
                     // Required for appsettings.json where everything is a string
                     if (typeof(T).GetGenericTypeDefinition() == typeof(Nullable<>))
                     {
-                        return (T)c.ToType(Nullable.GetUnderlyingType(typeof(T)), null);
+                        return (T)c.ToType(Nullable.GetUnderlyingType(typeof(T))!, null);
                     }
                     return (T)c.ToType(typeof(T), null);
                 }
