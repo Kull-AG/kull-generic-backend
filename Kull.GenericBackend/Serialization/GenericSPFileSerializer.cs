@@ -1,15 +1,17 @@
 using Kull.Data;
+
+#if NET47
+using System.Web;
+using Kull.MvcCompat;
+using System.Net.Http.Headers;
+#else
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-#if NETSTD2
-using Newtonsoft.Json;
-#else 
-using System.Text.Json;
+using Microsoft.Net.Http.Headers;
 #endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
@@ -28,7 +30,7 @@ namespace Kull.GenericBackend.Serialization
         protected string FileNameColumn { get; } = "FileName";
 
         public bool SupportsResultType(string resultType) => resultType == "file";
-        public int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+        public int? GetSerializerPriority(IEnumerable<MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
         {
@@ -37,11 +39,11 @@ namespace Kull.GenericBackend.Serialization
         }
 
 
-        private readonly ILogger logger;
+        private readonly ILogger<GenericSPFileSerializer> logger;
         private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
 
         public GenericSPFileSerializer(
-                ILogger<GenericSPJsonSerializer> logger,
+                ILogger<GenericSPFileSerializer> logger,
                 IEnumerable<Error.IResponseExceptionHandler> errorHandlers)
         {
             this.logger = logger;
@@ -80,7 +82,11 @@ namespace Kull.GenericBackend.Serialization
         {
             // Thanks, https://stackoverflow.com/questions/93551/how-to-encode-the-filename-parameter-of-content-disposition-header-in-http
             string contentDisposition;
+#if NETFX
+            string userAgent = context.Request.Headers["User-Agent"];
+#else
             string userAgent = context.Request.Headers["User-Agent"].FirstOrDefault();
+#endif
             if (userAgent != null && userAgent.ToLowerInvariant().Contains("android")) // android built-in download manager (all browsers on android)
                 contentDisposition = "attachment; filename=\"" + MakeAndroidSafeFileName(fileName) + "\"";
             else
@@ -128,7 +134,11 @@ namespace Kull.GenericBackend.Serialization
                     string contentType = rdr.GetNString(ContentTypeColumn) ?? DefaultContentType;
 
                     await PrepareHeader(context, method, ent, 200, contentType, fileName);
+#if NETFX
+                    await context.Response.OutputStream.WriteAsync(content, 0, content.Length);
+#else
                     await context.Response.Body.WriteAsync(content, 0, content.Length);
+#endif
                 }
 
             }
@@ -147,7 +157,11 @@ namespace Kull.GenericBackend.Serialization
                     if (result != null)
                     {
                         (var status, var content) = result.Value;
+#if NETFX
+                        if (!context.Response.HeadersWritten)
+#else
                         if (!context.Response.HasStarted)
+#endif
                         {
                             await PrepareHeader(context, method, ent, status, "application/json", null);
                             await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);

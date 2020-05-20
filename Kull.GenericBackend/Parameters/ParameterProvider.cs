@@ -1,10 +1,7 @@
-using Kull.Data;
 using Kull.DatabaseMetadata;
-using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using System.Text;
 
 namespace Kull.GenericBackend.Parameters
 {

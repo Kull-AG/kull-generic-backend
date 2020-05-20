@@ -1,12 +1,7 @@
 using Kull.GenericBackend.Config;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Kull.GenericBackend.Common
 {

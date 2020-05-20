@@ -1,8 +1,12 @@
 using Kull.GenericBackend.Common;
-using Microsoft.AspNetCore.Http;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+#if NET47
+using System.Net.Http.Headers;
+#else
+using Microsoft.Net.Http.Headers;
+#endif
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -25,7 +29,7 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="entity">The entity of the request</param>
         /// <param name="method">The method of the request</param>
         /// <returns></returns>
-        int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+        int? GetSerializerPriority(IEnumerable<MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method);
 

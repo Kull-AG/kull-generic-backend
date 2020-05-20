@@ -1,8 +1,9 @@
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
+#endif
 using System.Net.Http;
-using System.Text;
 
 namespace Kull.GenericBackend.Filter
 {

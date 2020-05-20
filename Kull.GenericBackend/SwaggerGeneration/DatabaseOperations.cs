@@ -1,27 +1,38 @@
 using Kull.GenericBackend.GenericSP;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Data.Common;
-using Kull.Data;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Logging;
 using Kull.GenericBackend.Model;
 using Kull.DatabaseMetadata;
-using Microsoft.Net.Http.Headers;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.Serialization;
 using Kull.GenericBackend.Parameters;
 using Microsoft.OpenApi.Extensions;
-using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Any;
 using Kull.GenericBackend.Config;
+#if NETFX
+using Swashbuckle.Swagger;
+using Kull.MvcCompat;
+using System.Web.Http.Description;
+#else 
+using Swashbuckle.AspNetCore.SwaggerGen;
+using Microsoft.Extensions.Logging;
+#endif
 
 namespace Kull.GenericBackend.SwaggerGeneration
 {
+#if NET47
+    public class DatabaseOperationWrap : IDocumentFilter
+    {
+        public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
+        {
+            IDocumentFilter realFilter = (IDocumentFilter) System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IDocumentFilter));
+            realFilter.Apply(swaggerDoc, schemaRegistry, apiExplorer);
+        }
+    }
+#endif
+
     /// <summary>
     /// The filter for swashbuckle that applies the Infos from the SP's
     /// </summary>
@@ -31,7 +42,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly SPMiddlewareOptions sPMiddlewareOptions;
         private readonly SwaggerFromSPOptions options;
         private readonly SqlHelper sqlHelper;
-        private readonly ILogger logger;
+        private readonly ILogger<DatabaseOperations> logger;
         private readonly SerializerResolver serializerResolver;
         private readonly DbConnection dbConnection;
         private readonly ParameterProvider parametersProvider;
@@ -62,6 +73,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
             entities = configProvider.Entities;
         }
 
+#if NET47
+        public class DocumentFilterContext { }
+#endif
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
@@ -298,5 +312,24 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
         }
 
+#if NET47
+        public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
+        {
+            var doc = new OpenApiDocument();
+            Apply(doc, new DocumentFilterContext());
+            var strW = new System.IO.StringWriter();
+            doc.SerializeAsV2(new Microsoft.OpenApi.Writers.OpenApiJsonWriter(strW));
+            string json = strW.ToString();
+            var docOld = Newtonsoft.Json.JsonConvert.DeserializeObject<SwaggerDocument>(json);
+            foreach (var p in docOld.paths)
+            {
+                swaggerDoc.paths.Add(p.Key, p.Value);
+            }
+            foreach(var p in docOld.definitions)
+            {
+                swaggerDoc.definitions.Add(p.Key, p.Value);
+            }
+        }
+#endif
     }
 }

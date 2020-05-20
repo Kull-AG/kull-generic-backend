@@ -225,6 +225,10 @@ There are two main things you can do:
 
 If you write an extension, it's best to do so using an Extension Method to [GenericBackendBuilder](Kull.GenericBackend/Builder/GenericBackendBuilder.cs)
 
+# .Net 4.7
+
+It's compiling, but not really tested. It uses Unity as Depencency Injection Framework which has to be configured therefore
+
 # Possible futher development
 
 - Direct manipulation of views without Stored Procedures (while staying secure)

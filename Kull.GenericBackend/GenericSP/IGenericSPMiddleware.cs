@@ -1,5 +1,9 @@
 using Kull.GenericBackend.Common;
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
+#endif
 using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.GenericSP

@@ -1,7 +1,9 @@
 using System;
-using System.Collections.Generic;
-using System.Text;
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
+#endif
 using Microsoft.OpenApi.Models;
 
 namespace Kull.GenericBackend.Parameters

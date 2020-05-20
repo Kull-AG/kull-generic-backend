@@ -1,8 +1,12 @@
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
+#endif
 using Microsoft.OpenApi.Models;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Configuration;
 
 namespace Kull.GenericBackend.Parameters
 {
@@ -80,10 +84,18 @@ namespace Kull.GenericBackend.Parameters
         public override object? GetValue(HttpContext http, object? valueProvided)
         {
             var allPrms = (Dictionary<string, object>)valueProvided!;
+#if NETFX
+            var file = (HttpPostedFileBase)allPrms[this.fileFieldName];
+#else
             var file = (IFormFile)allPrms[this.fileFieldName];
-            if(this.SqlName!.EndsWith("_Content", StringComparison.CurrentCultureIgnoreCase))
+#endif
+            if (this.SqlName!.EndsWith("_Content", StringComparison.CurrentCultureIgnoreCase))
             {
+#if NETFX
+                using var str = file.InputStream;
+#else
                 using var str = file.OpenReadStream();
+#endif
                 return GetByteFromStream(str);
             }
             if (this.SqlName!.EndsWith("_ContentType", StringComparison.CurrentCultureIgnoreCase))
@@ -92,7 +104,11 @@ namespace Kull.GenericBackend.Parameters
             }
             if (this.SqlName!.EndsWith("_Length", StringComparison.CurrentCultureIgnoreCase))
             {
+#if NETFX
+                return file.ContentLength;
+#else
                 return file.Length;
+#endif
             }
             if (this.SqlName!.EndsWith("_FileName", StringComparison.CurrentCultureIgnoreCase))
             {
@@ -101,7 +117,11 @@ namespace Kull.GenericBackend.Parameters
             if (this.SqlName!.EndsWith("_Headers", StringComparison.CurrentCultureIgnoreCase))
             {
                 // Untested
+#if NETFX
+                return null;
+#else
                 return Newtonsoft.Json.JsonConvert.SerializeObject(file.Headers);
+#endif
             }
             throw new NotSupportedException("Not supported");
         }

@@ -1,8 +1,10 @@
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
+#endif
 using Microsoft.OpenApi.Models;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Kull.GenericBackend.Parameters
 {

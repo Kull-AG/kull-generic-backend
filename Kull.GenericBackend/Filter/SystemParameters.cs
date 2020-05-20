@@ -1,5 +1,8 @@
-using Kull.GenericBackend.SwaggerGeneration;
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +21,11 @@ namespace Kull.GenericBackend.Filter
         {
             { "NTLogin", s=> GetUserName(s) },
             { "ADLogin", s=> GetUserName(s) },
+#if NETFX
+            { "IPAddress", c=>c.Request.ServerVariables["REMOTE_ADDR"] ?? "No ip"},
+#else
             { "IPAddress", c=>c.Connection?.RemoteIpAddress?.ToString() ?? "No ip"},
+#endif
             { "UserAgent", c=>c.Request.Headers["User-Agent"].ToString() }
         };
 

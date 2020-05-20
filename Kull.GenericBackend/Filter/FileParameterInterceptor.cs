@@ -1,8 +1,6 @@
-using Kull.GenericBackend.SwaggerGeneration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Kull.GenericBackend.Filter
 {

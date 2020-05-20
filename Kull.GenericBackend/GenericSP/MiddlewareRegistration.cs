@@ -1,18 +1,18 @@
-#if NETSTD2
+#if NETFX
+using System.Web.Routing;
+using Unity;
+#elif NETSTD2
 using Microsoft.AspNetCore.Routing;
 #else 
 using Microsoft.AspNetCore.Builder;
 using IRouteBuilder = Microsoft.AspNetCore.Routing.IEndpointRouteBuilder;
 #endif
-using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Kull.GenericBackend.Common;
 using Microsoft.OpenApi.Models;
-using Newtonsoft.Json.Linq;
 using Kull.GenericBackend.Config;
+using System.Web;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -25,9 +25,42 @@ namespace Kull.GenericBackend.GenericSP
         {
             entities = configProvider.Entities;
         }
-        
 
-        /// <summary>
+#if NET47
+        class RouteHandlerWrap : IRouteHandler, IHttpHandler
+        {
+            Entity entity;
+            public RouteHandlerWrap(Entity entity)
+            {
+                this.entity = entity;
+            }
+            public bool IsReusable => false;
+
+            public IHttpHandler GetHttpHandler(RequestContext requestContext)
+            {
+                return this;
+            }
+
+            public void ProcessRequest(HttpContext context)
+            {
+                var srv = (IGenericSPMiddleware)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IGenericSPMiddleware));
+                srv.HandleRequest(context, this.entity);
+            }
+        }
+        protected internal void RegisterMiddleware(SPMiddlewareOptions options,
+                RouteCollection routeBuilder)
+        {
+            this.options = options;
+
+            foreach (var ent in entities)
+            {
+                routeBuilder.Add(ent.ToString(),
+                    new Route(GetUrlForMvcRouting(ent), new RouteHandlerWrap(ent)));
+
+            }
+        }
+#else
+/// <summary>
         /// Registers the actual middlware
         /// </summary>
         /// <param name="options">The options</param>
@@ -81,6 +114,8 @@ namespace Kull.GenericBackend.GenericSP
                 }
             }
         }
+#endif
+
 
 
         private string GetUrlForMvcRouting(Entity ent)

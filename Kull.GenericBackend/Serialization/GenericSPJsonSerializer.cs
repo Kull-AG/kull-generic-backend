@@ -1,6 +1,14 @@
+
+#if NET47
+using Kull.MvcCompat;
+using System.Web;
+using System.Net.Http.Headers;
+#else
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-#if NETSTD2
+using Microsoft.Net.Http.Headers;
+#endif
+#if NETSTD2 || NETFX
 using Newtonsoft.Json;
 #else 
 using System.Text.Json;
@@ -8,12 +16,10 @@ using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.GenericSP;
-using System.Net.Http;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -23,7 +29,7 @@ namespace Kull.GenericBackend.Serialization
     public class GenericSPJsonSerializer : IGenericSPSerializer
     {
         public bool SupportsResultType(string resultType) => resultType == "json";
-        public int? GetSerializerPriority(IEnumerable<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> contentTypes,
+        public int? GetSerializerPriority(IEnumerable<MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
         {
@@ -34,7 +40,7 @@ namespace Kull.GenericBackend.Serialization
 
         private readonly Model.NamingMappingHandler namingMappingHandler;
         private readonly SPMiddlewareOptions options;
-        private readonly ILogger logger;
+        private readonly ILogger<GenericSPJsonSerializer> logger;
         private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
 
         public GenericSPJsonSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
@@ -88,8 +94,10 @@ namespace Kull.GenericBackend.Serialization
                 {
                     bool firstRead = rdr.Read();
                     await PrepareHeader(context, method, ent, 200);
-#if NETSTD2
+#if NETSTD2 
                     using (var jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, options.Encoding)))
+#elif NETFX 
+                    using (var jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.OutputStream, options.Encoding)))
 #else
                     await using (var jsonWriter = new Utf8JsonWriter(context.Response.Body))
 #endif
@@ -107,7 +115,7 @@ namespace Kull.GenericBackend.Serialization
                                 types[i] = nnType;
                         }
                         fieldNames = namingMappingHandler.GetNames(fieldNames).ToArray();
-#if !NETSTD2
+#if !NETSTD2 && !NETFX
                         var fieldNamesToUse = fieldNames.Select(f => JsonEncodedText.Encode(f)).ToArray();
 #else
                         var fieldNamesToUse = fieldNames;
@@ -119,7 +127,7 @@ namespace Kull.GenericBackend.Serialization
                             jsonWriter.WriteStartObject();
                             for (int p = 0; p < fieldNamesToUse.Length; p++)
                             {
-#if NETSTD2
+#if NETSTD2 || NETFX
                                 jsonWriter.WritePropertyName(fieldNamesToUse[p]);
                                 var vl = rdr.GetValue(p);
                                 jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
@@ -197,7 +205,11 @@ namespace Kull.GenericBackend.Serialization
             }
             catch (Exception err)
             {
+#if NETFX
+                logger.LogWarning($"Error executing {serializationContext} {err}");
+#else
                 logger.LogWarning(err, $"Error executing {serializationContext}");
+#endif
                 bool handled = false;
                 foreach (var hand in errorHandlers)
                 {
@@ -210,7 +222,11 @@ namespace Kull.GenericBackend.Serialization
                     if (result != null)
                     {
                         (var status, var content) = result.Value;
+#if NETFX
+                        if (!context.Response.HeadersWritten)
+#else
                         if (!context.Response.HasStarted)
+#endif
                         {
                             await PrepareHeader(context, method, ent, status);
                             await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);

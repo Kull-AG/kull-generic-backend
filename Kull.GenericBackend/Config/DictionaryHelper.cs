@@ -1,9 +1,10 @@
+#if !NETFX
 using Microsoft.Extensions.Configuration;
+#endif
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace Kull.GenericBackend.Config
 {
@@ -72,6 +73,7 @@ namespace Kull.GenericBackend.Config
             {
                 return dict.ToDictionary(o => o.Key, o => ConvertToDeepIDictionary(o.Value, stringComparer), stringComparer);
             }
+#if !NETFX
             if (input is ConfigurationRoot config)
             {
                 return new Dictionary<string, object?>(){
@@ -87,6 +89,7 @@ namespace Kull.GenericBackend.Config
                 // It's an object
                 return children.ToDictionary(o => o.Key, o => ConvertToDeepIDictionary(o, stringComparer), stringComparer);
             }
+#endif
             return input;
         }
     }

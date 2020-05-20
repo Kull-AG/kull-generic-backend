@@ -1,9 +1,10 @@
 using Kull.GenericBackend.Common;
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
+#endif
 using System.Data.Common;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.Serialization
@@ -37,9 +38,14 @@ namespace Kull.GenericBackend.Serialization
             Entity = entity;
         }
 
+#if NET47
+        public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync();
+        public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync();
+
+#else
         public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync(HttpContext.RequestAborted);
         public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync(HttpContext.RequestAborted);
-
+#endif
         public override string ToString()
         {
             return Method.HttpMethod.ToString() + " " + Entity.ToString() + ": " + Method.SP;

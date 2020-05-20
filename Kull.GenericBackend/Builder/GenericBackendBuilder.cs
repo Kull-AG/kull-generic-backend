@@ -1,12 +1,17 @@
 using Kull.GenericBackend.Serialization;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using Microsoft.Extensions.DependencyInjection;
 using Kull.GenericBackend.SwaggerGeneration;
 using System.Linq;
 using Kull.GenericBackend.GenericSP;
+#if NETFX
+using IServiceCollection = Unity.IUnityContainer;
+using Unity;
+using Kull.MvcCompat;
+#else 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+
+#endif
 
 namespace Kull.GenericBackend
 {
@@ -25,7 +30,7 @@ namespace Kull.GenericBackend
 
         public void AddSerializer<T>(Func<IServiceProvider, T> func) where T : class, IGenericSPSerializer
         {
-            services.AddTransient<IGenericSPSerializer, T>(func);
+            services.AddTransient<IGenericSPSerializer>(func);
         }
 
         public void AddParameterInterceptor<T>() where T : class, Filter.IParameterInterceptor
@@ -35,7 +40,7 @@ namespace Kull.GenericBackend
 
         public void AddParameterInterceptor<T>(Func<IServiceProvider, T> func) where T : class, Filter.IParameterInterceptor
         {
-            services.AddSingleton<Filter.IParameterInterceptor, T>(func);
+            services.AddSingleton<Filter.IParameterInterceptor>(func);
         }
 
         public void AddRequestInterceptor<T>() where T : class, Filter.IRequestInterceptor
@@ -45,7 +50,7 @@ namespace Kull.GenericBackend
 
         public void AddRequestInterceptor<T>(Func<IServiceProvider, T> func) where T : class, Filter.IRequestInterceptor
         {
-            services.AddSingleton<Filter.IRequestInterceptor, T>(func);
+            services.AddSingleton<Filter.IRequestInterceptor>(func);
         }
 
 
@@ -81,8 +86,13 @@ namespace Kull.GenericBackend
         /// <returns></returns>
         public GenericBackendBuilder ConfigureMiddleware(Action<SPMiddlewareOptions> configure)
         {
+#if NETFX
+            SPMiddlewareOptions opts = (SPMiddlewareOptions)services.Resolve(typeof(SPMiddlewareOptions));
+            configure(opts);
+#else 
             SPMiddlewareOptions opts = (SPMiddlewareOptions) services.First(s => s.ServiceType == typeof(SPMiddlewareOptions)).ImplementationInstance;
             configure(opts);
+#endif
             return this;
         }
 
@@ -93,8 +103,13 @@ namespace Kull.GenericBackend
         /// <returns></returns>
         public GenericBackendBuilder ConfigureOpenApiGeneration(Action<SwaggerFromSPOptions> configure)
         {
+#if NETFX
+            SwaggerFromSPOptions opts = (SwaggerFromSPOptions)services.Resolve(typeof(SwaggerFromSPOptions));
+            configure(opts);
+#else
             SwaggerFromSPOptions opts = (SwaggerFromSPOptions)services.First(s => s.ServiceType == typeof(SwaggerFromSPOptions)).ImplementationInstance;
             configure(opts);
+#endif
             return this;
         }
     }

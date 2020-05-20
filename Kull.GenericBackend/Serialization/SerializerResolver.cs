@@ -1,15 +1,18 @@
 using Kull.GenericBackend.Common;
-using System;
 using System.Collections.Generic;
-using System.Text;
+#if NET47
+using System.Net.Http.Headers;
+#else
+using Microsoft.Net.Http.Headers;
+#endif
 
 namespace Kull.GenericBackend.Serialization
 {
     public sealed class SerializerResolver
     {
         private readonly IEnumerable<IGenericSPSerializer> serializers;
-        private readonly IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue> defaultAccept = new List<Microsoft.Net.Http.Headers.MediaTypeHeaderValue>() {
-                     new Microsoft.Net.Http.Headers.MediaTypeHeaderValue("application/json")
+        private readonly IList<MediaTypeHeaderValue> defaultAccept = new List<MediaTypeHeaderValue>() {
+                     new MediaTypeHeaderValue("application/json")
                      };
 
         public SerializerResolver(
@@ -18,7 +21,7 @@ namespace Kull.GenericBackend.Serialization
             this.serializers = serializers;
         }
 
-        public IGenericSPSerializer? GetSerialializerOrNull(IList<Microsoft.Net.Http.Headers.MediaTypeHeaderValue>? acceptHeaders,
+        public IGenericSPSerializer? GetSerialializerOrNull(IList<MediaTypeHeaderValue>? acceptHeaders,
             Entity entity,
             Method method)
         {

@@ -1,9 +1,12 @@
 using Kull.Data;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Model;
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
+#endif
 using Microsoft.OpenApi.Models;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 

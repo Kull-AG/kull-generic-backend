@@ -1,9 +1,10 @@
+#if NET47
+using System.Web;
+#else
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
+#endif
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.Common
@@ -12,6 +13,20 @@ namespace Kull.GenericBackend.Common
     {
         internal static async Task HttpContentToResponse(HttpContent content, HttpResponse response)
         {
+#if NET47
+            foreach (var h in content.Headers)
+            {
+                if (response.Headers.AllKeys.Contains(h.Key))
+                {
+                    response.Headers[h.Key] = h.Value.Single();
+                }
+                else
+                {
+                    response.Headers.Add(h.Key, h.Value.Single());
+                }
+            }
+            await content.CopyToAsync(response.OutputStream).ConfigureAwait(false);
+#else
             foreach (var h in content.Headers)
             {
                 if (response.Headers.ContainsKey(h.Key))
@@ -24,6 +39,7 @@ namespace Kull.GenericBackend.Common
                 }
             }
             await content.CopyToAsync(response.Body).ConfigureAwait(false);
+#endif
         }
     }
 }
