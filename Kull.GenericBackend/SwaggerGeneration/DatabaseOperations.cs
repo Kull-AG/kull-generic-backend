@@ -323,7 +323,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
             var strW = new System.IO.StringWriter();
             doc.SerializeAsV2(new Microsoft.OpenApi.Writers.OpenApiJsonWriter(strW));
             string json = strW.ToString();
-            var docOld = Newtonsoft.Json.JsonConvert.DeserializeObject<SwaggerDocument>(json);
+            var settings = new Newtonsoft.Json.JsonSerializerSettings();
+            settings.MetadataPropertyHandling = Newtonsoft.Json.MetadataPropertyHandling.Ignore;
+            var docOld = Newtonsoft.Json.JsonConvert.DeserializeObject<SwaggerDocument>(json, settings);
             foreach (var p in docOld.paths)
             {
                 swaggerDoc.paths.Add(p.Key, p.Value);

@@ -55,10 +55,10 @@ namespace Kull.GenericBackend
             services.TryAddTransient<ParameterProvider>();
             services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
 
-            services.TryAddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
-            services.TryAddTransient<SerializerResolver, SerializerResolver>();
-            services.TryAddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
-            services.TryAddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
+            services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
+            services.AddTransient<SerializerResolver, SerializerResolver>();
+            services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
+            services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
             GenericSP.SPMiddlewareOptions? options = null;
             SwaggerFromSPOptions? swaggerFromSPOptions = null;
             var opts = options ??
