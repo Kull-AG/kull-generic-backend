@@ -73,14 +73,14 @@ namespace Kull.GenericBackend.GenericSP
             {
                 var shouldIntercept = interceptor.OnBeforeRequest(context, new RequestInterceptorContext(
                     ent, method, this.dbConnection));
-                if(shouldIntercept != null)
+                if (shouldIntercept != null)
                 {
                     context.Response.StatusCode = shouldIntercept.Value.statusCode;
                     return HttpHandlingUtils.HttpContentToResponse(shouldIntercept.Value.responseContent, context.Response);
                 }
             }
 #if NET47 
-            var accept = new MediaTypeHeaderValue[] { MediaTypeHeaderValue.Parse(context.Request.Headers["Accept"]) }.ToList();
+            var accept = (context.Request.Headers["Accept"] ?? "").Split(',').Select(ac => MediaTypeHeaderValue.Parse(ac)).ToList();
 #else
             var accept = context.Request.GetTypedHeaders().Accept;
 #endif
@@ -211,7 +211,7 @@ namespace Kull.GenericBackend.GenericSP
             if (method == null) throw new ArgumentNullException(nameof(method));
             if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase); }
             var cmd = con.AssureOpen().CreateSPCommand(method.SP);
-            if(method.CommandTimeout != null)
+            if (method.CommandTimeout != null)
             {
                 cmd.CommandTimeout = method.CommandTimeout.Value;
             }
