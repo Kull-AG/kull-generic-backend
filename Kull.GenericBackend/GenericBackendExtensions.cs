@@ -3,7 +3,7 @@ using Kull.GenericBackend.Parameters;
 using Kull.GenericBackend.Serialization;
 using Kull.GenericBackend.SwaggerGeneration;
 #if NETFX 
-using IServiceCollection = Unity.UnityContainer;
+using IServiceCollection = Unity.IUnityContainer;
 using Kull.MvcCompat;
 #else 
 using Microsoft.AspNetCore.Builder;
@@ -69,7 +69,7 @@ namespace Kull.GenericBackend
         }
 
 #if NETFX
-        public static void UseGenericBackend(System.Web.Routing.RouteCollection routeBuilder
+        public static void UseGenericBackend(this System.Web.Routing.RouteCollection routeBuilder
            )
         {
            
