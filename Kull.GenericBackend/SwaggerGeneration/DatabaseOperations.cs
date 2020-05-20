@@ -79,6 +79,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
         public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
+            if (swaggerDoc.Paths == null) swaggerDoc.Paths = new OpenApiPaths();
+            if (swaggerDoc.Components == null) swaggerDoc.Components = new OpenApiComponents();
+            if (swaggerDoc.Components.Schemas == null) swaggerDoc.Components.Schemas = new Dictionary<string, OpenApiSchema>();
 
             foreach (var ent in entities)
             {

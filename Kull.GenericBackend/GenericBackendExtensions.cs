@@ -65,6 +65,9 @@ namespace Kull.GenericBackend
                     new GenericSP.SPMiddlewareOptions();
             services.TryAddSingleton(opts);
             services.TryAddSingleton(swaggerFromSPOptions ?? new SwaggerGeneration.SwaggerFromSPOptions());
+#if NETFX
+            services.AddTransient<Swashbuckle.Swagger.IDocumentFilter, DatabaseOperations>();
+#endif
             return new GenericBackendBuilder(services);
         }
 
@@ -72,9 +75,9 @@ namespace Kull.GenericBackend
         public static void UseGenericBackend(this System.Web.Routing.RouteCollection routeBuilder
            )
         {
-           
+
             var service = (GenericSP.MiddlewareRegistration)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(GenericSP.MiddlewareRegistration));
-            var opts = (GenericSP.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(GenericSP.SPMiddlewareOptions)); 
+            var opts = (GenericSP.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(GenericSP.SPMiddlewareOptions));
             service.RegisterMiddleware(opts, routeBuilder);
         }
 #else
