@@ -49,7 +49,7 @@ namespace Kull.GenericBackend
             services.AddRouting();
 #endif
             services.AddKullDatabaseMetadata();
-            services.TryAddSingleton<Model.NamingMappingHandler>();
+            services.TryAddSingleton<Common.NamingMappingHandler>();
             services.TryAddSingleton<SwaggerGeneration.CodeConvention>();
             services.TryAddSingleton<Config.ConfigProvider>();
             services.TryAddTransient<ParameterProvider>();

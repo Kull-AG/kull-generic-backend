@@ -3,9 +3,8 @@ using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Data.Common;
-using Kull.GenericBackend.Model;
-using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Common;
+using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Serialization;
 using Kull.GenericBackend.Parameters;
 using Microsoft.OpenApi.Extensions;
@@ -205,8 +204,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
         {
             OpenApiResponses responses = new OpenApiResponses();
             OpenApiResponse response = new OpenApiResponse();
+            response.Description = $"A list of {resultTypeName}"; // Required as per spec
             response.Content.Add("application/json", new OpenApiMediaType()
             {
+                
                 Schema =
                     new OpenApiSchema()
                     {

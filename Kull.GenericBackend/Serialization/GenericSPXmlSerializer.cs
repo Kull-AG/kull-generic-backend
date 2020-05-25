@@ -33,12 +33,12 @@ namespace Kull.GenericBackend.Serialization
         }
 
 
-        private readonly Model.NamingMappingHandler namingMappingHandler;
+        private readonly Common.NamingMappingHandler namingMappingHandler;
         private readonly SPMiddlewareOptions options;
         private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
         private readonly ILogger<GenericSPXmlSerializer> logger;
 
-        public GenericSPXmlSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+        public GenericSPXmlSerializer(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
                 IEnumerable<Error.IResponseExceptionHandler> errorHandlers,
                 ILogger<GenericSPXmlSerializer> logger)
         {

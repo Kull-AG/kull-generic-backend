@@ -1,7 +1,8 @@
-﻿using Newtonsoft.Json.Serialization;
+using Kull.GenericBackend.GenericSP;
+using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
 
-namespace Kull.GenericBackend.Model
+namespace Kull.GenericBackend.Common
 {
     /// <summary>
     /// A class for handling the mapping between SQL Server Naming Convention and REST Naming Convention (Camel Case)
@@ -9,14 +10,20 @@ namespace Kull.GenericBackend.Model
     /// </summary>
     public class NamingMappingHandler
     {
+        private readonly SPMiddlewareOptions options;
+
+        public NamingMappingHandler(SPMiddlewareOptions options)
+        {
+            this.options = options;
+        }
+
         public IEnumerable<string> GetNames(IEnumerable<string> dt)
         {
-            CamelCaseNamingStrategy strat = new CamelCaseNamingStrategy();
             var setNames = new List<string>();
             int nullCount = 0;
             foreach (var item in dt)
             {
-                string name = strat.GetPropertyName(item, false);
+                string name = options.NamingStrategy.GetPropertyName(item, false);
                 if(name == null)
                 {
                     name = "column" + (nullCount == 0 ? "" : nullCount.ToString());

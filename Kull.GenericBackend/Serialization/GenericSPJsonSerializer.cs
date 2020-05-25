@@ -38,12 +38,12 @@ namespace Kull.GenericBackend.Serialization
         }
 
 
-        private readonly Model.NamingMappingHandler namingMappingHandler;
+        private readonly Common.NamingMappingHandler namingMappingHandler;
         private readonly SPMiddlewareOptions options;
         private readonly ILogger<GenericSPJsonSerializer> logger;
         private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
 
-        public GenericSPJsonSerializer(Model.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+        public GenericSPJsonSerializer(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
                 ILogger<GenericSPJsonSerializer> logger,
                 IEnumerable<Error.IResponseExceptionHandler> errorHandlers)
         {

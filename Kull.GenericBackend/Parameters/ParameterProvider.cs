@@ -10,13 +10,13 @@ namespace Kull.GenericBackend.Parameters
         public IEnumerable<Filter.IParameterInterceptor> parameterInterceptors;
         private readonly DbConnection dbConnection;
         private readonly SPParametersProvider sPParametersProvider;
-        private readonly Model.NamingMappingHandler namingMappingHandler;
+        private readonly Common.NamingMappingHandler namingMappingHandler;
         private readonly SqlHelper sqlHelper;
 
         public ParameterProvider(IEnumerable<Filter.IParameterInterceptor> parameterInterceptors,
             DbConnection dbConnection,
             SPParametersProvider sPParametersProvider,
-            Model.NamingMappingHandler namingMappingHandler,
+            Common.NamingMappingHandler namingMappingHandler,
             SqlHelper sqlHelper)
         {
             this.parameterInterceptors = parameterInterceptors;

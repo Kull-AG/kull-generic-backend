@@ -1,6 +1,6 @@
 using Kull.Data;
 using Kull.DatabaseMetadata;
-using Kull.GenericBackend.Model;
+using Kull.GenericBackend.Common;
 #if NET47
 using System.Web;
 #else

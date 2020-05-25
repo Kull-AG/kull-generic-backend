@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Serialization;
 using System.Text;
 
 namespace Kull.GenericBackend.GenericSP
@@ -12,5 +13,10 @@ namespace Kull.GenericBackend.GenericSP
         public Encoding Encoding { get; set; } = new UTF8Encoding(false);
 
         public bool RequireAuthenticated { get; set; } = false;
+
+        /// <summary>
+        /// Naming strategy for properties etc
+        /// </summary>
+        public NamingStrategy NamingStrategy { get; set; } = new CamelCaseNamingStrategy();
     }
 }
