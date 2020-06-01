@@ -1,5 +1,6 @@
 #if NET47
-using System.Web;
+using HttpContext = System.Web.HttpContextBase;
+using Kull.MvcCompat;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
@@ -85,17 +86,13 @@ namespace Kull.GenericBackend.Parameters
         {
             var allPrms = (Dictionary<string, object>)valueProvided!;
 #if NETFX
-            var file = (HttpPostedFileBase)allPrms[this.fileFieldName];
+            var file = (System.Web.HttpPostedFileBase)allPrms[this.fileFieldName];
 #else
             var file = (IFormFile)allPrms[this.fileFieldName];
 #endif
             if (this.SqlName!.EndsWith("_Content", StringComparison.CurrentCultureIgnoreCase))
             {
-#if NETFX
-                using var str = file.InputStream;
-#else
                 using var str = file.OpenReadStream();
-#endif
                 return GetByteFromStream(str);
             }
             if (this.SqlName!.EndsWith("_ContentType", StringComparison.CurrentCultureIgnoreCase))

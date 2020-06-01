@@ -44,7 +44,7 @@ namespace Kull.GenericBackend.GenericSP
             public void ProcessRequest(HttpContext context)
             {
                 var srv = (IGenericSPMiddleware)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IGenericSPMiddleware));
-                srv.HandleRequest(context, this.entity);
+                srv.HandleRequest(new System.Web.HttpContextWrapper(context), this.entity);
             }
         }
         protected internal void RegisterMiddleware(SPMiddlewareOptions options,

@@ -1,6 +1,6 @@
 using Kull.GenericBackend.Common;
 #if NET47
-using System.Web;
+using HttpContext = System.Web.HttpContextBase;
 #else
 using Microsoft.AspNetCore.Http;
 #endif

@@ -1,7 +1,7 @@
 using Kull.Data;
 
 #if NET47
-using System.Web;
+using HttpContext = System.Web.HttpContextBase;
 using Kull.MvcCompat;
 using System.Net.Http.Headers;
 #else

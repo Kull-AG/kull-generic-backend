@@ -1,7 +1,7 @@
 
 #if NET47
 using Kull.MvcCompat;
-using System.Web;
+using HttpContext=System.Web.HttpContextBase;
 using System.Net.Http.Headers;
 #else
 using Microsoft.AspNetCore.Http;

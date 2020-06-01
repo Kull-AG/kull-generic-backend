@@ -1,5 +1,6 @@
 #if NET47
-using System.Web;
+using HttpContext = System.Web.HttpContextBase;
+using HttpResponse = System.Web.HttpResponseBase;
 #else
 using Microsoft.AspNetCore.Http;
 #endif

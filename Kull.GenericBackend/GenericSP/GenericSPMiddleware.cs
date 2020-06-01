@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 #if NET47
-using System.Web;
+using HttpContext = System.Web.HttpContextBase;
 using System.Web.Routing;
 using Kull.MvcCompat;
 #else
