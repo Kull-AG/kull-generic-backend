@@ -227,7 +227,8 @@ If you write an extension, it's best to do so using an Extension Method to [Gene
 
 # .Net 4.7
 
-It's compiling, but not really tested. It uses Unity as Depencency Injection Framework which has to be configured therefore
+It works in theory, but requires a lot of #if's and is not integration-tested.
+See [wiki](https://github.com/Kull-AG/kull-generic-backend/wiki/Usage-with-MVC-5)
 
 # Possible futher development
 
