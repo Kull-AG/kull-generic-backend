@@ -156,6 +156,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private Parameters.WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, Method method)
         {
             return parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true))
+                .inputParameters
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
         }
@@ -257,15 +258,15 @@ namespace Kull.GenericBackend.SwaggerGeneration
             operation.Responses = GetDefaultResponse(codeConvention.GetResultTypeName(method.SP));
             if (serializer != null)
                 serializer.ModifyResponses(operation.Responses);
+            var (inputParameters, outputParameters) = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true));
 
-            var props = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true))
-                                .ToArray();
-            if (operationType != OperationType.Get && props.Any(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))
+
+            if (operationType != OperationType.Get && inputParameters.Any(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))
             {
                 if (operation.RequestBody == null) operation.RequestBody = new OpenApiRequestBody();
                 operation.RequestBody.Required = true;
                 operation.RequestBody.Description = "Parameters for " + method.SP.ToString();
-                bool requireFormData = props.Any(p => p.RequiresFormData);
+                bool requireFormData = inputParameters.Any(p => p.RequiresFormData);
                 operation.RequestBody.Content.Add(requireFormData ? "multipart/form-data" : "application /json", new OpenApiMediaType()
                 {
                     Schema = new OpenApiSchema()
@@ -281,7 +282,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             if (operation.Parameters == null) operation.Parameters = new List<OpenApiParameter>();
             if (operationType == OperationType.Get)
             {
-                foreach (var item in props.Where(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))
+                foreach (var item in inputParameters.Where(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))
                 {
                     var schema = item.GetSchema();
 
@@ -299,7 +300,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 }
 
             }
-            foreach (var item in props.Where(p => p.WebApiName != null && entity.ContainsPathParameter(p.WebApiName)))
+            foreach (var item in inputParameters.Where(p => p.WebApiName != null && entity.ContainsPathParameter(p.WebApiName)))
             {
                 var schema = item.GetSchema();
                 operation.Parameters.Add(new OpenApiParameter()

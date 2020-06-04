@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Kull.GenericBackend.Parameters
 {
-    public class ParameterProvider
+    public sealed class ParameterProvider
     {
         public IEnumerable<Filter.IParameterInterceptor> parameterInterceptors;
         private readonly DbConnection dbConnection;
@@ -26,10 +26,14 @@ namespace Kull.GenericBackend.Parameters
             this.sqlHelper = sqlHelper;
         }
 
-        public WebApiParameter[] GetApiParameters(Filter.ParameterInterceptorContext context)
+
+        public (WebApiParameter[] inputParameters, OutputParameter[] outputParameters) GetApiParameters(Filter.ParameterInterceptorContext context)
         {
             var method = context.Method;
             var spParams = sPParametersProvider.GetSPParameters(method.SP, dbConnection);
+            var spPrmsNoCount = spParams.Where(p => p.ParameterDirection != System.Data.ParameterDirection.Output);
+            var prmsOutRaw = spParams.Where(p => p.ParameterDirection == System.Data.ParameterDirection.Output || p.ParameterDirection == System.Data.ParameterDirection.InputOutput);
+            var prmsOut = prmsOutRaw.Select(p => new OutputParameter(p.SqlName, p.DbType)).ToArray();
             var webApiNames = namingMappingHandler.GetNames(spParams.Select(s => s.SqlName)).ToArray();
 
             var apiParamsRaw = spParams.Select((s, index) =>
@@ -41,7 +45,7 @@ namespace Kull.GenericBackend.Parameters
             {
                 inter.Intercept(apiParams, context);
             }
-            return apiParams.ToArray();
+            return (apiParams.ToArray(), prmsOut);
         }
     }
 }

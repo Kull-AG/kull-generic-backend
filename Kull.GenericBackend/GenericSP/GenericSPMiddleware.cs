@@ -32,7 +32,6 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class GenericSPMiddleware : IGenericSPMiddleware
     {
-        private readonly SqlHelper sqlHelper;
         private readonly ParameterProvider parameterProvider;
 
         private readonly ILogger<GenericSPMiddleware> logger;
@@ -44,7 +43,6 @@ namespace Kull.GenericBackend.GenericSP
 
         public GenericSPMiddleware(
             ParameterProvider parameterProvider,
-            SqlHelper sqlHelper,
             ILogger<GenericSPMiddleware> logger,
             SerializerResolver serializerResolver,
             SPParametersProvider sPParametersProvider,
@@ -58,7 +56,6 @@ namespace Kull.GenericBackend.GenericSP
             this.dbConnection = dbConnection;
             this.requestInterceptors = requestInterceptors;
             this.parameterProvider = parameterProvider;
-            this.sqlHelper = sqlHelper;
             this.sPParametersProvider = sPParametersProvider;
         }
 
@@ -215,9 +212,9 @@ namespace Kull.GenericBackend.GenericSP
             {
                 cmd.CommandTimeout = method.CommandTimeout.Value;
             }
-            var parameters = parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false));
+            var (inputParameters, outputParameters) = parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false));
             SPParameter[]? sPParameters = null;
-            foreach (var apiPrm in parameters)
+            foreach (var apiPrm in inputParameters)
             {
                 var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */
                         :
