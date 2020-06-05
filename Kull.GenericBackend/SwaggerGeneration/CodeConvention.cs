@@ -95,6 +95,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         public virtual string GetParameterObjectName(Entity ent, Method method) =>
                  GetOperationId(ent, method) + "Parameters";
 
-        public virtual string GetResultTypeName(DBObjectName name) => name.Name + "Result";
+        public virtual string GetResultTypeName(Method method) => method.SP.Name + "Result";
+        public virtual string GetOutputObjectTypeName(Method method) => method.SP.Name + "Output";
     }
 }

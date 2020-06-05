@@ -1,5 +1,6 @@
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.SwaggerGeneration;
 #if NET47
 using Kull.MvcCompat;
 using HttpContext = System.Web.HttpContextBase;
@@ -205,8 +206,9 @@ namespace Kull.GenericBackend.Serialization
 
         public bool SupportsResultType(string resultType) => resultType == "xml";
 
-        public void ModifyResponses(OpenApiResponses responses)
+        public OpenApiResponses ModifyResponses(OpenApiResponses responses, OperationResponseContext operationResponseContext)
         {
+            return responses;
         }
     }
 }

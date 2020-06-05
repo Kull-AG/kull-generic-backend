@@ -18,5 +18,11 @@ namespace Kull.GenericBackend.GenericSP
         /// Naming strategy for properties etc
         /// </summary>
         public NamingStrategy NamingStrategy { get; set; } = new CamelCaseNamingStrategy();
+
+        /// <summary>
+        /// Set this to true to always wrap your result in an object
+        /// This prevents certain CORS Attacks for GET Requests
+        /// </summary>
+        public bool AlwaysWrapJson { get; set; } = false;
     }
 }

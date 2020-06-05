@@ -47,6 +47,7 @@ namespace Kull.GenericBackend.Serialization
         /// Hook to allow modifing the open api schema
         /// </summary>
         /// <param name="responses">The respones object</param>
-        void ModifyResponses(OpenApiResponses responses);
+        /// <param name="operationResponseContext">Some context</param>
+        OpenApiResponses ModifyResponses(OpenApiResponses responses, SwaggerGeneration.OperationResponseContext operationResponseContext);
     }
 }

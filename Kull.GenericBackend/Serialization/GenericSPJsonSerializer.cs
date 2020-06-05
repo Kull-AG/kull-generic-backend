@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.SwaggerGeneration;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -246,8 +247,9 @@ namespace Kull.GenericBackend.Serialization
         }
 
 
-        public void ModifyResponses(OpenApiResponses responses)
+        public OpenApiResponses ModifyResponses(OpenApiResponses responses, OperationResponseContext operationResponseContext)
         {
+            return responses;
         }
     }
 }

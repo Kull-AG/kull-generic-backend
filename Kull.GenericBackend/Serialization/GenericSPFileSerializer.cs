@@ -15,6 +15,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
+using Kull.GenericBackend.SwaggerGeneration;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -180,8 +181,9 @@ namespace Kull.GenericBackend.Serialization
             }
         }
 
-        public void ModifyResponses(OpenApiResponses responses)
+        public OpenApiResponses ModifyResponses(OpenApiResponses responses, OperationResponseContext context)
         {
+            // TODO: Implement Output Parameters
             responses.Remove("200");
             responses.Add("200", new OpenApiResponse()
             {
@@ -202,6 +204,7 @@ namespace Kull.GenericBackend.Serialization
                         }
                     }
             });
+            return responses;
         }
     }
 }
