@@ -54,8 +54,11 @@ namespace Kull.GenericBackend
             services.TryAddSingleton<Config.ConfigProvider>();
             services.TryAddTransient<ParameterProvider>();
             services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
-
-            services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
+#if NETFX || NETSTD
+            services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerJsonNet>();
+#else
+            services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerSTJ>();
+#endif
             services.AddTransient<SerializerResolver, SerializerResolver>();
             services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
             services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
