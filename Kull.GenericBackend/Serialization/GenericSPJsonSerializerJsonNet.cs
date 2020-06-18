@@ -20,6 +20,7 @@ using Kull.GenericBackend.SwaggerGeneration;
 using System.IO;
 using System.Data.Common;
 using Kull.GenericBackend.Error;
+using Newtonsoft.Json.Serialization;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -34,7 +35,8 @@ namespace Kull.GenericBackend.Serialization
 
         protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNames, bool firstReadDone)
         {
-            var jsonWriter = new JsonTextWriter(new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true));
+            var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
+            var jsonWriter = new JsonTextWriter(streamWriter);
 
             jsonWriter.WriteStartArray();
             if (!firstReadDone)
@@ -56,6 +58,22 @@ namespace Kull.GenericBackend.Serialization
 
             jsonWriter.WriteEndArray();
             await jsonWriter.FlushAsync();
+            await streamWriter.FlushAsync();
+        }
+
+        protected override Task WriteObject(Stream outputStream, Dictionary<string, object> objectData)
+        {
+            string json = Newtonsoft.Json.JsonConvert.SerializeObject(objectData,
+                new JsonSerializerSettings()
+                {
+                     ContractResolver = new DefaultContractResolver()
+                     {
+                         NamingStrategy = new DefaultNamingStrategy()
+                     }
+                });
+            byte[] bytes = options.Encoding.GetBytes(json);
+            outputStream.Write(bytes, 0, bytes.Length);
+            return Task.CompletedTask;
         }
     }
 

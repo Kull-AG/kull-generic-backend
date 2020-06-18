@@ -72,6 +72,23 @@ namespace Kull.GenericBackend.Serialization
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Writes an object to the given outputStream
+        /// </summary>
+        /// <param name="outputStream"></param>
+        /// <param name="objectData"></param>
+        /// <returns></returns>
+        protected abstract Task WriteObject(Stream outputStream, Dictionary<string, object> objectData);
+
+        /// <summary>
+        /// Writes a Json Array of the given Data to the underlying stream.
+        /// The method must NOT dispose the stream
+        /// </summary>
+        /// <param name="outputStream"></param>
+        /// <param name="reader"></param>
+        /// <param name="fieldNames"></param>
+        /// <param name="firstReadDone"></param>
+        /// <returns></returns>
         protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string[] fieldNames, bool firstReadDone);
 
         /// <summary>

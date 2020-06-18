@@ -118,6 +118,11 @@ namespace Kull.GenericBackend.Serialization
             jsonWriter.WriteEndArray();
             await jsonWriter.FlushAsync();
         }
+
+        protected override Task WriteObject(Stream outputStream, Dictionary<string, object> objectData)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
 #endif
