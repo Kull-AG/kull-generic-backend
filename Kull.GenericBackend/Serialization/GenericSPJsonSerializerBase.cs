@@ -72,13 +72,22 @@ namespace Kull.GenericBackend.Serialization
             return Task.CompletedTask;
         }
 
+        private void WriteOutputParameters()
+        {
+            Kull.Data.DataReader.ObjectDataReader objectData = new Data.DataReader.ObjectDataReader(
+                new 
+                );
+
+        }
+
         /// <summary>
         /// Writes an object to the given outputStream
         /// </summary>
         /// <param name="outputStream"></param>
         /// <param name="objectData"></param>
+        /// <param name="fieldNames"></param>
         /// <returns></returns>
-        protected abstract Task WriteObject(Stream outputStream, Dictionary<string, object> objectData);
+        protected abstract Task WriteObject(Stream outputStream, System.Data.IDataRecord objectData, string[] fieldNames);
 
         /// <summary>
         /// Writes a Json Array of the given Data to the underlying stream.

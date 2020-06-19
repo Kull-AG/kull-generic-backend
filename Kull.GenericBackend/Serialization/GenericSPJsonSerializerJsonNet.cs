@@ -45,14 +45,7 @@ namespace Kull.GenericBackend.Serialization
 
             do
             {
-                jsonWriter.WriteStartObject();
-                for (int p = 0; p < fieldNames.Length; p++)
-                {
-                    jsonWriter.WritePropertyName(fieldNames[p]);
-                    var vl = rdr.GetValue(p);
-                    jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
-                }
-                jsonWriter.WriteEndObject();
+                WriteSingleRow(rdr, fieldNames, jsonWriter);
             }
             while (rdr.Read());
 
@@ -61,19 +54,25 @@ namespace Kull.GenericBackend.Serialization
             await streamWriter.FlushAsync();
         }
 
-        protected override Task WriteObject(Stream outputStream, Dictionary<string, object> objectData)
+        private static void WriteSingleRow(System.Data.IDataRecord rdr, string[] fieldNames, JsonTextWriter jsonWriter)
         {
-            string json = Newtonsoft.Json.JsonConvert.SerializeObject(objectData,
-                new JsonSerializerSettings()
-                {
-                     ContractResolver = new DefaultContractResolver()
-                     {
-                         NamingStrategy = new DefaultNamingStrategy()
-                     }
-                });
-            byte[] bytes = options.Encoding.GetBytes(json);
-            outputStream.Write(bytes, 0, bytes.Length);
-            return Task.CompletedTask;
+            jsonWriter.WriteStartObject();
+            for (int p = 0; p < fieldNames.Length; p++)
+            {
+                jsonWriter.WritePropertyName(fieldNames[p]);
+                var vl = rdr.GetValue(p);
+                jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
+            }
+            jsonWriter.WriteEndObject();
+        }
+
+        protected override async Task WriteObject(Stream outputStream, System.Data.IDataRecord objectData, string[] fieldNames)
+        {
+            var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
+            var jsonWriter = new JsonTextWriter(streamWriter);
+            WriteSingleRow(objectData, fieldNames, jsonWriter);
+            await jsonWriter.FlushAsync();
+            await streamWriter.FlushAsync();
         }
     }
 
