@@ -46,6 +46,7 @@ namespace Kull.GenericBackend.Serialization
         protected readonly ILogger logger;
         protected readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
 
+
         public GenericSPJsonSerializerBase(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
                 ILogger<GenericSPJsonSerializerBase> logger,
                 IEnumerable<Error.IResponseExceptionHandler> errorHandlers)
@@ -72,12 +73,39 @@ namespace Kull.GenericBackend.Serialization
             return Task.CompletedTask;
         }
 
-        private void WriteOutputParameters()
+        private void WriteOutputParameters(Stream outputStream, IReadOnlyCollection<DbParameter> outParameters)
         {
-            Kull.Data.DataReader.ObjectDataReader objectData = new Data.DataReader.ObjectDataReader(
-                new 
-                );
+            Dictionary<string, object> outParameterValues 
+                = new Dictionary<string, object>(outParameters.Count);
+            foreach (var p in outParameters.Cast<DbParameter>())
+            {
+                outParameterValues.Add(p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName,
+                    p.Value);
 
+            }
+            Kull.Data.DataReader.ObjectDataReader objectData = new Data.DataReader.ObjectDataReader(
+                new Dictionary<string, object>[]
+                {
+                    outParameterValues
+                }
+                );
+            objectData.Read();
+            string[] fieldNames = new string[objectData.FieldCount];
+
+            // Will store the types of the fields. Nullable datatypes will map to normal types
+            for (int i = 0; i < fieldNames.Length; i++)
+            {
+                fieldNames[i] = objectData.GetName(i);
+            }
+            fieldNames = namingMappingHandler.GetNames(fieldNames).ToArray();
+            WriteObject(outputStream, objectData, fieldNames);
+
+        }
+
+        private void WriteRaw(Stream stream, string value)
+        {
+            byte[] data = options.Encoding.GetBytes(value);
+            stream.Write(data, 0, data.Length);
         }
 
         /// <summary>
@@ -113,6 +141,10 @@ namespace Kull.GenericBackend.Serialization
             var context = serializationContext.HttpContext;
             var method = serializationContext.Method;
             var ent = serializationContext.Entity;
+            var outParameters = serializationContext.GetParameters()
+                .Where(p => p.Direction == System.Data.ParameterDirection.Output || p.Direction == System.Data.ParameterDirection.InputOutput)
+                .ToArray();
+            bool wrap = options.AlwaysWrapJson || outParameters.Length > 0;
 
             try
             {
@@ -135,7 +167,37 @@ namespace Kull.GenericBackend.Serialization
 #else
                     var stream = context.Response.Body;
 #endif
-                    await WriteCurrentResultSet(stream, rdr, fieldNames, true);
+                    if (wrap)
+                    {
+                        WriteRaw(stream, "{ \"value\": \r\n");
+
+                        await WriteCurrentResultSet(stream, rdr, fieldNames, true);
+                        WriteRaw(stream, ", \"additionalValues\": [");
+                        bool first=true;
+                        while (await rdr.NextResultAsync())
+                        {
+                            if(first)
+                            {
+                                first = false;
+                            }
+                            else
+                            {
+                                WriteRaw(stream, ",");
+                            }
+                            await WriteCurrentResultSet(stream, rdr, fieldNames, true);
+                        }
+                        WriteRaw(stream, "]");
+                        if (outParameters.Length > 0)
+                        {
+                            WriteRaw(stream, ", \"out\": ");
+                            WriteOutputParameters(stream, outParameters);
+                        }
+                        WriteRaw(stream, "\r\n}");
+                    }
+                    else
+                    {
+                        await WriteCurrentResultSet(stream, rdr, fieldNames, true);
+                    }
 
                 }
 

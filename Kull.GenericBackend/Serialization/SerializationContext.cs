@@ -3,8 +3,11 @@ using Kull.GenericBackend.Common;
 using HttpContext = System.Web.HttpContextBase;
 #else
 using Microsoft.AspNetCore.Http;
+using System.Collections;
+using System.Collections.Generic;
 #endif
 using System.Data.Common;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.Serialization
@@ -45,7 +48,9 @@ namespace Kull.GenericBackend.Serialization
 #else
         public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync(HttpContext.RequestAborted);
         public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync(HttpContext.RequestAborted);
+
 #endif
+        public virtual IEnumerable<DbParameter> GetParameters() => cmd.Parameters.Cast<DbParameter>();
         public override string ToString()
         {
             return Method.HttpMethod.ToString() + " " + Entity.ToString() + ": " + Method.SP;

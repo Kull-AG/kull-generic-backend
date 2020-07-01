@@ -233,12 +233,25 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     Type = "object",
                     Properties = new Dictionary<string, OpenApiSchema>()
                    {
-                       {"result", arrayOfResult }
+                       {"value", arrayOfResult },
+                        {"additionalValues", new OpenApiSchema()
+                        {
+                            Type="array",
+                            Items = new OpenApiSchema()
+                            {
+                                Type="array",
+                                Items = new OpenApiSchema()
+                                {
+                                    Type="object",
+                                    AdditionalPropertiesAllowed=true                                    
+                                }
+                            }
+                        } }
                    }
                 };
                 if (outputObjectName != null)
                 {
-                    schema.Properties.Add("output", new OpenApiSchema()
+                    schema.Properties.Add("out", new OpenApiSchema()
                     {
                         Reference = new OpenApiReference()
                         {
