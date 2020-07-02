@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Kull.GenericBackend.IntegrationTest
 {
-    public class MiddlewareTest 
+    public class MiddlewareTest
         : IClassFixture<TestWebApplicationFactory>
     {
         private readonly TestWebApplicationFactory _factory;
@@ -26,7 +26,7 @@ namespace Kull.GenericBackend.IntegrationTest
             var client = _factory.CreateClient();
             client.DefaultRequestHeaders.Accept.Add(
                 new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
-            
+
             // Act
             var response = await client.GetAsync(url);
 
@@ -174,7 +174,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
             var resp = await response.Content.ReadAsStringAsync();
             var obj = Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(resp);
-            
+
         }
 
 
@@ -192,7 +192,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
             // User Error
             Assert.InRange((int)response.StatusCode, 400, 499);
-            Assert.True(response.Content.Headers.ContentType.MediaType.Contains("xml"));
+            Assert.Contains("xml", response.Content.Headers.ContentType.MediaType);
 
             var resp = await response.Content.ReadAsStringAsync();
             XElement e = XElement.Parse(resp);

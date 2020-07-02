@@ -29,7 +29,7 @@ namespace Kull.GenericBackend.Serialization
     /// </summary>
     public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGenericSPSerializer
     {
-        public GenericSPJsonSerializerJsonNet(NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options, ILogger<GenericSPJsonSerializerBase> logger, IEnumerable<IResponseExceptionHandler> errorHandlers) : base(namingMappingHandler, options, logger, errorHandlers)
+        public GenericSPJsonSerializerJsonNet(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 

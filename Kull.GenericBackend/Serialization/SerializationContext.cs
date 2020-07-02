@@ -4,11 +4,11 @@ using HttpContext = System.Web.HttpContextBase;
 #else
 using Microsoft.AspNetCore.Http;
 using System.Collections;
-using System.Collections.Generic;
 #endif
 using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace Kull.GenericBackend.Serialization
 {

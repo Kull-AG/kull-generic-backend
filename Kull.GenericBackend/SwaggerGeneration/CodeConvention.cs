@@ -9,6 +9,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
 {
     public class CodeConvention
     {
+        public virtual string FirstResultKey {get;} = "value";
+        public virtual string OtherResultsKey {get;} = "additionalValues";
+        public virtual string OutputParametersKey {get;} = "out";
+
         /// <summary>
         /// A string to be used for Representation in URLs or Methods
         /// Eg for /Cases/{CaseId|int}/Brand returns GetCasesBy

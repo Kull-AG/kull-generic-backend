@@ -45,16 +45,15 @@ namespace Kull.GenericBackend.Serialization
         protected readonly SPMiddlewareOptions options;
         protected readonly ILogger logger;
         protected readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
+        private readonly CodeConvention codeConvention;
 
-
-        public GenericSPJsonSerializerBase(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
-                ILogger<GenericSPJsonSerializerBase> logger,
-                IEnumerable<Error.IResponseExceptionHandler> errorHandlers)
+        public GenericSPJsonSerializerBase(IServiceProvider serviceProvider)
         {
-            this.namingMappingHandler = namingMappingHandler;
-            this.options = options;
-            this.logger = logger;
-            this.errorHandlers = errorHandlers;
+            this.namingMappingHandler = (Common.NamingMappingHandler)serviceProvider.GetService(typeof(Common.NamingMappingHandler));
+            this.options = (SPMiddlewareOptions)serviceProvider.GetService(typeof(SPMiddlewareOptions));
+            this.logger = (ILogger<GenericSPJsonSerializerBase>)serviceProvider.GetService(typeof(ILogger<GenericSPJsonSerializerBase>));
+            this.errorHandlers = (IEnumerable<Error.IResponseExceptionHandler>)serviceProvider.GetService(typeof(IEnumerable<Error.IResponseExceptionHandler>)); 
+            this.codeConvention = (CodeConvention)serviceProvider.GetService(typeof(CodeConvention));
         }
 
         /// <summary>
@@ -75,7 +74,7 @@ namespace Kull.GenericBackend.Serialization
 
         private void WriteOutputParameters(Stream outputStream, IReadOnlyCollection<DbParameter> outParameters)
         {
-            Dictionary<string, object> outParameterValues 
+            Dictionary<string, object> outParameterValues
                 = new Dictionary<string, object>(outParameters.Count);
             foreach (var p in outParameters.Cast<DbParameter>())
             {
@@ -169,16 +168,19 @@ namespace Kull.GenericBackend.Serialization
 #endif
                     if (wrap)
                     {
-                        WriteRaw(stream, "{ \"value\": \r\n");
+                        WriteRaw(stream, $"{{ \"{codeConvention.FirstResultKey}\": \r\n");
 
                         await WriteCurrentResultSet(stream, rdr, fieldNames, true);
-                        WriteRaw(stream, ", \"additionalValues\": [");
-                        bool first=true;
+
+                        bool first = true;
+                        bool hasAnyResults = false;
                         while (await rdr.NextResultAsync())
                         {
-                            if(first)
+                            if (first)
                             {
+                                WriteRaw(stream, $", \"{codeConvention.OtherResultsKey}\": [");
                                 first = false;
+                                hasAnyResults = true;
                             }
                             else
                             {
@@ -186,10 +188,13 @@ namespace Kull.GenericBackend.Serialization
                             }
                             await WriteCurrentResultSet(stream, rdr, fieldNames, true);
                         }
-                        WriteRaw(stream, "]");
+                        if (hasAnyResults)
+                        {
+                            WriteRaw(stream, "]");
+                        }
                         if (outParameters.Length > 0)
                         {
-                            WriteRaw(stream, ", \"out\": ");
+                            WriteRaw(stream, $", \"{codeConvention.OutputParametersKey}\": ");
                             WriteOutputParameters(stream, outParameters);
                         }
                         WriteRaw(stream, "\r\n}");

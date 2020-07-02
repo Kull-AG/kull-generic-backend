@@ -231,10 +231,11 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 schema = new OpenApiSchema()
                 {
                     Type = "object",
+                    Required = new HashSet<string>(new string[] { codeConvention.FirstResultKey }),
                     Properties = new Dictionary<string, OpenApiSchema>()
                    {
-                       {"value", arrayOfResult },
-                        {"additionalValues", new OpenApiSchema()
+                       {  codeConvention.FirstResultKey, arrayOfResult },
+                        { codeConvention.OtherResultsKey,  new OpenApiSchema()
                         {
                             Type="array",
                             Items = new OpenApiSchema()
@@ -243,7 +244,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                                 Items = new OpenApiSchema()
                                 {
                                     Type="object",
-                                    AdditionalPropertiesAllowed=true                                    
+                                    AdditionalPropertiesAllowed=true
                                 }
                             }
                         } }
@@ -251,7 +252,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 };
                 if (outputObjectName != null)
                 {
-                    schema.Properties.Add("out", new OpenApiSchema()
+                    schema.Properties.Add(codeConvention.OutputParametersKey, new OpenApiSchema()
                     {
                         Reference = new OpenApiReference()
                         {
@@ -259,6 +260,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                             Id = outputObjectName
                         }
                     });
+                    schema.Required.Add(codeConvention.OutputParametersKey);
                 }
             }
             response.Content.Add("application/json", new OpenApiMediaType()

@@ -24,7 +24,7 @@ namespace Kull.GenericBackend.Serialization
     /// </summary>
     public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericSPSerializer
     {
-        public GenericSPJsonSerializerSTJ(NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options, ILogger<GenericSPJsonSerializerBase> logger, IEnumerable<IResponseExceptionHandler> errorHandlers) : base(namingMappingHandler, options, logger, errorHandlers)
+        public GenericSPJsonSerializerSTJ(IServiceProvider serviceProvider) : base(serviceProvider)
         {
         }
 
