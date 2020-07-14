@@ -7,7 +7,7 @@ Nearly everything can be customized. It's designed to be extensible.
 
 ## Installation
 
-[![NuGet Badge](https://buildstats.info/nuget/Kull.GenericBackend?includePreReleases=true)](https://www.nuget.org/packages/Kull.GenericBackend/)
+[![NuGet Badge](https://buildstats.info/nuget/Kull.GenericBackend)](https://www.nuget.org/packages/Kull.GenericBackend/)
 
 It's on Nuget: https://www.nuget.org/packages/Kull.GenericBackend/
 Basically, just use:
