@@ -23,6 +23,7 @@ using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Filter;
 using System.Net.Http.Headers;
 using System.Net.Mime;
+using Kull.GenericBackend.Execution;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -32,31 +33,27 @@ namespace Kull.GenericBackend.GenericSP
     /// </summary>
     public class GenericSPMiddleware : IGenericSPMiddleware
     {
-        private readonly ParameterProvider parameterProvider;
-
         private readonly ILogger<GenericSPMiddleware> logger;
         private readonly SerializerResolver serializerResolver;
         private readonly SPMiddlewareOptions sPMiddlewareOptions;
-        private readonly SPParametersProvider sPParametersProvider;
         private readonly DbConnection dbConnection;
         private readonly IEnumerable<IRequestInterceptor> requestInterceptors;
+        private readonly CommandPreparation commandPreparation;
 
         public GenericSPMiddleware(
-            ParameterProvider parameterProvider,
             ILogger<GenericSPMiddleware> logger,
             SerializerResolver serializerResolver,
-            SPParametersProvider sPParametersProvider,
             SPMiddlewareOptions sPMiddlewareOptions,
             DbConnection dbConnection,
-            IEnumerable<Filter.IRequestInterceptor> requestInterceptors)
+            IEnumerable<Filter.IRequestInterceptor> requestInterceptors,
+            CommandPreparation commandPreparation)
         {
             this.logger = logger;
             this.serializerResolver = serializerResolver;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.dbConnection = dbConnection;
             this.requestInterceptors = requestInterceptors;
-            this.parameterProvider = parameterProvider;
-            this.sPParametersProvider = sPParametersProvider;
+            this.commandPreparation = commandPreparation;
         }
 
         public Task HandleRequest(HttpContext context, Entity ent)
@@ -128,7 +125,7 @@ namespace Kull.GenericBackend.GenericSP
                 queryParameters = new Dictionary<string, object>();
             }
 #endif
-            var cmd = GetCommandWithParameters(context, dbConnection, ent, method, queryParameters);
+            var cmd = commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
 
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
 
@@ -193,80 +190,11 @@ namespace Kull.GenericBackend.GenericSP
                 parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
                 JsonConvert.PopulateObject(json, parameterObject);
             }
-            var cmd = GetCommandWithParameters(context, dbConnection, ent, method, parameterObject);
+            var cmd = commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
 
         }
 
-        protected DbCommand GetCommandWithParameters(HttpContext context,
-                DbConnection con,
-            Entity ent,
-                Method method, Dictionary<string, object> parameterOfUser)
-        {
-            if (con == null) throw new ArgumentNullException(nameof(con));
-            if (ent == null) throw new ArgumentNullException(nameof(ent));
-            if (method == null) throw new ArgumentNullException(nameof(method));
-            if (parameterOfUser == null) { parameterOfUser = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase); }
-            var cmd = con.AssureOpen().CreateSPCommand(method.SP);
-            if (method.CommandTimeout != null)
-            {
-                cmd.CommandTimeout = method.CommandTimeout.Value;
-            }
-            var (inputParameters, outputParameters) = parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false));
-            SPParameter[]? sPParameters = null;
-            foreach (var apiPrm in inputParameters)
-            {
-                var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */
-                        :
-                        ent.ContainsPathParameter(apiPrm.WebApiName) ?
-                        context.GetRouteValue(apiPrm.WebApiName) :
-                        parameterOfUser.FirstOrDefault(p => p.Key.Equals(apiPrm.WebApiName,
-                            StringComparison.CurrentCultureIgnoreCase)).Value;
-                if (apiPrm.SqlName == null)
-                    continue;
-                object? value = apiPrm.GetValue(context, prm);
-
-                if (value is System.Data.DataTable dt)
-                {
-
-                    var cmdPrm = cmd.CreateParameter();
-                    cmdPrm.ParameterName = "@" + apiPrm.SqlName;
-                    cmdPrm.Value = value;
-                    if (cmdPrm.GetType().FullName == "System.Data.SqlClient.SqlParameter" ||
-                        cmdPrm.GetType().FullName == "Microsoft.Data.SqlClient.SqlParameter")
-                    {
-
-                        // Reflection set SqlDbType in order to avoid 
-                        // referecnting the deprecated SqlClient Nuget Package or the too new Microsoft SqlClient package
-
-                        // see https://devblogs.microsoft.com/dotnet/introducing-the-new-microsoftdatasqlclient/
-
-                        // cmdPrm.SqlDbType = System.Data.SqlDbType.Structured;
-                        cmdPrm.GetType().GetProperty("SqlDbType", System.Reflection.BindingFlags.Public |
-                            System.Reflection.BindingFlags.Instance |
-                            System.Reflection.BindingFlags.SetProperty)!
-                            .SetValue(cmdPrm, System.Data.SqlDbType.Structured);
-                    }
-                    cmd.Parameters.Add(cmdPrm);
-                }
-                else if (value as string == "")
-                {
-                    sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
-                    var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
-                    if (spPrm.DbType.NetType == typeof(System.DateTime)
-                        || spPrm.DbType.JsType == "number"
-                         || spPrm.DbType.JsType == "integer")
-                    {
-                        cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value);
-                    }
-                }
-                else
-                {
-                    cmd.AddCommandParameter(apiPrm.SqlName, value ?? System.DBNull.Value);
-                }
-            }
-            return cmd;
-        }
 
 
 

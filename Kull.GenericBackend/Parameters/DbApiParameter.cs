@@ -104,7 +104,7 @@ namespace Kull.GenericBackend.Parameters
 
         
 
-        public override object? GetValue(HttpContext http, object? valueProvided)
+        public override object? GetValue(HttpContext? http, object? valueProvided)
         {
             if (valueProvided is IDictionary<string, object> obj)
             {
