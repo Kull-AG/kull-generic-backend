@@ -29,7 +29,7 @@ namespace Kull.GenericBackend.Parameters
         /// </summary>
         public virtual bool RequiresFormData { get; } = false;
 
-        public abstract object? GetValue(HttpContext http, object? valueProvided);
+        public abstract object? GetValue(HttpContext? http, object? valueProvided);
 
         public WebApiParameter(string? sqlName, string? webApiName)
         {

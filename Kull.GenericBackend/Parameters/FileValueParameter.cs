@@ -82,7 +82,7 @@ namespace Kull.GenericBackend.Parameters
 
         }
 
-        public override object? GetValue(HttpContext http, object? valueProvided)
+        public override object? GetValue(HttpContext? http, object? valueProvided)
         {
             var allPrms = (Dictionary<string, object>)valueProvided!;
 #if NETFX

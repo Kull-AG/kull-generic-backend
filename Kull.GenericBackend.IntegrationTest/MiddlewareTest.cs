@@ -192,7 +192,7 @@ namespace Kull.GenericBackend.IntegrationTest
 
             // User Error
             Assert.InRange((int)response.StatusCode, 400, 499);
-            Assert.True(response.Content.Headers.ContentType.MediaType.Contains("xml"));
+            Assert.Contains("xml", response.Content.Headers.ContentType.MediaType);
 
             var resp = await response.Content.ReadAsStringAsync();
             XElement e = XElement.Parse(resp);
