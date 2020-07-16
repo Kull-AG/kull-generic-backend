@@ -54,7 +54,7 @@ namespace Kull.GenericBackend
             services.TryAddSingleton<Config.ConfigProvider>();
             services.TryAddTransient<ParameterProvider>();
             services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
-
+            services.TryAddSingleton<Execution.CommandPreparation>();
             services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializer>();
             services.AddTransient<SerializerResolver, SerializerResolver>();
             services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();

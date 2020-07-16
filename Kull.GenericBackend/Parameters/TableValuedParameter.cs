@@ -55,7 +55,7 @@ namespace Kull.GenericBackend.Parameters
             return schema;
         }
 
-        public override object? GetValue(HttpContext http, object? valueProvided)
+        public override object? GetValue(HttpContext? http, object? valueProvided)
         {
 
             System.Data.DataTable dt;

@@ -23,8 +23,9 @@ namespace Kull.GenericBackend.Parameters
             return null!;
         }
 
-        public override object? GetValue(HttpContext http, object? valueProvided)
+        public override object? GetValue(HttpContext? http, object? valueProvided)
         {
+            if (http == null) return null;
             var vl = getParameterValue(http);
             return vl;
         }
