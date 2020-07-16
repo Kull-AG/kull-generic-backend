@@ -94,10 +94,13 @@ namespace Kull.GenericBackend.Serialization
                 {
                     bool firstRead = rdr.Read();
                     await PrepareHeader(context, method, ent, 200);
-#if NETSTD2 
-                    using (var jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.Body, options.Encoding)))
-#elif NETFX 
-                    using (var jsonWriter = new JsonTextWriter(new System.IO.StreamWriter(context.Response.OutputStream, options.Encoding)))
+
+#if NETSTD2
+                    var strW = new System.IO.StreamWriter(context.Response.Body, options.Encoding, 4092, leaveOpen: true);
+                    using (var jsonWriter = new JsonTextWriter(strW))
+#elif NETFX
+                    var strW = new System.IO.StreamWriter(context.Response.OutputStream, options.Encoding, 4092, leaveOpen: true);
+                    using (var jsonWriter = new JsonTextWriter(strW))
 #else
                     await using (var jsonWriter = new Utf8JsonWriter(context.Response.Body))
 #endif
@@ -199,9 +202,17 @@ namespace Kull.GenericBackend.Serialization
                         }
                         jsonWriter.WriteEndArray();
                         await jsonWriter.FlushAsync();
+                        
                     }
+#if NET47 || NETSTD2
+                    await strW.FlushAsync();
+#endif 
                 }
 
+#if NET47
+                await context.Response.OutputStream.FlushAsync();
+                await context.Response.FlushAsync();
+#endif
             }
             catch (Exception err)
             {
