@@ -203,7 +203,10 @@ namespace Kull.GenericBackend.Serialization
                     {
                         await WriteCurrentResultSet(stream, rdr, fieldNames, true);
                     }
-
+                    await stream.FlushAsync();
+#if NET47
+                    await context.Response.FlushAsync();
+#endif
                 }
 
             }
