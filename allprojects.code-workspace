@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "Kull.GenericBackend"
+		},
+		{
+			"path": "Kull.GenericBackend.Test"
+		},
+		{
+			"path": "Kull.GenericBackend.IntegrationTest"
+		}
+	],
+	"settings": {}
+}
