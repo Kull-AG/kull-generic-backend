@@ -2,7 +2,7 @@
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
-INSERT INTO dbo.TestDbVersion(VersionNr) VALUES(7) -- sync this value with the TestWebApplicationFactory.expectedVersion
+INSERT INTO dbo.TestDbVersion(VersionNr) VALUES('{{DbVersion}}')
 GO
 INSERT INTO dbo.Pets(PetId, PetName, IsNice)
 SELECT 1, 'Dog', 0
@@ -51,6 +51,18 @@ BEGIN
 	-- Just pretending
 	SELECT CONVERT(BIT,1) AS Success
 		FROM dbo.Pets WHERE PetId=@PetId AND ts=@Ts
+END
+GO
+CREATE PROCEDURE spUpdateDog
+	@Dogid int,
+	@Ts timestamp out
+AS
+BEGIN
+	-- Just pretending
+	SELECT CONVERT(BIT,1) AS Success
+		FROM dbo.Pets WHERE PetId=@DogId AND ts=@Ts
+	
+	SET @Ts = 0x01;
 END
 GO
 CREATE PROCEDURE spSearchPets

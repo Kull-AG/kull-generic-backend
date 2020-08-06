@@ -7,7 +7,7 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
 
     public static class DatabaseUtils
     {
-        const int expectedVersion = 7; // sync this with sqlscript.sql
+        const int expectedVersion = 9;
 
         static object setupObj = new object();
         public static void SetupDb(string dataPath, string constr)
@@ -75,6 +75,7 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
                 }
 
                 var sqls = System.IO.File.ReadAllText(System.IO.Path.Combine(dataPath, "sqlscript.sql"))
+                    .Replace("{{DbVersion}}", expectedVersion.ToString())
                     .Replace("\r\n", "\n")
                     .Replace("\r", "\n")
                     .Split("\nGO\n")

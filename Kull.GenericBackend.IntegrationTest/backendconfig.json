@@ -5,6 +5,9 @@
       "GET": "spGetPets",
       "PUT": "spUpdatePet"
     },
+    "Dog/{DogIg}": {
+      "PUT": "spUpdateDog"
+    },
     "Pet/{petid}": {
       "GET": "spGetPet",
       "POST": "spAddPet",
