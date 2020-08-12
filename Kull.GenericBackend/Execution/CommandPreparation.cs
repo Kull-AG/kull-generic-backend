@@ -117,6 +117,13 @@ namespace Kull.GenericBackend.Execution
                         cmd.AddCommandParameter(apiPrm.SqlName, value);
                     }
                 }
+                else if (value == null)
+                {
+                    sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
+                    var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
+                    cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value, spPrm.DbType.NetType);
+                    
+                }
                 else
                 {
                     cmd.AddCommandParameter(apiPrm.SqlName, value ?? System.DBNull.Value);
