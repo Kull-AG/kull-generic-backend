@@ -26,7 +26,9 @@ namespace Kull.GenericBackend.Common
                     response.Headers.Add(h.Key, h.Value.Single());
                 }
             }
-            await content.CopyToAsync(response.OutputStream).ConfigureAwait(false);
+            await content.CopyToAsync(response.OutputStream).ConfigureAwait(false); 
+            await response.OutputStream.FlushAsync();
+            await response.FlushAsync();
 #else
             foreach (var h in content.Headers)
             {
@@ -40,6 +42,7 @@ namespace Kull.GenericBackend.Common
                 }
             }
             await content.CopyToAsync(response.Body).ConfigureAwait(false);
+            await response.Body.FlushAsync();
 #endif
         }
     }

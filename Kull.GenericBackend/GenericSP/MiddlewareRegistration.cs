@@ -13,6 +13,7 @@ using Kull.GenericBackend.Common;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Config;
 using System.Web;
+using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.GenericSP
 {
@@ -27,24 +28,24 @@ namespace Kull.GenericBackend.GenericSP
         }
 
 #if NET47
-        class RouteHandlerWrap : IRouteHandler, IHttpHandler
+        class RouteHandlerWrap : HttpTaskAsyncHandler, IRouteHandler
         {
             Entity entity;
             public RouteHandlerWrap(Entity entity)
             {
                 this.entity = entity;
             }
-            public bool IsReusable => false;
+            public override bool IsReusable => false;
 
             public IHttpHandler GetHttpHandler(RequestContext requestContext)
             {
                 return this;
             }
 
-            public void ProcessRequest(HttpContext context)
+            public override async Task ProcessRequestAsync(HttpContext context)
             {
                 var srv = (IGenericSPMiddleware)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IGenericSPMiddleware));
-                srv.HandleRequest(new System.Web.HttpContextWrapper(context), this.entity);
+                await srv.HandleRequest(new System.Web.HttpContextWrapper(context), this.entity);
             }
         }
         protected internal void RegisterMiddleware(SPMiddlewareOptions options,
