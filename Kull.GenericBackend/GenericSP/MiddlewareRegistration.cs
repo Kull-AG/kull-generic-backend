@@ -35,6 +35,7 @@ namespace Kull.GenericBackend.GenericSP
             {
                 this.entity = entity;
             }
+            public override bool IsReusable => false;
 
             public IHttpHandler GetHttpHandler(RequestContext requestContext)
             {

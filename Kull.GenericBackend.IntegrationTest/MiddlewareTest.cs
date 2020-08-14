@@ -36,6 +36,26 @@ namespace Kull.GenericBackend.IntegrationTest
                 response.Content.Headers.ContentType.MediaType);
 
         }
+        [Theory]
+        [InlineData("/rest/Pet")]
+        public async Task UpdatePetWithoutTimestamp(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            var putParameter = Newtonsoft.Json.JsonConvert.SerializeObject(
+                new { petId = 1, ts = (byte[])null });
+
+            var putResponse = await client.PutAsync(url,
+                    new System.Net.Http.StringContent(putParameter));
+            var putContent = await putResponse.Content.ReadAsStringAsync();
+            putResponse.EnsureSuccessStatusCode();
+            var resultPut = Newtonsoft.Json.JsonConvert.DeserializeObject<JArray>(putContent);
+            Assert.Empty(resultPut);
+        }
+
 
         [Theory]
         [InlineData("/rest/Pet")]

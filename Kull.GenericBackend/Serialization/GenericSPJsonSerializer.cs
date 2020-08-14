@@ -202,7 +202,10 @@ namespace Kull.GenericBackend.Serialization
                         }
                         jsonWriter.WriteEndArray();
                         await jsonWriter.FlushAsync();
-                        
+#if NET47
+                        await context.Response.OutputStream.FlushAsync();
+                        await context.Response.FlushAsync();
+#endif
                     }
 #if NET47 || NETSTD2
                     await strW.FlushAsync();
