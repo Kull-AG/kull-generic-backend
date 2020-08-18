@@ -63,7 +63,7 @@ namespace Kull.GenericBackend.Execution
             {
                 cmd.CommandTimeout = method.CommandTimeout.Value;
             }
-            var parameters = parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false));
+            var parameters = parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), con);
             SPParameter[]? sPParameters = null;
             foreach (var apiPrm in parameters)
             {

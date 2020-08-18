@@ -8,25 +8,22 @@ namespace Kull.GenericBackend.Parameters
     public class ParameterProvider
     {
         public IEnumerable<Filter.IParameterInterceptor> parameterInterceptors;
-        private readonly DbConnection dbConnection;
         private readonly SPParametersProvider sPParametersProvider;
         private readonly Common.NamingMappingHandler namingMappingHandler;
         private readonly SqlHelper sqlHelper;
 
         public ParameterProvider(IEnumerable<Filter.IParameterInterceptor> parameterInterceptors,
-            DbConnection dbConnection,
             SPParametersProvider sPParametersProvider,
             Common.NamingMappingHandler namingMappingHandler,
             SqlHelper sqlHelper)
         {
             this.parameterInterceptors = parameterInterceptors;
-            this.dbConnection = dbConnection;
             this.sPParametersProvider = sPParametersProvider;
             this.namingMappingHandler = namingMappingHandler;
             this.sqlHelper = sqlHelper;
         }
 
-        public WebApiParameter[] GetApiParameters(Filter.ParameterInterceptorContext context)
+        public WebApiParameter[] GetApiParameters(Filter.ParameterInterceptorContext context, DbConnection dbConnection)
         {
             var method = context.Method;
             var spParams = sPParametersProvider.GetSPParameters(method.SP, dbConnection);
