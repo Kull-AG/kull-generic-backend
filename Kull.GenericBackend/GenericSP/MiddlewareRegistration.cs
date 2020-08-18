@@ -35,6 +35,7 @@ namespace Kull.GenericBackend.GenericSP
             {
                 this.entity = entity;
             }
+            public override bool IsReusable => false;
 
             public IHttpHandler GetHttpHandler(RequestContext requestContext)
             {
@@ -43,8 +44,20 @@ namespace Kull.GenericBackend.GenericSP
 
             public override async Task ProcessRequestAsync(HttpContext context)
             {
-                var srv = (IGenericSPMiddleware)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IGenericSPMiddleware));
-                await srv.HandleRequest(new System.Web.HttpContextWrapper(context), this.entity);
+                var container = (IUnityContainer)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IUnityContainer));
+                if (container != null)
+                {
+                    using (var child = container.CreateChildContainer())
+                    {
+                        var srv = child.Resolve<IGenericSPMiddleware>();
+                        await srv.HandleRequest(new System.Web.HttpContextWrapper(context), this.entity);
+                    }
+                }
+                else
+                {
+                    var srv = (IGenericSPMiddleware)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IGenericSPMiddleware));
+                    await srv.HandleRequest(new System.Web.HttpContextWrapper(context), this.entity);
+                }
             }
         }
         protected internal void RegisterMiddleware(SPMiddlewareOptions options,

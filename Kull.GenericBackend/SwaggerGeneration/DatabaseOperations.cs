@@ -154,7 +154,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
         private Parameters.WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, Method method)
         {
-            return parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true))
+            return parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true), dbConnection)
                 .inputParameters
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
@@ -297,7 +297,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
             IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, entity, method);
 
-            var (inputParameters, outputParameters) = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true));
+            var (inputParameters, outputParameters) = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), dbConnection);
 
             var context = new OperationResponseContext(entity, method, sPMiddlewareOptions.AlwaysWrapJson,
                     outputParameters);
@@ -376,13 +376,19 @@ namespace Kull.GenericBackend.SwaggerGeneration
             var settings = new Newtonsoft.Json.JsonSerializerSettings();
             settings.MetadataPropertyHandling = Newtonsoft.Json.MetadataPropertyHandling.Ignore;
             var docOld = Newtonsoft.Json.JsonConvert.DeserializeObject<SwaggerDocument>(json, settings);
-            foreach (var p in docOld.paths)
+            if (docOld.paths != null)
             {
-                swaggerDoc.paths.Add(p.Key, p.Value);
+                foreach (var p in docOld.paths)
+                {
+                    swaggerDoc.paths.Add(p.Key, p.Value);
+                }
             }
-            foreach(var p in docOld.definitions)
+            if (docOld.definitions != null)
             {
-                swaggerDoc.definitions.Add(p.Key, p.Value);
+                foreach (var p in docOld.definitions)
+                {
+                    swaggerDoc.definitions.Add(p.Key, p.Value);
+                }
             }
         }
 #endif
