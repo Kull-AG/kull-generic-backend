@@ -11,12 +11,13 @@ SELECT 2, 'Dog 2', 1
 GO
 CREATE PROCEDURE spGetPets
 	@OnlyNice bit=0,
-	@SearchString varchar(100),
+	@SearchString varchar(100)='',
 	@IpAddress varchar(100)
 AS
 BEGIN
-	SELECT * FROM dbo.Pets
+	SELECT PetId, PetName, IsNice, ts FROM dbo.Pets
 		WHERE IsNice=1 OR @OnlyNice=0
+		ORDER BY PetId;
 END
 GO
 CREATE PROCEDURE spGetPet
@@ -58,10 +59,6 @@ CREATE PROCEDURE spUpdateDog
 	@Ts timestamp out
 AS
 BEGIN
-	-- Just pretending
-	SELECT CONVERT(BIT,1) AS Success
-		FROM dbo.Pets WHERE PetId=@DogId AND ts=@Ts
-	
 	SET @Ts = 0x01;
 END
 GO

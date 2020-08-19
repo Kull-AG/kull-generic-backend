@@ -72,7 +72,7 @@ namespace Kull.GenericBackend.Serialization
             return Task.CompletedTask;
         }
 
-        private void WriteOutputParameters(Stream outputStream, IReadOnlyCollection<DbParameter> outParameters)
+        private async Task WriteOutputParameters(Stream outputStream, IReadOnlyCollection<DbParameter> outParameters)
         {
             Dictionary<string, object> outParameterValues
                 = new Dictionary<string, object>(outParameters.Count);
@@ -97,14 +97,14 @@ namespace Kull.GenericBackend.Serialization
                 fieldNames[i] = objectData.GetName(i);
             }
             fieldNames = namingMappingHandler.GetNames(fieldNames).ToArray();
-            WriteObject(outputStream, objectData, fieldNames);
+            await WriteObject(outputStream, objectData, fieldNames);
 
         }
 
-        private void WriteRaw(Stream stream, string value)
+        private async Task WriteRaw(Stream stream, string value)
         {
             byte[] data = options.Encoding.GetBytes(value);
-            stream.Write(data, 0, data.Length);
+            await stream.WriteAsync(data, 0, data.Length);
         }
 
         /// <summary>
@@ -123,9 +123,9 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="outputStream"></param>
         /// <param name="reader"></param>
         /// <param name="fieldNames"></param>
-        /// <param name="firstReadDone"></param>
+        /// <param name="firstReadResult"></param>
         /// <returns></returns>
-        protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string[] fieldNames, bool firstReadDone);
+        protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string[] fieldNames, bool? firstReadResult);
 
         /// <summary>
         /// Writes the result data to the body
@@ -149,7 +149,7 @@ namespace Kull.GenericBackend.Serialization
             {
                 using (var rdr = await serializationContext.ExecuteReaderAsync())
                 {
-                    bool firstRead = rdr.Read();
+                    bool firstReadResult = rdr.Read();
                     await PrepareHeader(context, method, ent, 200);
 
 
@@ -168,9 +168,9 @@ namespace Kull.GenericBackend.Serialization
 #endif
                     if (wrap)
                     {
-                        WriteRaw(stream, $"{{ \"{codeConvention.FirstResultKey}\": \r\n");
+                        await WriteRaw(stream, $"{{ \"{codeConvention.FirstResultKey}\": \r\n");
 
-                        await WriteCurrentResultSet(stream, rdr, fieldNames, true);
+                        await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult);
 
                         bool first = true;
                         bool hasAnyResults = false;
@@ -178,30 +178,30 @@ namespace Kull.GenericBackend.Serialization
                         {
                             if (first)
                             {
-                                WriteRaw(stream, $", \"{codeConvention.OtherResultsKey}\": [");
+                                await WriteRaw(stream, $", \"{codeConvention.OtherResultsKey}\": [");
                                 first = false;
                                 hasAnyResults = true;
                             }
                             else
                             {
-                                WriteRaw(stream, ",");
+                                await WriteRaw(stream, ",");
                             }
-                            await WriteCurrentResultSet(stream, rdr, fieldNames, true);
+                            await WriteCurrentResultSet(stream, rdr, fieldNames, false);
                         }
                         if (hasAnyResults)
                         {
-                            WriteRaw(stream, "]");
+                            await WriteRaw(stream, "]");
                         }
                         if (outParameters.Length > 0)
                         {
-                            WriteRaw(stream, $", \"{codeConvention.OutputParametersKey}\": ");
-                            WriteOutputParameters(stream, outParameters);
+                            await WriteRaw(stream, $", \"{codeConvention.OutputParametersKey}\": ");
+                            await WriteOutputParameters(stream, outParameters);
                         }
-                        WriteRaw(stream, "\r\n}");
+                        await WriteRaw(stream, "\r\n}");
                     }
                     else
                     {
-                        await WriteCurrentResultSet(stream, rdr, fieldNames, true);
+                        await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult);
                     }
                     await stream.FlushAsync();
 #if NET47

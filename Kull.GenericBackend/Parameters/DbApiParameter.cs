@@ -24,6 +24,11 @@ namespace Kull.GenericBackend.Parameters
 
         public DBObjectName? UserDefinedType { get; }
 
+        /// <summary>
+        /// Do not add a parameter to db command if not provided by user. use db default
+        /// </summary>
+        public override bool RequiresUserProvidedValue => true;
+
         public DbApiParameter(string sqlName, string webApiName,
                 SqlType sqlType, bool isNullable,
                 DBObjectName userDefinedType,

@@ -14,6 +14,8 @@ namespace Kull.GenericBackend.Parameters
 {
     public class TableValuedParameter : WebApiParameter
     {
+        public override bool RequiresUserProvidedValue => true;
+
         private readonly SqlFieldDescription[] fields;
         private readonly NamingMappingHandler namingMappingHandler;
 

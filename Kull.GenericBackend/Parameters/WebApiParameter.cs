@@ -31,6 +31,8 @@ namespace Kull.GenericBackend.Parameters
 
         public abstract object? GetValue(HttpContext? http, object? valueProvided);
 
+        public abstract bool RequiresUserProvidedValue { get; }
+
         public WebApiParameter(string? sqlName, string? webApiName)
         {
             SqlName = sqlName;

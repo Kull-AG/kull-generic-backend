@@ -11,6 +11,9 @@ namespace Kull.GenericBackend.Parameters
     {
         public override bool RequiresFormData => true;
 
+        // User cannot provide value anyway, SqlName is always null
+        public override bool RequiresUserProvidedValue => false;
+
         public FileDescriptionParameter(string webApiName): base(null, webApiName)
         {
 

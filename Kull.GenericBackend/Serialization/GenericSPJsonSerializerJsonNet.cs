@@ -33,22 +33,23 @@ namespace Kull.GenericBackend.Serialization
         {
         }
 
-        protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNames, bool firstReadDone)
+        protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNames, bool? firstReadResult)
         {
             var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
             var jsonWriter = new JsonTextWriter(streamWriter);
 
             jsonWriter.WriteStartArray();
-            if (!firstReadDone)
-                rdr.Read();
+            if (firstReadResult==null)
+                firstReadResult=rdr.Read();
 
-
-            do
+            if (firstReadResult == true)
             {
-                WriteSingleRow(rdr, fieldNames, jsonWriter);
+                do
+                {
+                    WriteSingleRow(rdr, fieldNames, jsonWriter);
+                }
+                while (rdr.Read());
             }
-            while (rdr.Read());
-
             jsonWriter.WriteEndArray();
             await jsonWriter.FlushAsync();
             await streamWriter.FlushAsync();

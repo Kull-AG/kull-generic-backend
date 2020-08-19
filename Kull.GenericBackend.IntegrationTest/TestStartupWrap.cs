@@ -26,6 +26,7 @@ namespace Kull.GenericBackend.IntegrationTest
                 .ConfigureMiddleware(m =>
                 {
                     m.AlwaysWrapJson=true;
+                    m.Prefix = "/rest";
                 })
                 .ConfigureOpenApiGeneration(o =>
                 {

@@ -13,6 +13,9 @@ namespace Kull.GenericBackend.Parameters
 {
     public class FileValueParameter : WebApiParameter
     {
+
+        public override bool RequiresUserProvidedValue => false;
+
         private readonly string fileFieldName;
 
         public override bool RequiresFormData => true;

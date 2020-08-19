@@ -17,6 +17,7 @@ using Kull.Data;
 using System.Linq;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Parameters;
+using System.Data;
 
 namespace Kull.GenericBackend.Execution
 {
@@ -45,7 +46,7 @@ namespace Kull.GenericBackend.Execution
                 Func<string, object>? getRouteValue,
                 DbConnection con,
                 Entity ent,
-                Method method, 
+                Method method,
                 Dictionary<string, object> parameterOfUser)
         {
             if (con == null) throw new ArgumentNullException(nameof(con));
@@ -75,58 +76,92 @@ namespace Kull.GenericBackend.Execution
                             StringComparison.CurrentCultureIgnoreCase)).Value;
                 if (apiPrm.SqlName == null)
                     continue;
-                object? value = apiPrm.GetValue(context, prm);
+                bool hasValue = !apiPrm.RequiresUserProvidedValue
+                    || (apiPrm.WebApiName != null && ent.ContainsPathParameter(apiPrm.WebApiName))
+                    || parameterOfUser.Any(p => p.Key.Equals(apiPrm.WebApiName,
+                            StringComparison.CurrentCultureIgnoreCase));
 
-                if (value is System.Data.DataTable dt)
+                if (hasValue)
                 {
-
-                    var cmdPrm = cmd.CreateParameter();
-                    cmdPrm.ParameterName = "@" + apiPrm.SqlName;
-                    cmdPrm.Value = value;
-                    if (cmdPrm.GetType().FullName == "System.Data.SqlClient.SqlParameter" ||
-                        cmdPrm.GetType().FullName == "Microsoft.Data.SqlClient.SqlParameter")
+                    var value = apiPrm.GetValue(context, prm);
+                    ParameterDirection parameterDirection =
+                            outputParameters.Any(p => p.SqlName.Equals(apiPrm.SqlName, StringComparison.CurrentCultureIgnoreCase)) ? ParameterDirection.InputOutput
+                            : ParameterDirection.Input;
+                    if (value is System.Data.DataTable dt)
                     {
 
-                        // Reflection set SqlDbType in order to avoid 
-                        // referecnting the deprecated SqlClient Nuget Package or the too new Microsoft SqlClient package
+                        var cmdPrm = cmd.CreateParameter();
+                        cmdPrm.ParameterName = "@" + apiPrm.SqlName;
+                        cmdPrm.Value = value;
+                        cmdPrm.Direction = parameterDirection;
+                        if (cmdPrm.GetType().FullName == "System.Data.SqlClient.SqlParameter" ||
+                            cmdPrm.GetType().FullName == "Microsoft.Data.SqlClient.SqlParameter")
+                        {
 
-                        // see https://devblogs.microsoft.com/dotnet/introducing-the-new-microsoftdatasqlclient/
+                            // Reflection set SqlDbType in order to avoid 
+                            // referecnting the deprecated SqlClient Nuget Package or the too new Microsoft SqlClient package
 
-                        // cmdPrm.SqlDbType = System.Data.SqlDbType.Structured;
-                        cmdPrm.GetType().GetProperty("SqlDbType", System.Reflection.BindingFlags.Public |
-                            System.Reflection.BindingFlags.Instance |
-                            System.Reflection.BindingFlags.SetProperty)!
-                            .SetValue(cmdPrm, System.Data.SqlDbType.Structured);
+                            // see https://devblogs.microsoft.com/dotnet/introducing-the-new-microsoftdatasqlclient/
+
+                            // cmdPrm.SqlDbType = System.Data.SqlDbType.Structured;
+                            cmdPrm.GetType().GetProperty("SqlDbType", System.Reflection.BindingFlags.Public |
+                                System.Reflection.BindingFlags.Instance |
+                                System.Reflection.BindingFlags.SetProperty)!
+                                .SetValue(cmdPrm, System.Data.SqlDbType.Structured);
+                        }
+                        cmd.Parameters.Add(cmdPrm);
                     }
-                    cmd.Parameters.Add(cmdPrm);
-                }
-                else if (value as string == "")
-                {
-                    sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
-                    var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
-                    if (spPrm.DbType.NetType == typeof(System.DateTime)
-                        || spPrm.DbType.NetType == typeof(System.DateTimeOffset)
-                        || spPrm.DbType.JsType == "number"
-                        || spPrm.DbType.JsType == "integer"
-                        || spPrm.DbType.JsType == "boolean")
+                    else if (value as string == "")
                     {
-                        cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value);
+                        sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
+                        var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
+                        if (spPrm.DbType.NetType == typeof(System.DateTime)
+                            || spPrm.DbType.NetType == typeof(System.DateTimeOffset)
+                            || spPrm.DbType.JsType == "number"
+                            || spPrm.DbType.JsType == "integer"
+                            || spPrm.DbType.JsType == "boolean")
+                        {
+                            cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value, configure: c =>
+                            {
+                                c.Direction = parameterDirection;
+                            });
+                        }
+                        else
+                        {
+                            cmd.AddCommandParameter(apiPrm.SqlName, value, configure: c =>
+                            {
+                                c.Direction = parameterDirection;
+                            });
+                        }
                     }
-                    else 
+                    else if (value == null)
                     {
-                        cmd.AddCommandParameter(apiPrm.SqlName, value);
+                        sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
+                        var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
+                        cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value, spPrm.DbType.NetType, configure: c =>
+                        {
+                            c.Direction = parameterDirection;
+                        });
+
+                    }
+                    else
+                    {
+                        cmd.AddCommandParameter(apiPrm.SqlName, value ?? System.DBNull.Value, configure: c =>
+                        {
+                            c.Direction = parameterDirection;
+                        }); ;
                     }
                 }
-                else if (value == null)
+            }
+            foreach (var op in outputParameters)
+            {
+                bool isAlreadyInput = inputParameters.Any(i => i.SqlName != null && i.SqlName.Equals(op.SqlName, StringComparison.CurrentCultureIgnoreCase));
+                if (!isAlreadyInput)
                 {
-                    sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
-                    var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
-                    cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value, spPrm.DbType.NetType);
-                    
-                }
-                else
-                {
-                    cmd.AddCommandParameter(apiPrm.SqlName, value ?? System.DBNull.Value);
+                    cmd.AddCommandParameter(op.SqlName, DBNull.Value, op.DbType.NetType, configure: c =>
+                    {
+                        c.Direction = ParameterDirection.Output;
+                    });
                 }
             }
             return cmd;

@@ -28,7 +28,7 @@ namespace Kull.GenericBackend.Serialization
         {
         }
 
-        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNamesToUse, bool firstReadDone)
+        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNamesToUse, bool? firstReadResult)
         {
 
             if (options.Encoding.BodyName != "utf-8")
@@ -38,15 +38,18 @@ namespace Kull.GenericBackend.Serialization
             Type[] types = GetTypesFromReader(rdr);
             var jsonWriter = new Utf8JsonWriter(outputStream);
             jsonWriter.WriteStartArray();
-            if (!firstReadDone)
-                rdr.Read();
+           
+            if (firstReadResult == null)
+                firstReadResult = rdr.Read();
 
-
-            do
+            if (firstReadResult == true)
             {
-                WriteSingleRow(rdr, fieldNamesToUse, types, jsonWriter);
+                do
+                {
+                    WriteSingleRow(rdr, fieldNamesToUse, types, jsonWriter);
+                }
+                while (rdr.Read());
             }
-            while (rdr.Read());
 
             jsonWriter.WriteEndArray();
             await jsonWriter.FlushAsync();

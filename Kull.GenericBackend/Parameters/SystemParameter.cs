@@ -10,6 +10,8 @@ namespace Kull.GenericBackend.Parameters
 {
     public class SystemParameter : WebApiParameter
     {
+        public override bool RequiresUserProvidedValue => false;
+
         private readonly Func<HttpContext, object?> getParameterValue;
 
         public SystemParameter(string sqlName,
