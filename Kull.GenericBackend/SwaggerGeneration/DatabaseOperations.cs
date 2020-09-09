@@ -12,6 +12,7 @@ using Microsoft.OpenApi.Any;
 using Kull.GenericBackend.Config;
 using System;
 using System.Threading.Tasks;
+using Kull.GenericBackend.Utils;
 #if NETFX
 using Swashbuckle.Swagger;
 using Kull.MvcCompat;
@@ -78,7 +79,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         public class DocumentFilterContext { }
 #endif
 
-        public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+        public async Task ApplyAsync(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
             if (swaggerDoc.Paths == null) swaggerDoc.Paths = new OpenApiPaths();
             if (swaggerDoc.Components == null) swaggerDoc.Components = new OpenApiComponents();
@@ -96,7 +97,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     {
                         var opType = method.Key;
                         OpenApiOperation bodyOperation = new OpenApiOperation();
-                        WriteBodyPath(bodyOperation, ent, opType, method.Value).Wait();
+                        await WriteBodyPath(bodyOperation, ent, opType, method.Value);
                         openApiPathItem.Operations.Add(opType, bodyOperation);
                     }
                     swaggerDoc.Paths.Add(ent.GetUrl(this.sPMiddlewareOptions.Prefix, false), openApiPathItem);
@@ -115,9 +116,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 else
                 {
                     OpenApiSchema resultSchema = new OpenApiSchema();
-                    var res = sqlHelper.GetSPResultSet(dbConnection, method.SP, options.PersistResultSets);
-                    res.Wait();
-                    var dataToWrite = res.Result;
+                    var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, options.PersistResultSets);
                     WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
                     swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
@@ -127,9 +126,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             {
                 foreach (var method in ent.Methods)
                 {
-                    var prmMethod = GetBodyOrQueryStringParameters(ent, method.Value);
-                    prmMethod.Wait();
-                    var parameters = prmMethod.Result;
+                    var parameters = await GetBodyOrQueryStringParameters(ent, method.Value);
                     var addTypes = parameters.SelectMany(sm => sm.GetRequiredTypes()).Distinct();
                     foreach (var addType in addTypes)
                     {
@@ -154,6 +151,10 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 }
             }
 
+        }
+        public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+        {
+            AsyncHelpers.RunSync(() => ApplyAsync(swaggerDoc, context));
         }
 
 
