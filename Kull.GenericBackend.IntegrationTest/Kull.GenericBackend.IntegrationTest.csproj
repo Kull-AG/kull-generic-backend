@@ -11,7 +11,7 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
     <PackageReference Include="Kull.Data" Version="5.3.0" />
     <PackageReference Include="System.Data.SqlClient" Version="4.6.0"></PackageReference>
-    <PackageReference Include="Kull.DatabaseMetadata" Version="0.9.3" />
+    <PackageReference Include="Kull.DatabaseMetadata" Version="0.9.4" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='netcoreapp2.1'">
     <PackageReference Include="Microsoft.AspNetCore.App" />

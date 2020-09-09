@@ -31,8 +31,8 @@ namespace Kull.GenericBackend.Parameters
 
         public DbApiParameter(string sqlName, string webApiName,
                 SqlType sqlType, bool isNullable,
-                DBObjectName userDefinedType,
-                SqlHelper sqlHelper,
+                DBObjectName? userDefinedType,
+                IReadOnlyCollection<SqlFieldDescription>? userDefinedTypeFields,
                 NamingMappingHandler namingMappingHandler) : base(sqlName, webApiName)
         {
             this.DbType = sqlType;
@@ -41,9 +41,9 @@ namespace Kull.GenericBackend.Parameters
             if (userDefinedType != null)
             {
                 this.TableParameter = new TableValuedParameter(
-                    GetSqlTypeWebApiName(this.UserDefinedType),
-                    this.UserDefinedType,
-                    sqlHelper, namingMappingHandler);
+                    GetSqlTypeWebApiName(userDefinedType),
+                    userDefinedType,
+                    namingMappingHandler, userDefinedTypeFields ?? throw new ArgumentNullException("userDefinedTypeFields"));
             }
         }
 

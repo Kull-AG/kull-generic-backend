@@ -18,6 +18,7 @@ using System.Linq;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Parameters;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.Execution
 {
@@ -42,7 +43,7 @@ namespace Kull.GenericBackend.Execution
         /// <param name="method">The method</param>
         /// <param name="parameterOfUser">The parameters as provided from user</param>
         /// <returns>Returns a DbCommand Object, NOT executed</returns>
-        public virtual DbCommand GetCommandWithParameters(HttpContext? context,
+        public virtual async Task<DbCommand> GetCommandWithParameters(HttpContext? context,
                 Func<string, object>? getRouteValue,
                 DbConnection con,
                 Entity ent,
@@ -64,7 +65,7 @@ namespace Kull.GenericBackend.Execution
             {
                 cmd.CommandTimeout = method.CommandTimeout.Value;
             }
-            var (inputParameters, outputParameters) = parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), con);
+            var (inputParameters, outputParameters) = await parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), con);
             SPParameter[]? sPParameters = null;
             foreach (var apiPrm in inputParameters)
             {
@@ -113,7 +114,7 @@ namespace Kull.GenericBackend.Execution
                     }
                     else if (value as string == "")
                     {
-                        sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
+                        sPParameters = sPParameters ?? await sPParametersProvider.GetSPParameters(method.SP, con);
                         var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
                         if (spPrm.DbType.NetType == typeof(System.DateTime)
                             || spPrm.DbType.NetType == typeof(System.DateTimeOffset)
@@ -136,7 +137,7 @@ namespace Kull.GenericBackend.Execution
                     }
                     else if (value == null)
                     {
-                        sPParameters = sPParameters ?? sPParametersProvider.GetSPParameters(method.SP, con);
+                        sPParameters = sPParameters ?? await sPParametersProvider.GetSPParameters(method.SP, con);
                         var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
                         cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value, spPrm.DbType.NetType, configure: c =>
                         {

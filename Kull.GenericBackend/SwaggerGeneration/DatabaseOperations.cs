@@ -11,6 +11,7 @@ using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Any;
 using Kull.GenericBackend.Config;
 using System;
+using System.Threading.Tasks;
 #if NETFX
 using Swashbuckle.Swagger;
 using Kull.MvcCompat;
@@ -95,7 +96,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     {
                         var opType = method.Key;
                         OpenApiOperation bodyOperation = new OpenApiOperation();
-                        WriteBodyPath(bodyOperation, ent, opType, method.Value);
+                        WriteBodyPath(bodyOperation, ent, opType, method.Value).Wait();
                         openApiPathItem.Operations.Add(opType, bodyOperation);
                     }
                     swaggerDoc.Paths.Add(ent.GetUrl(this.sPMiddlewareOptions.Prefix, false), openApiPathItem);
@@ -114,7 +115,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 else
                 {
                     OpenApiSchema resultSchema = new OpenApiSchema();
-                    var dataToWrite = sqlHelper.GetSPResultSet(method.SP, options.PersistResultSets);
+                    var res = sqlHelper.GetSPResultSet(dbConnection, method.SP, options.PersistResultSets);
+                    res.Wait();
+                    var dataToWrite = res.Result;
                     WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
                     swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
@@ -124,7 +127,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
             {
                 foreach (var method in ent.Methods)
                 {
-                    var parameters = GetBodyOrQueryStringParameters(ent, method.Value);
+                    var prmMethod = GetBodyOrQueryStringParameters(ent, method.Value);
+                    prmMethod.Wait();
+                    var parameters = prmMethod.Result;
                     var addTypes = parameters.SelectMany(sm => sm.GetRequiredTypes()).Distinct();
                     foreach (var addType in addTypes)
                     {
@@ -152,9 +157,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private Parameters.WebApiParameter[] GetBodyOrQueryStringParameters(Entity ent, Method method)
+        private async Task<Parameters.WebApiParameter[]> GetBodyOrQueryStringParameters(Entity ent, Method method)
         {
-            return parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true), dbConnection)
+            return (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true), dbConnection))
                 .inputParameters
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
@@ -273,7 +278,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private void WriteBodyPath(OpenApiOperation operation, Entity entity, OperationType operationType, Method method)
+        private async Task WriteBodyPath(OpenApiOperation operation, Entity entity, OperationType operationType, Method method)
         {
             if (operation.Tags == null)
                 operation.Tags = new List<OpenApiTag>();
@@ -297,7 +302,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
             IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, entity, method);
 
-            var (inputParameters, outputParameters) = parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), dbConnection);
+            var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), dbConnection);
 
             var context = new OperationResponseContext(entity, method, sPMiddlewareOptions.AlwaysWrapJson,
                     outputParameters);

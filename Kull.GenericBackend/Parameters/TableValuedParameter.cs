@@ -16,20 +16,20 @@ namespace Kull.GenericBackend.Parameters
     {
         public override bool RequiresUserProvidedValue => true;
 
-        private readonly SqlFieldDescription[] fields;
+        private readonly IReadOnlyCollection<SqlFieldDescription> fields;
         private readonly NamingMappingHandler namingMappingHandler;
 
         public DBObjectName UserDefinedType { get; }
 
         public TableValuedParameter(string webApiName,
               DBObjectName userDefinedType,
-              SqlHelper sqlHelper,
-              NamingMappingHandler namingMappingHandler
+              NamingMappingHandler namingMappingHandler,
+              IReadOnlyCollection<SqlFieldDescription> fields
               ) : base(null, webApiName)
         {
             UserDefinedType = userDefinedType;
             this.namingMappingHandler = namingMappingHandler;
-            this.fields = sqlHelper.GetTableTypeFields(userDefinedType);
+            this.fields = fields;
         }
 
         public override OpenApiSchema GetSchema()

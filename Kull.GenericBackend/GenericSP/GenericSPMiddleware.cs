@@ -125,7 +125,7 @@ namespace Kull.GenericBackend.GenericSP
                 queryParameters = new Dictionary<string, object>();
             }
 #endif
-            var cmd = commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
+            var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
 
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
 
@@ -190,7 +190,7 @@ namespace Kull.GenericBackend.GenericSP
                 parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
                 JsonConvert.PopulateObject(json, parameterObject);
             }
-            var cmd = commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
+            var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
 
         }
