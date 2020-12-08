@@ -31,6 +31,9 @@ namespace Kull.GenericBackend.IntegrationTest
                 .ConfigureOpenApiGeneration(o =>
                 {
                     o.PersistResultSets = true;
+                    o.ParameterFieldsAreRequired = true;
+                    o.ResponseFieldsAreRequired = true;
+                    o.UseSwagger2 = false;
                 })
                 .AddFileSupport()
                 .AddXmlSupport()

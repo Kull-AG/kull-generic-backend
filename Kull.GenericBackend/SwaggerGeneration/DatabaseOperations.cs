@@ -17,10 +17,14 @@ using Kull.GenericBackend.Utils;
 using Swashbuckle.Swagger;
 using Kull.MvcCompat;
 using System.Web.Http.Description;
+using IWebHostEnvironment = Kull.MvcCompat.IHostingEnvironment;
 #else
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
+#endif
+#if NETSTD2
+using IWebHostEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 #endif
 
 namespace Kull.GenericBackend.SwaggerGeneration
@@ -51,7 +55,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly ParameterProvider parametersProvider;
         private readonly NamingMappingHandler namingMappingHandler;
         private readonly CodeConvention codeConvention;
-        private readonly IHostingEnvironment hostingEnvironment;
+        private readonly IWebHostEnvironment hostingEnvironment;
 
         public DatabaseOperations(
          SPMiddlewareOptions sPMiddlewareOptions,
@@ -64,7 +68,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
          NamingMappingHandler namingMappingHandler,
          CodeConvention codeConvention,
          ConfigProvider configProvider,
-         IHostingEnvironment hostingEnvironment)
+         IWebHostEnvironment hostingEnvironment)
         {
             this.codeConvention = codeConvention;
             this.hostingEnvironment = hostingEnvironment;
@@ -110,7 +114,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
 
             var allMethods = entities.SelectMany(e => e.Methods.Values);
-            var resultSetPath = options.PersistResultSets? (options.PersistedResultSetPath ?? System.IO.Path.Combine(hostingEnvironment.ContentRootPath, "ResultSets")):null;
+            var resultSetPath = options.PersistResultSets ? (options.PersistedResultSetPath ?? System.IO.Path.Combine(hostingEnvironment.ContentRootPath, "ResultSets")) : null;
             foreach (var method in allMethods)
             {
                 string typeName = codeConvention.GetResultTypeName(method);
@@ -121,8 +125,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 else
                 {
                     OpenApiSchema resultSchema = new OpenApiSchema();
-                    var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters);
-                    WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
+                    var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters!);
+                    WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler, options.ResponseFieldsAreRequired,
+                        options.UseSwagger2);
                     swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
             }
@@ -147,7 +152,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     if (parameters.Any())
                     {
                         OpenApiSchema parameterSchema = new OpenApiSchema();
-                        WriteJsonSchema(parameterSchema, parameters);
+                        WriteJsonSchema(parameterSchema, parameters, options.ParameterFieldsAreRequired,
+                                options.UseSwagger2);
 
 
                         swaggerDoc.Components.Schemas.Add(codeConvention.GetParameterObjectName(ent, method.Value),
@@ -171,27 +177,41 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 .ToArray();
         }
 
-        private void WriteJsonSchema(OpenApiSchema parameterSchema, Parameters.WebApiParameter[] parameters)
+        private void WriteJsonSchema(OpenApiSchema parameterSchema, Parameters.WebApiParameter[] parameters,
+            bool addRequired,
+            bool forSwagger2)
         {
             parameterSchema.Type = "object";
+            if(parameterSchema.Required == null && addRequired)
+                parameterSchema.Required = new HashSet<string>();
             foreach (var item in parameters)
             {
+                var prop = item.GetSchema();
+                if (forSwagger2 && prop.Nullable)
+                {
+                    prop.AddExtension("x-nullable", new OpenApiBoolean(true));
+                }
                 parameterSchema.Properties.Add(
                      item.WebApiName,
-                    item.GetSchema());
+                     prop);
+                if (addRequired)
+                    parameterSchema.Required!.Add(item.WebApiName);
+                
             }
         }
 
         private static void WriteJsonSchema(OpenApiSchema schema,
             IEnumerable<SqlFieldDescription> props,
-            NamingMappingHandler namingMappingHandler)
+            NamingMappingHandler namingMappingHandler,
+            bool addRequired,
+            bool forSwagger2)
         {
             schema.Type = "object";
             var names = namingMappingHandler.GetNames(props.Select(p => p.Name))
                 .GetEnumerator();
             if (schema.Xml == null) schema.Xml = new OpenApiXml();
             schema.Xml.Name = "tr";//it's always tr
-            if (schema.Required == null)
+            if (schema.Required == null && addRequired)
                 schema.Required = new HashSet<string>();
             foreach (var prop in props)
             {
@@ -203,10 +223,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     property.Format = prop.DbType.JsFormat;
                 }
                 property.Nullable = prop.IsNullable;
-
+                if(forSwagger2 && prop.IsNullable)
+                {
+                    property.AddExtension("x-nullable", new OpenApiBoolean(true));
+                }
                 names.MoveNext();
                 schema.Properties.Add(names.Current, property);
-                schema.Required.Add(names.Current);
+                if (addRequired)
+                    schema.Required!.Add(names.Current);
             }
         }
 

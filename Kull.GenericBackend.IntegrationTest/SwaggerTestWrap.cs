@@ -8,12 +8,12 @@ using System.Linq;
 
 namespace Kull.GenericBackend.IntegrationTest
 {
-    public class SwaggerTest
-        : IClassFixture<TestWebApplicationFactory>
+    public class SwaggerTestWrap
+        : IClassFixture<TestWebApplicationFactoryWrap>
     {
-        private readonly TestWebApplicationFactory _factory;
+        private readonly TestWebApplicationFactoryWrap _factory;
 
-        public SwaggerTest(TestWebApplicationFactory factory)
+        public SwaggerTestWrap(TestWebApplicationFactoryWrap factory)
         {
             _factory = factory;
         }
@@ -33,24 +33,20 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.Equal("application/json; charset=utf-8",
                 response.Content.Headers.ContentType.ToString());
             var resp = await response.Content.ReadAsStringAsync();
-            System.IO.File.WriteAllText("test.json", resp);
+            System.IO.File.WriteAllText("testWrap.json", resp);
             var jObj = JsonConvert.DeserializeObject<JObject>(resp);
             var petParameter = (JArray)jObj["paths"]["/rest/Pet"]["get"]["parameters"];
             Assert.Equal(2, petParameter.Count);
             var onlyNiceParam =
                 petParameter.Children<JObject>()
                 .Single(p => p.Value<string>("name") == "onlyNice");
-            Assert.Equal("boolean", onlyNiceParam.Value<string>("type"));
-            if (onlyNiceParam.TryGetValue("required", out var token))
-            {
-                var vl = (bool)((JValue)token).Value;
-                Assert.False(vl);
-            }
+            Assert.Equal("boolean", onlyNiceParam["schema"].Value<string>("type"));
+
 
             var searchStringParam =
                 petParameter.Children<JObject>()
                 .Single(p => p.Value<string>("name") == "searchString");
-            Assert.Equal("string", searchStringParam.Value<string>("type"));
+            Assert.Equal("string", searchStringParam["schema"].Value<string>("type"));
 
 
             var postAsGetOp = (JObject)jObj["paths"]["/rest/Test"]["post"];
