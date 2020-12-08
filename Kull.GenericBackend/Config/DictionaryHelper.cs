@@ -10,12 +10,17 @@ namespace Kull.GenericBackend.Config
 {
     internal static class DictionaryHelper
     {
-        public static T GetValue<T>(this IDictionary<string, object?> dictionary, string key)
+        public static T GetValue<T>(this IReadOnlyDictionary<string, object?> dictionary, string key)
         {
+
             if (dictionary.ContainsKey(key))
             {
-                var value  = dictionary[key]!;
+                var value = dictionary[key]!;
                 if (value == null) return default(T)!;
+                if (typeof(T) == typeof(IReadOnlyDictionary<string, object>))
+                {
+                    return (T)ConvertToDeepIDictionary(value, StringComparer.CurrentCultureIgnoreCase);
+                }
                 if (value is T t)
                 {
                     return t;
@@ -69,7 +74,7 @@ namespace Kull.GenericBackend.Config
                         throw new NotSupportedException("Cannot convert Json");
                 }
             }
-            if (input is IDictionary<string, object> dict)
+            if (input is IReadOnlyDictionary<string, object> dict)
             {
                 return dict.ToDictionary(o => o.Key, o => ConvertToDeepIDictionary(o.Value, stringComparer), stringComparer);
             }

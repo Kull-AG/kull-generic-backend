@@ -27,7 +27,9 @@ namespace Kull.GenericBackend.Common
         
         public int? CommandTimeout { get; }
 
-        private IDictionary<string, object?> restParameters;
+        private IReadOnlyDictionary<string, object?> restParameters;
+
+        public IReadOnlyDictionary<string, object?>? ExecuteParameters { get; }
 
         public Method(OperationType httpMethod, string sp)
             : this(httpMethod, sp, null, null, null)
@@ -40,7 +42,8 @@ namespace Kull.GenericBackend.Common
             string? operationName = null,
             string? resultType = null, string? tag = null,
             int? commandTimeout = null,
-            IDictionary<string, object?>? restParameters = null)
+            IReadOnlyDictionary<string, object?>? executeParameters=null,
+            IReadOnlyDictionary<string, object?>? restParameters = null)
         {
             if (sp == null) throw new ArgumentNullException("sp");
             HttpMethod = httpMethod;
@@ -70,14 +73,15 @@ namespace Kull.GenericBackend.Common
             }
             if (value is string s)
                 return new Method(operationType, s);
-            var childConfig = (IDictionary<string, object?>)value;
+            var childConfig = (IReadOnlyDictionary<string, object?>)value;
             return new Method(operationType, childConfig.GetValue<string>("SP"),
                 childConfig.GetValue<string?>("OperationId"),
                 childConfig.GetValue<string?>("OperationName"),
                 childConfig.GetValue<string?>("ResultType"),
                 childConfig.GetValue<string?>("Tag"),
                 childConfig.GetValue<int?>("CommandTimeout"),
-                childConfig);
+                executeParameters: childConfig.GetValue<IReadOnlyDictionary<string, object?>?>("ExecuteParameters"),
+                restParameters: childConfig);
 
         }
 

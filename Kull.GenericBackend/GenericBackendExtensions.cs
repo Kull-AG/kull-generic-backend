@@ -65,6 +65,7 @@ namespace Kull.GenericBackend
             services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
             GenericSP.SPMiddlewareOptions? options = null;
             SwaggerFromSPOptions? swaggerFromSPOptions = null;
+            
             var opts = options ??
                     new GenericSP.SPMiddlewareOptions();
             services.TryAddSingleton(opts);

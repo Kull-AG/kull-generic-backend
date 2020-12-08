@@ -6,12 +6,12 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0007" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.2" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
     <PackageReference Include="Kull.Data" Version="5.3.0" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.6.0"></PackageReference>
-    <PackageReference Include="Kull.DatabaseMetadata" Version="0.9.4" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.2"></PackageReference>
+    <PackageReference Include="Kull.DatabaseMetadata" Version="0.9.7" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='netcoreapp2.1'">
     <PackageReference Include="Microsoft.AspNetCore.App" />

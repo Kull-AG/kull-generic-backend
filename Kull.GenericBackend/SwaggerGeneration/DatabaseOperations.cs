@@ -20,6 +20,7 @@ using System.Web.Http.Description;
 #else
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
 #endif
 
 namespace Kull.GenericBackend.SwaggerGeneration
@@ -50,6 +51,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly ParameterProvider parametersProvider;
         private readonly NamingMappingHandler namingMappingHandler;
         private readonly CodeConvention codeConvention;
+        private readonly IHostingEnvironment hostingEnvironment;
 
         public DatabaseOperations(
          SPMiddlewareOptions sPMiddlewareOptions,
@@ -61,9 +63,11 @@ namespace Kull.GenericBackend.SwaggerGeneration
          SerializerResolver serializerResolver,
          NamingMappingHandler namingMappingHandler,
          CodeConvention codeConvention,
-         ConfigProvider configProvider)
+         ConfigProvider configProvider,
+         IHostingEnvironment hostingEnvironment)
         {
             this.codeConvention = codeConvention;
+            this.hostingEnvironment = hostingEnvironment;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.options = options;
             this.sqlHelper = sqlHelper;
@@ -106,6 +110,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
 
             var allMethods = entities.SelectMany(e => e.Methods.Values);
+            var resultSetPath = options.PersistResultSets? (options.PersistedResultSetPath ?? System.IO.Path.Combine(hostingEnvironment.ContentRootPath, "ResultSets")):null;
             foreach (var method in allMethods)
             {
                 string typeName = codeConvention.GetResultTypeName(method);
@@ -116,7 +121,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 else
                 {
                     OpenApiSchema resultSchema = new OpenApiSchema();
-                    var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, options.PersistResultSets);
+                    var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters);
                     WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
                     swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
