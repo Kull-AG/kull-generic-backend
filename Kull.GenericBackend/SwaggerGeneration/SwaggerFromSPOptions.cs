@@ -22,7 +22,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         /// <summary>
         /// Uses x-nullable for nullability
         /// </summary>
-        public bool UseSwagger2 { get; set; }
+        public bool UseSwagger2 { get; set; } = false;
     }
 
 }
