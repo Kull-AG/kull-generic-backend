@@ -132,12 +132,12 @@ namespace Kull.GenericBackend.GenericSP
             var start = DateTime.UtcNow;
             foreach(var log in requestLoggers)
             {
-                log.OnRequestStart(cmd);
+                log.OnRequestStart(context, cmd);
             }
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
             foreach (var log in requestLoggers)
             {
-                log.OnRequestEnd(cmd, start);
+                log.OnRequestEnd(context, cmd, start);
             }
         }
 
@@ -204,12 +204,12 @@ namespace Kull.GenericBackend.GenericSP
             var start = DateTime.UtcNow;
             foreach (var log in requestLoggers)
             {
-                log.OnRequestStart(cmd);
+                log.OnRequestStart(context, cmd);
             }
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
             foreach (var log in requestLoggers)
             {
-                log.OnRequestEnd(cmd, start);
+                log.OnRequestEnd(context, cmd, start);
             }
         }
 
