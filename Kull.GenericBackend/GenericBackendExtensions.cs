@@ -54,7 +54,7 @@ namespace Kull.GenericBackend
             services.TryAddSingleton<Config.ConfigProvider>();
             services.TryAddTransient<ParameterProvider>();
             services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
-            services.TryAddSingleton<Execution.CommandPreparation>();
+            services.TryAddTransient<Execution.CommandPreparation>();
 #if NETFX || NETSTD
             services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerJsonNet>();
 #else

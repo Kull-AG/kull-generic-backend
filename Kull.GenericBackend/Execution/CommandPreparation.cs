@@ -1,5 +1,5 @@
 using Kull.GenericBackend.Common;
-#if NET47
+#if NET48
 using HttpContext = System.Web.HttpContextBase;
 using System.Web.Routing;
 using Kull.MvcCompat;
@@ -27,10 +27,10 @@ namespace Kull.GenericBackend.Execution
         private readonly ParameterProvider parameterProvider;
         private readonly SPParametersProvider sPParametersProvider;
 
-        public CommandPreparation(IServiceProvider serviceProvider) // Use of IServiceProvider to not break inheritance
+        public CommandPreparation(ParameterProvider parameterProvider, SPParametersProvider sPParametersProvider)
         {
-            this.parameterProvider = (ParameterProvider)serviceProvider.GetService(typeof(ParameterProvider));
-            this.sPParametersProvider = (SPParametersProvider)serviceProvider.GetService(typeof(SPParametersProvider));
+            this.parameterProvider = parameterProvider;
+            this.sPParametersProvider = sPParametersProvider;
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Kull.GenericBackend.Execution
                 cmd.CommandTimeout = method.CommandTimeout.Value;
             }
             var (inputParameters, outputParameters) = await parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), con);
-            SPParameter[]? sPParameters = null;
+            IReadOnlyCollection<SPParameter>? sPParameters = null;
             foreach (var apiPrm in inputParameters)
             {
                 var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */

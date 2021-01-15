@@ -1,5 +1,5 @@
 
-#if NET47
+#if NET48
 using Kull.MvcCompat;
 using HttpContext=System.Web.HttpContextBase;
 using System.Net.Http.Headers;

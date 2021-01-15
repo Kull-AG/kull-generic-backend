@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-#if NET47
+#if NET48
 using HttpContext = System.Web.HttpContextBase;
 using System.Web.Routing;
 using Kull.MvcCompat;
@@ -39,6 +39,7 @@ namespace Kull.GenericBackend.GenericSP
         private readonly DbConnection dbConnection;
         private readonly IEnumerable<IRequestInterceptor> requestInterceptors;
         private readonly CommandPreparation commandPreparation;
+        private readonly IEnumerable<Filter.RequestLogger> requestLoggers;
 
         public GenericSPMiddleware(
             ILogger<GenericSPMiddleware> logger,
@@ -46,6 +47,7 @@ namespace Kull.GenericBackend.GenericSP
             SPMiddlewareOptions sPMiddlewareOptions,
             DbConnection dbConnection,
             IEnumerable<Filter.IRequestInterceptor> requestInterceptors,
+            IEnumerable<Filter.RequestLogger> requestLoggers,
             CommandPreparation commandPreparation)
         {
             this.logger = logger;
@@ -54,11 +56,12 @@ namespace Kull.GenericBackend.GenericSP
             this.dbConnection = dbConnection;
             this.requestInterceptors = requestInterceptors;
             this.commandPreparation = commandPreparation;
+            this.requestLoggers = requestLoggers;
         }
 
         public Task HandleRequest(HttpContext context, Entity ent)
         {
-#if NET47
+#if NET48
             var method = ent.GetMethod(context.Request.HttpMethod);
 #else
             var method = ent.GetMethod(context.Request.Method);
@@ -73,7 +76,7 @@ namespace Kull.GenericBackend.GenericSP
                     return HttpHandlingUtils.HttpContentToResponse(shouldIntercept.Value.responseContent, context.Response);
                 }
             }
-#if NET47 
+#if NET48 
             var accept = (context.Request.Headers["Accept"] ?? "").Split(',').Select(ac => MediaTypeHeaderValue.Parse(ac)).ToList();
 #else
             var accept = context.Request.GetTypedHeaders().Accept;
@@ -90,7 +93,7 @@ namespace Kull.GenericBackend.GenericSP
                 context.Response.StatusCode = 401;
                 return Task.CompletedTask;
             }
-#if NET47
+#if NET48
             if (context.Request.HttpMethod.ToUpper() == "GET")
 #else
             if (context.Request.Method.ToUpper() == "GET")
@@ -107,7 +110,7 @@ namespace Kull.GenericBackend.GenericSP
             var request = context.Request;
 
             Dictionary<string, object> queryParameters;
-#if NET47
+#if NET48
             queryParameters = request.QueryString.AllKeys.ToDictionary(k => k,
                 k => (object)request.QueryString.Get(k), StringComparer.CurrentCultureIgnoreCase);
 #else
@@ -126,9 +129,16 @@ namespace Kull.GenericBackend.GenericSP
             }
 #endif
             var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
-
+            var start = DateTime.UtcNow;
+            foreach(var log in requestLoggers)
+            {
+                log.OnRequestStart(cmd);
+            }
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
-
+            foreach (var log in requestLoggers)
+            {
+                log.OnRequestEnd(cmd, start);
+            }
         }
 
 
@@ -150,7 +160,7 @@ namespace Kull.GenericBackend.GenericSP
         {
             var request = context.Request;
             Dictionary<string, object> parameterObject;
-#if NET47
+#if NET48
             var cntType = MediaTypeHeaderValue.Parse(request.ContentType);
             bool hasFormContentType = HasMultipartFormContentType(cntType) || HasApplicationFormContentType(cntType);
 #else
@@ -191,8 +201,16 @@ namespace Kull.GenericBackend.GenericSP
                 JsonConvert.PopulateObject(json, parameterObject);
             }
             var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
+            var start = DateTime.UtcNow;
+            foreach (var log in requestLoggers)
+            {
+                log.OnRequestStart(cmd);
+            }
             await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
-
+            foreach (var log in requestLoggers)
+            {
+                log.OnRequestEnd(cmd, start);
+            }
         }
 
 

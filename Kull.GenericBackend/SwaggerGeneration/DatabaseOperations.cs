@@ -29,7 +29,7 @@ using IWebHostEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 
 namespace Kull.GenericBackend.SwaggerGeneration
 {
-#if NET47
+#if NET48
     public class DatabaseOperationWrap : IDocumentFilter
     {
         public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
@@ -83,7 +83,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             entities = configProvider.Entities;
         }
 
-#if NET47
+#if NET48
         public class DocumentFilterContext { }
 #endif
 
@@ -400,7 +400,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
         }
 
-#if NET47
+#if NET48
         public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
         {
             var doc = new OpenApiDocument();

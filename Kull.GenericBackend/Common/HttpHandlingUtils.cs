@@ -1,4 +1,4 @@
-#if NET47
+#if NET48
 using HttpContext = System.Web.HttpContextBase;
 using HttpResponse = System.Web.HttpResponseBase;
 #else
@@ -14,7 +14,7 @@ namespace Kull.GenericBackend.Common
     {
         internal static async Task HttpContentToResponse(HttpContent content, HttpResponse response)
         {
-#if NET47
+#if NET48
             foreach (var h in content.Headers)
             {
                 if (response.Headers.AllKeys.Contains(h.Key))

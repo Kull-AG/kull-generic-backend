@@ -1,5 +1,5 @@
 
-#if NET47
+#if NET48
 using Kull.MvcCompat;
 using HttpContext=System.Web.HttpContextBase;
 using System.Net.Http.Headers;
@@ -204,7 +204,7 @@ namespace Kull.GenericBackend.Serialization
                         await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult);
                     }
                     await stream.FlushAsync();
-#if NET47
+#if NET48
                     await context.Response.FlushAsync();
 #endif
                 }

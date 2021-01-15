@@ -1,5 +1,5 @@
 using Kull.GenericBackend.Common;
-#if NET47
+#if NET48
 using HttpContext = System.Web.HttpContextBase;
 #else
 using Microsoft.AspNetCore.Http;
@@ -41,7 +41,7 @@ namespace Kull.GenericBackend.Serialization
             Entity = entity;
         }
 
-#if NET47
+#if NET48
         public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync();
         public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync();
 

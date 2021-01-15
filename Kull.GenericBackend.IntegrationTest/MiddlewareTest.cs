@@ -55,6 +55,38 @@ namespace Kull.GenericBackend.IntegrationTest
             });
         }
 
+
+        [Theory]
+        [InlineData("/rest/Pet/2")]
+        public async Task GetSinglePet(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+            var getContent = await response.Content.ReadAsStringAsync();
+            var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
+            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts").ToDictionary(k => k, k => d[k])).ToArray();
+            Utils.JsonUtils.AssertJsonEquals(withoutTs, new[]
+            {
+                new
+                {
+                    petId=2,
+                    petName= "Dog 2",
+                    isNice =true
+                }
+            });
+        }
+
+
         [Theory]
         [InlineData("/rest/Dog/1")]
         public async Task UpdateDog(string url)

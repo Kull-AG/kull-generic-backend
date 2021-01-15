@@ -2,7 +2,7 @@ using Kull.GenericBackend.Common;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-#if NET47
+#if NET48
 using System.Net.Http.Headers;
 #else
 using Microsoft.Net.Http.Headers;

@@ -1,6 +1,6 @@
 using Kull.GenericBackend.Common;
 using System.Collections.Generic;
-#if NET47
+#if NET48
 using System.Net.Http.Headers;
 #else
 using Microsoft.Net.Http.Headers;

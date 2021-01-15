@@ -27,7 +27,7 @@ namespace Kull.GenericBackend.GenericSP
             entities = configProvider.Entities;
         }
 
-#if NET47
+#if NET48
         class RouteHandlerWrap : HttpTaskAsyncHandler ,  IRouteHandler
         {
             Entity entity;

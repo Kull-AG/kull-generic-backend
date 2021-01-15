@@ -1,7 +1,7 @@
 using Kull.Data;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Common;
-#if NET47
+#if NET48
 using HttpContext = System.Web.HttpContextBase;
 #else
 using Microsoft.AspNetCore.Http;

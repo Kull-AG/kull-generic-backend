@@ -1,7 +1,7 @@
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.GenericSP;
 using Kull.GenericBackend.SwaggerGeneration;
-#if NET47
+#if NET48
 using Kull.MvcCompat;
 using HttpContext = System.Web.HttpContextBase;
 using System.Net.Http.Headers;
@@ -98,7 +98,7 @@ namespace Kull.GenericBackend.Serialization
                 {
                     bool firstRead = rdr.Read();
                     await PrepareHeader(context, method, ent, 200);
-#if NET47
+#if NET48
                     using (var xmlWriter = new System.Xml.XmlTextWriter(context.Response.OutputStream, options.Encoding))
 #else
                     using (var xmlWriter = new System.Xml.XmlTextWriter(context.Response.Body, options.Encoding))
@@ -172,7 +172,7 @@ namespace Kull.GenericBackend.Serialization
                     if (result != null)
                     {
                         (var status, var content) = result.Value;
-#if NET47
+#if NET48
                         if (!context.Response.HeadersWritten)
 #else 
                         if (!context.Response.HasStarted)
@@ -197,7 +197,7 @@ namespace Kull.GenericBackend.Serialization
 
         private static bool IsHtmlRequest(HttpContext context)
         {
-#if NET47 
+#if NET48 
             return false;//Not a great featurea anyway :)
 #else
             return context.Request.GetTypedHeaders().Accept.Any(contentType => contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml");

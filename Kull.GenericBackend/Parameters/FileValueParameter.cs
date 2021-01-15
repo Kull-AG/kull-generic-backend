@@ -1,4 +1,4 @@
-#if NET47
+#if NET48
 using HttpContext = System.Web.HttpContextBase;
 using Kull.MvcCompat;
 #else
