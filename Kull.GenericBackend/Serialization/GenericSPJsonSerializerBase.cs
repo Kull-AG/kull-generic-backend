@@ -47,13 +47,16 @@ namespace Kull.GenericBackend.Serialization
         protected readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
         private readonly CodeConvention codeConvention;
 
-        public GenericSPJsonSerializerBase(IServiceProvider serviceProvider)
+        public GenericSPJsonSerializerBase(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+                ILogger<GenericSPJsonSerializerBase> logger,
+                IEnumerable<Error.IResponseExceptionHandler> responseExceptions,
+                CodeConvention convention)
         {
-            this.namingMappingHandler = (Common.NamingMappingHandler)serviceProvider.GetService(typeof(Common.NamingMappingHandler));
-            this.options = (SPMiddlewareOptions)serviceProvider.GetService(typeof(SPMiddlewareOptions));
-            this.logger = (ILogger<GenericSPJsonSerializerBase>)serviceProvider.GetService(typeof(ILogger<GenericSPJsonSerializerBase>));
-            this.errorHandlers = (IEnumerable<Error.IResponseExceptionHandler>)serviceProvider.GetService(typeof(IEnumerable<Error.IResponseExceptionHandler>)); 
-            this.codeConvention = (CodeConvention)serviceProvider.GetService(typeof(CodeConvention));
+            this.namingMappingHandler = namingMappingHandler;
+            this.options = options;
+            this.logger = logger;
+            this.errorHandlers = responseExceptions; 
+            this.codeConvention = convention;
         }
 
         /// <summary>

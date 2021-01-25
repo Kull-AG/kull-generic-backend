@@ -29,9 +29,11 @@ namespace Kull.GenericBackend.Serialization
     /// </summary>
     public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGenericSPSerializer
     {
-        public GenericSPJsonSerializerJsonNet(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
+        public GenericSPJsonSerializerJsonNet(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+                ILogger<GenericSPJsonSerializerBase> logger,
+                IEnumerable<Error.IResponseExceptionHandler> responseExceptions,
+                CodeConvention convention) : base(namingMappingHandler, options, logger, responseExceptions, convention)
+        { }
 
         protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNames, bool? firstReadResult)
         {
@@ -39,8 +41,8 @@ namespace Kull.GenericBackend.Serialization
             var jsonWriter = new JsonTextWriter(streamWriter);
 
             jsonWriter.WriteStartArray();
-            if (firstReadResult==null)
-                firstReadResult=rdr.Read();
+            if (firstReadResult == null)
+                firstReadResult = rdr.Read();
 
             if (firstReadResult == true)
             {

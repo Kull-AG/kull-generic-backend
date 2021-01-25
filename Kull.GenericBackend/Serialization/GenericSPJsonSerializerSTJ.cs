@@ -24,9 +24,11 @@ namespace Kull.GenericBackend.Serialization
     /// </summary>
     public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericSPSerializer
     {
-        public GenericSPJsonSerializerSTJ(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
+        public GenericSPJsonSerializerSTJ(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+                ILogger<GenericSPJsonSerializerBase> logger,
+                IEnumerable<Error.IResponseExceptionHandler> responseExceptions,
+                CodeConvention convention) : base(namingMappingHandler, options, logger, responseExceptions, convention)
+        { }
 
         protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNamesToUse, bool? firstReadResult)
         {
