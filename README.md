@@ -166,9 +166,9 @@ If you want to set the status code, use throw with code 50000 + Http Status Code
 throw 50503, 'No access to this', 1 
 ```
 
-# .Net 4.7
+# .Net 4.8
 
-It works in theory, but requires a lot of #if's and is not integration-tested.
+It works in theory, but requires a lot of #if's and is not integration-tested. It's used in a number of projects though and does it's job.
 See [wiki](https://github.com/Kull-AG/kull-generic-backend/wiki/Usage-with-MVC-5)
 
 # Possible futher development
