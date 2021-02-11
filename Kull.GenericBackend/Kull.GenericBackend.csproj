@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>1.3.8</VersionPrefix>
+    <VersionPrefix>1.3.9</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/Kull-AG/kull-generic-backend</RepositoryUrl>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>9.0</LangVersion>
     <Nullable>enable</Nullable>
     <Copyright>Kull AG</Copyright>
     <IncludeSymbols>true</IncludeSymbols>
@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;netstandard2.0;net48</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;netstandard2.0;net5;net48</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
@@ -47,7 +47,7 @@
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net48' ">
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="5.6.3" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.0.4" />
     <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='net48'">
