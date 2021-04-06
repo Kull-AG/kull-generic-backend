@@ -90,7 +90,12 @@ In a File called backendconfig.json, set the URI's:
             "Get": "api.spGetBrands",
             "Post": {
                 "SP": "api.spAddUpdateBrands",
-                "OperationId": "AddOrUpdateBrands"
+                "OperationId": "AddOrUpdateBrands",
+                "IgnoreParameters":["AParameterMyApiDoesnotCare"],
+                "ExecuteParameters": {
+                    "ParamterName": "Set this object for strange cases where SQL Server does not return meta",
+                    "AnotherParamter": "Be sure not to edit any data."
+                }
             }
         }
     }
