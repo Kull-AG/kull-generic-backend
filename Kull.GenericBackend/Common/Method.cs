@@ -31,6 +31,8 @@ namespace Kull.GenericBackend.Common
 
         public IReadOnlyDictionary<string, object?>? ExecuteParameters { get; }
 
+        public IReadOnlyCollection<string> IgnoreParameters { get; }
+
         public Method(OperationType httpMethod, string sp)
             : this(httpMethod, sp, null, null, null)
         {
@@ -43,6 +45,7 @@ namespace Kull.GenericBackend.Common
             string? resultType = null, string? tag = null,
             int? commandTimeout = null,
             IReadOnlyDictionary<string, object?>? executeParameters=null,
+            IReadOnlyCollection<string>? ignoreParameters = null,
             IReadOnlyDictionary<string, object?>? restParameters = null)
         {
             if (sp == null) throw new ArgumentNullException("sp");
@@ -53,6 +56,8 @@ namespace Kull.GenericBackend.Common
             ResultType = resultType;
             Tag = tag;
             CommandTimeout = commandTimeout;
+            this.ExecuteParameters = executeParameters;
+            this.IgnoreParameters = ignoreParameters ?? Array.Empty<string>();
             this.restParameters = restParameters ?? new Dictionary<string, object?>();
         }
 
@@ -81,6 +86,7 @@ namespace Kull.GenericBackend.Common
                 childConfig.GetValue<string?>("Tag"),
                 childConfig.GetValue<int?>("CommandTimeout"),
                 executeParameters: childConfig.GetValue<IReadOnlyDictionary<string, object?>?>("ExecuteParameters"),
+                ignoreParameters: childConfig.GetValue<IReadOnlyCollection<string>?>("IgnoreParameters"),
                 restParameters: childConfig);
 
         }

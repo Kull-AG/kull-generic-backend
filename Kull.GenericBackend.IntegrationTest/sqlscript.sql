@@ -120,3 +120,12 @@ AS
 BEGIN
 	SELECT @Image_Content AS Content, @Image_ContentType as ContentType, @Image_FileName AS [FileName]
 END
+GO
+CREATE PROCEDURE dbo.spGetSomeTempTable
+	@IgnoreMe bit=0,
+	@AnAwesomeParam int
+AS
+BEGIn
+	SELECT @AnAwesomeParam AS Nr INTO #out
+	SELECT *FROM #out;
+END

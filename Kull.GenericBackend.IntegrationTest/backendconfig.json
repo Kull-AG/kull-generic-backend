@@ -47,6 +47,15 @@
       "GET": {
         "Sp": "None"
       }
+    },
+    "TestTemp": {
+      "GET": {
+        "SP": "spGetSomeTempTable",
+        "IgnoreParameters": [ "IgnoreMe" ],
+        "ExecuteParameters": {
+          "AnAwesomeParam": 56
+        }
+      }
     }
   }
 }

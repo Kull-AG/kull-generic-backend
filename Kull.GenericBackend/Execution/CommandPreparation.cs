@@ -65,7 +65,7 @@ namespace Kull.GenericBackend.Execution
             {
                 cmd.CommandTimeout = method.CommandTimeout.Value;
             }
-            var (inputParameters, outputParameters) = await parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), con);
+            var (inputParameters, outputParameters) = await parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), method.IgnoreParameters, con);
             IReadOnlyCollection<SPParameter>? sPParameters = null;
             foreach (var apiPrm in inputParameters)
             {

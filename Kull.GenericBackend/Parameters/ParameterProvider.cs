@@ -1,5 +1,6 @@
 using Kull.Data;
 using Kull.DatabaseMetadata;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -26,10 +27,14 @@ namespace Kull.GenericBackend.Parameters
         }
 
 
-        public async Task<(WebApiParameter[] inputParameters, OutputParameter[] outputParameters)> GetApiParameters(Filter.ParameterInterceptorContext context, DbConnection dbConnection)
+        public async Task<(WebApiParameter[] inputParameters, OutputParameter[] outputParameters)> GetApiParameters(Filter.ParameterInterceptorContext context,
+            IReadOnlyCollection<string> ignoreParameters,
+            DbConnection dbConnection)
         {
             var method = context.Method;
-            var spParams = await sPParametersProvider.GetSPParameters(method.SP, dbConnection);
+            var spParamsRaw = await sPParametersProvider.GetSPParameters(method.SP, dbConnection);
+            var spParams = ignoreParameters.Count == 0 ? spParamsRaw : spParamsRaw.Where(p => !ignoreParameters.Contains(p.SqlName.StartsWith("@") ? p.SqlName.Substring(1) : p.SqlName,
+                  StringComparer.OrdinalIgnoreCase));
             var spPrmsNoCount = spParams.Where(p => p.ParameterDirection != System.Data.ParameterDirection.Output);
             var prmsOutRaw = spParams.Where(p => p.ParameterDirection == System.Data.ParameterDirection.Output || p.ParameterDirection == System.Data.ParameterDirection.InputOutput);
             var prmsOut = prmsOutRaw.Select(p => new OutputParameter(p.SqlName, p.DbType)).ToArray();

@@ -17,13 +17,25 @@ namespace Kull.GenericBackend.Config
             {
                 var value = dictionary[key]!;
                 if (value == null) return default(T)!;
+                if (value is T t) return t;
                 if (typeof(T) == typeof(IReadOnlyDictionary<string, object>))
                 {
-                    return (T)ConvertToDeepIDictionary(value, StringComparer.CurrentCultureIgnoreCase);
+                    return (T)(object)ConvertToDeepIDictionary(value, StringComparer.CurrentCultureIgnoreCase)!;
                 }
-                if (value is T t)
+                if (typeof(T) == typeof(IReadOnlyCollection<string>))
                 {
-                    return t;
+                    if (value is JArray ar)
+                    {
+                        return (T)(object)ar.Children().Select(s => s.Value<string>()).ToList();
+                    }
+                    else if (value is IEnumerable<string> es)
+                    {
+                        return (T)(object)es.ToList();
+                    }
+                    else if (value is IEnumerable<object> es2)
+                    {
+                        return (T)(object)es2.Select(s => s.ToString()).ToList();
+                    }
                 }
                 else if (value is IConvertible c)
                 {
@@ -43,7 +55,7 @@ namespace Kull.GenericBackend.Config
         }
 
 
-        internal static object? ConvertToDeepIDictionary(object input, StringComparer stringComparer)
+        internal static object? ConvertToDeepIDictionary(object? input, StringComparer stringComparer)
         {
             if (input == null) return null;
             if (input is JObject obj)

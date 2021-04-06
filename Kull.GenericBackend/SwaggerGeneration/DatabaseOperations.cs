@@ -136,7 +136,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
             {
                 foreach (var method in ent.Methods)
                 {
-                    var parameters = await GetBodyOrQueryStringParameters(ent, method.Value);
+                    var allParameters = (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method.Value, true), method.Value.IgnoreParameters, dbConnection));
+                    
+                    var parameters = await GetBodyOrQueryStringParameters(allParameters.inputParameters, ent, method.Value);
                     var addTypes = parameters.SelectMany(sm => sm.GetRequiredTypes()).Distinct();
                     foreach (var addType in addTypes)
                     {
@@ -154,10 +156,15 @@ namespace Kull.GenericBackend.SwaggerGeneration
                         OpenApiSchema parameterSchema = new OpenApiSchema();
                         WriteJsonSchema(parameterSchema, parameters, options.ParameterFieldsAreRequired,
                                 options.UseSwagger2);
-
-
                         swaggerDoc.Components.Schemas.Add(codeConvention.GetParameterObjectName(ent, method.Value),
                             parameterSchema);
+                    }
+                    if(allParameters.outputParameters.Any())
+                    {
+                        OpenApiSchema outputSchema = new OpenApiSchema();
+                        WriteJsonSchema(outputSchema, allParameters.outputParameters, namingMappingHandler, true, options.UseSwagger2);
+                        swaggerDoc.Components.Schemas.Add(codeConvention.GetOutputObjectTypeName(method.Value),
+                            outputSchema);
                     }
                 }
             }
@@ -169,10 +176,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private async Task<Parameters.WebApiParameter[]> GetBodyOrQueryStringParameters(Entity ent, Method method)
+        private async Task<Parameters.WebApiParameter[]> GetBodyOrQueryStringParameters(IEnumerable<WebApiParameter> inputParameters, Entity ent, Method method)
         {
-            return (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true), dbConnection))
-                .inputParameters
+            return inputParameters
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
         }
@@ -224,6 +230,40 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 }
                 property.Nullable = prop.IsNullable;
                 if(forSwagger2 && prop.IsNullable)
+                {
+                    property.AddExtension("x-nullable", new OpenApiBoolean(true));
+                }
+                names.MoveNext();
+                schema.Properties.Add(names.Current, property);
+                if (addRequired)
+                    schema.Required!.Add(names.Current);
+            }
+        }
+
+        private static void WriteJsonSchema(OpenApiSchema schema,
+            IEnumerable<OutputParameter> props,
+            NamingMappingHandler namingMappingHandler,
+            bool addRequired,
+            bool forSwagger2)
+        {
+            schema.Type = "object";
+            var names = namingMappingHandler.GetNames(props.Select(p => p.SqlName))
+                .GetEnumerator();
+            if (schema.Xml == null) schema.Xml = new OpenApiXml();
+            schema.Xml.Name = "tr";//it's always tr
+            if (schema.Required == null && addRequired)
+                schema.Required = new HashSet<string>();
+            foreach (var prop in props)
+            {
+
+                OpenApiSchema property = new OpenApiSchema();
+                property.Type = prop.DbType.JsType;
+                if (prop.DbType.JsFormat != null)
+                {
+                    property.Format = prop.DbType.JsFormat;
+                }
+                property.Nullable = true;
+                if (forSwagger2)
                 {
                     property.AddExtension("x-nullable", new OpenApiBoolean(true));
                 }
@@ -332,7 +372,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
             IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, entity, method);
 
-            var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), dbConnection);
+            var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), method.IgnoreParameters, dbConnection);
 
             var context = new OperationResponseContext(entity, method, sPMiddlewareOptions.AlwaysWrapJson,
                     outputParameters);
