@@ -77,16 +77,12 @@ namespace Kull.GenericBackend.Serialization
 
         private async Task WriteOutputParameters(Stream outputStream, IReadOnlyCollection<DbParameter> outParameters)
         {
-            Dictionary<string, object> outParameterValues
-                = new Dictionary<string, object>(outParameters.Count);
-            foreach (var p in outParameters.Cast<DbParameter>())
-            {
-                outParameterValues.Add(p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName,
-                    p.Value);
+            Dictionary<string, object?> outParameterValues = outParameters.Cast<DbParameter>().ToDictionary(
+                p=>p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName,
+                  p=>  p.Value);
 
-            }
             Kull.Data.DataReader.ObjectDataReader objectData = new Data.DataReader.ObjectDataReader(
-                new Dictionary<string, object>[]
+                new IReadOnlyDictionary<string, object?>[]
                 {
                     outParameterValues
                 }

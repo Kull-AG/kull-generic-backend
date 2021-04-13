@@ -84,9 +84,9 @@ namespace Kull.GenericBackend.Serialization
             // Thanks, https://stackoverflow.com/questions/93551/how-to-encode-the-filename-parameter-of-content-disposition-header-in-http
             string contentDisposition;
 #if NETFX
-            string userAgent = context.Request.Headers["User-Agent"];
+            string? userAgent = context.Request.Headers["User-Agent"];
 #else
-            string userAgent = context.Request.Headers["User-Agent"].FirstOrDefault();
+            string? userAgent = context.Request.Headers["User-Agent"].FirstOrDefault();
 #endif
             if (userAgent != null && userAgent.ToLowerInvariant().Contains("android")) // android built-in download manager (all browsers on android)
                 contentDisposition = "attachment; filename=\"" + MakeAndroidSafeFileName(fileName) + "\"";

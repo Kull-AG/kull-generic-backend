@@ -39,7 +39,7 @@ namespace Kull.GenericBackend.Filter
                 return DebugUsername;
             }
 #endif
-            return context.User.Identity.Name;
+            return context.User?.Identity?.Name;
         }
 
         public string[] GetSystemParameters()

@@ -138,7 +138,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 {
                     var allParameters = (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method.Value, true), method.Value.IgnoreParameters, dbConnection));
                     
-                    var parameters = await GetBodyOrQueryStringParameters(allParameters.inputParameters, ent, method.Value);
+                    var parameters = GetBodyOrQueryStringParameters(allParameters.inputParameters, ent, method.Value);
                     var addTypes = parameters.SelectMany(sm => sm.GetRequiredTypes()).Distinct();
                     foreach (var addType in addTypes)
                     {
@@ -176,14 +176,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        private async Task<Parameters.WebApiParameter[]> GetBodyOrQueryStringParameters(IEnumerable<WebApiParameter> inputParameters, Entity ent, Method method)
+        private IReadOnlyCollection<Parameters.WebApiParameter> GetBodyOrQueryStringParameters(IEnumerable<WebApiParameter> inputParameters, Entity ent, Method method)
         {
             return inputParameters
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
         }
 
-        private void WriteJsonSchema(OpenApiSchema parameterSchema, Parameters.WebApiParameter[] parameters,
+        private void WriteJsonSchema(OpenApiSchema parameterSchema, IReadOnlyCollection<Parameters.WebApiParameter> parameters,
             bool addRequired,
             bool forSwagger2)
         {

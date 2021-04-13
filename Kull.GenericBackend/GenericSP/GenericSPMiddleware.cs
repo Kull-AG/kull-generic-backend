@@ -114,7 +114,7 @@ namespace Kull.GenericBackend.GenericSP
             queryParameters = request.QueryString.AllKeys.ToDictionary(k => k,
                 k => (object)request.QueryString.Get(k), StringComparer.CurrentCultureIgnoreCase);
 #else
-            if (request.QueryString.HasValue)
+            if (request.QueryString.HasValue && request.QueryString.Value != null)
             {
                 var queryDictionary = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value);
                 queryParameters = queryDictionary
@@ -146,13 +146,13 @@ namespace Kull.GenericBackend.GenericSP
         private bool HasApplicationFormContentType(MediaTypeHeaderValue contentType)
         {
             // Content-Type: application/x-www-form-urlencoded; charset=utf-8
-            return contentType != null && contentType.MediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
+            return contentType != null && contentType.MediaType != null && contentType.MediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
         }
 
         private bool HasMultipartFormContentType(MediaTypeHeaderValue contentType)
         {
             // Content-Type: multipart/form-data; boundary=----WebKitFormBoundarymx2fSWqWSd0OxQqq
-            return contentType != null && contentType.MediaType.Equals("multipart/form-data", StringComparison.OrdinalIgnoreCase);
+            return contentType != null && contentType.MediaType != null && contentType.MediaType.Equals("multipart/form-data", StringComparison.OrdinalIgnoreCase);
         }
 
 

@@ -92,8 +92,8 @@ namespace Kull.GenericBackend
             IRouteBuilder routeBuilder
             )
         {
-            var service = applicationBuilder.ApplicationServices.GetService<GenericSP.MiddlewareRegistration>();
-            var opts = applicationBuilder.ApplicationServices.GetService<GenericSP.SPMiddlewareOptions>();
+            var service = applicationBuilder.ApplicationServices.GetService<GenericSP.MiddlewareRegistration>()!;
+            var opts = applicationBuilder.ApplicationServices.GetService<GenericSP.SPMiddlewareOptions>()!;
             service.RegisterMiddleware(opts, routeBuilder);
         }
 #endif
