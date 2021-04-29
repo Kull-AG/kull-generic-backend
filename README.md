@@ -117,9 +117,9 @@ For a full documentation of allowed route constraints, please see [here](https:/
 
 For best practices for defining a REST Api, see [here](https://docs.microsoft.com/en-us/azure/architecture/best-practices/api-design)
 
-### Futher features
+### Further features
 
-For usage on Output Parameters, Talued Parameters and multiple Result Sets, view the wiki
+For usage on Output Parameters, Table Valued Parameters and multiple Result Sets, view the wiki
 
 ## Main parts of the generic API
 
