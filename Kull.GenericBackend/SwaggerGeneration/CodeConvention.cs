@@ -99,7 +99,21 @@ namespace Kull.GenericBackend.SwaggerGeneration
         public virtual string GetParameterObjectName(Entity ent, Method method) =>
                  GetOperationId(ent, method) + "Parameters";
 
-        public virtual string GetResultTypeName(Method method) => method.SP.Name + "Result";
-        public virtual string GetOutputObjectTypeName(Method method) => method.SP.Name + "Output";
+        protected string CleanName(string name)
+        {
+            var sb = new System.Text.StringBuilder();
+            foreach (char c in name)
+            {
+                if ((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '-' || c == '.' || c == '_')
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
+            //[a-zA-Z0-9\.\-_]+
+        }
+
+        public virtual string GetResultTypeName(Method method) => CleanName(method.SP.Name) + "Result";
+        public virtual string GetOutputObjectTypeName(Method method) => CleanName(method.SP.Name) + "Output";
     }
 }
