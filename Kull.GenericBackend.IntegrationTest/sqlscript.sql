@@ -129,3 +129,10 @@ BEGIn
 	SELECT @AnAwesomeParam AS Nr INTO #out
 	SELECT *FROM #out;
 END
+GO
+CREATE PROCEDURE dbo.[Procedure with - strange name]
+	@ImASpecialParameter bit
+AS
+BEGIn
+	SELECT @ImASpecialParameter as PrmVl;
+END

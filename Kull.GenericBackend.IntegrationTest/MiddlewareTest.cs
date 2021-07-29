@@ -318,5 +318,29 @@ namespace Kull.GenericBackend.IntegrationTest
             var obj = Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(resp);
 
         }
+
+        [Theory]
+        [InlineData("/rest/TestSystemWithSpecial")]
+        public async Task TestSystemWithSpecial(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync(url);
+            var resp = await response.Content.ReadAsStringAsync();
+            Assert.True(response.IsSuccessStatusCode);
+            // App Error
+            
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+
+            var ar = Newtonsoft.Json.JsonConvert.DeserializeObject<JArray>(resp);
+            Assert.Single(ar);
+            var obj = (JObject)ar[0];
+            Assert.True(obj.Value<bool>("prmVl"));
+        }
+
+        
     }
 }

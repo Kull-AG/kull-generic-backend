@@ -34,7 +34,10 @@ namespace Kull.GenericBackend.IntegrationTest
                 })
                 .AddFileSupport()
                 .AddXmlSupport()
-                .AddSystemParameters();
+                .AddSystemParameters(cf=>
+                {
+                    cf.AddSystemParameter("[Procedure with - strange name].ImASpecialParameter", (c) => true);
+                });
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });

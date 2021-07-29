@@ -56,6 +56,11 @@
           "AnAwesomeParam": 56
         }
       }
+    },
+    "TestSystemWithSpecial": {
+      "GET": {
+        "SP": "Procedure with - strange name"
+      }
     }
   }
 }
