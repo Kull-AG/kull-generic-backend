@@ -155,7 +155,10 @@ If you would like to add something to this, or remove the default ones, you can 
     .AddSystemParameters(prms=>
     {
         prms.Clear();
+        //Usually you will want to set global system parameters
         prms.AddSystemParameter("UserClaims", c => Newtonsoft.Json.JsonConvert.SerializeObject(c.User.Claims));
+        //But if you want one for just one SP, you can do this by using the dot
+        prms.AddSystemParameter("ProcecureName.ParameterNameInThere", c => c.GetType().ToString());
     });
 ```
 
