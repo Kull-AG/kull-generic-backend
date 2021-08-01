@@ -48,6 +48,6 @@ namespace Kull.GenericBackend.Serialization
         /// </summary>
         /// <param name="responses">The respones object</param>
         /// <param name="operationResponseContext">Some context</param>
-        OpenApiResponses ModifyResponses(OpenApiResponses responses, SwaggerGeneration.OperationResponseContext operationResponseContext);
+        OpenApiResponses GetResponseType(SwaggerGeneration.OperationResponseContext operationResponseContext);
     }
 }

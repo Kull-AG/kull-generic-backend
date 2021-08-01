@@ -86,7 +86,7 @@ namespace Kull.GenericBackend.GenericSP
             {
                 Microsoft.AspNetCore.Http.RequestDelegate requestDelegate = context =>
                 {
-                    var srv = (IGenericSPMiddleware)context.RequestServices.GetService(typeof(IGenericSPMiddleware));
+                    var srv = (IGenericSPMiddleware?)context.RequestServices.GetService(typeof(IGenericSPMiddleware));
                     if(srv == null)
                     {
                         throw new InvalidOperationException("IGenericSPMiddleware not given");

@@ -26,11 +26,14 @@ namespace Kull.GenericBackend.Serialization
     {
         public GenericSPJsonSerializerSTJ(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
                 ILogger<GenericSPJsonSerializerBase> logger,
-                IEnumerable<Error.IResponseExceptionHandler> responseExceptions,
-                CodeConvention convention) : base(namingMappingHandler, options, logger, responseExceptions, convention)
+                CodeConvention convention,
+                ResponseDescriptor responseDescriptor,
+                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger, 
+                    convention, responseDescriptor, jsonErrorHandler)
         { }
 
-        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNamesToUse, bool? firstReadResult)
+        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, 
+            string[] fieldNamesToUse, bool? firstReadResult, bool objectOfFirstOnly)
         {
 
             if (options.Encoding.BodyName != "utf-8")
@@ -39,10 +42,26 @@ namespace Kull.GenericBackend.Serialization
             }
             Type[] types = GetTypesFromReader(rdr);
             var jsonWriter = new Utf8JsonWriter(outputStream);
-            jsonWriter.WriteStartArray();
-           
+            
             if (firstReadResult == null)
                 firstReadResult = rdr.Read();
+
+            if (objectOfFirstOnly)
+            {
+                if (firstReadResult.Value)
+                {
+                    WriteSingleRow(rdr, fieldNamesToUse, types, jsonWriter);
+                }
+                else
+                {
+                    jsonWriter.WriteNullValue();
+                }
+                await jsonWriter.FlushAsync();
+                return;
+            }
+
+            jsonWriter.WriteStartArray();
+           
 
             if (firstReadResult == true)
             {

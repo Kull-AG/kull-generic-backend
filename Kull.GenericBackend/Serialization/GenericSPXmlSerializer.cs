@@ -38,15 +38,18 @@ namespace Kull.GenericBackend.Serialization
         private readonly SPMiddlewareOptions options;
         private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
         private readonly ILogger<GenericSPXmlSerializer> logger;
+        private readonly ResponseDescriptor responseDescriptor;
 
         public GenericSPXmlSerializer(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
                 IEnumerable<Error.IResponseExceptionHandler> errorHandlers,
-                ILogger<GenericSPXmlSerializer> logger)
+                ILogger<GenericSPXmlSerializer> logger,
+                ResponseDescriptor responseDescriptor)
         {
             this.namingMappingHandler = namingMappingHandler;
             this.options = options;
             this.errorHandlers = errorHandlers;
             this.logger = logger;
+            this.responseDescriptor = responseDescriptor;
         }
 
         /// <summary>
@@ -206,8 +209,19 @@ namespace Kull.GenericBackend.Serialization
 
         public bool SupportsResultType(string resultType) => resultType == "xml";
 
-        public OpenApiResponses ModifyResponses(OpenApiResponses responses, OperationResponseContext operationResponseContext)
+        public virtual OpenApiResponses GetResponseType(OperationResponseContext operationResponseContext)
         {
+            var schema = responseDescriptor.GetArrayOfResult(operationResponseContext.ResultTypeName);
+
+            OpenApiResponses responses = new OpenApiResponses();
+            OpenApiResponse response = new OpenApiResponse();
+            response.Description = $"OK"; // Required as per spec
+            response.Content.Add("application/xml", new OpenApiMediaType()
+            {
+                Schema = schema
+
+            });
+            responses.Add("200", response);
             return responses;
         }
     }

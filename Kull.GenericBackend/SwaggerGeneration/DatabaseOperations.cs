@@ -56,6 +56,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly NamingMappingHandler namingMappingHandler;
         private readonly CodeConvention codeConvention;
         private readonly IWebHostEnvironment hostingEnvironment;
+        private readonly ResponseDescriptor responseDescriptor;
 
         public DatabaseOperations(
          SPMiddlewareOptions sPMiddlewareOptions,
@@ -68,10 +69,12 @@ namespace Kull.GenericBackend.SwaggerGeneration
          NamingMappingHandler namingMappingHandler,
          CodeConvention codeConvention,
          ConfigProvider configProvider,
-         IWebHostEnvironment hostingEnvironment)
+         IWebHostEnvironment hostingEnvironment,
+         ResponseDescriptor responseDescriptor)
         {
             this.codeConvention = codeConvention;
             this.hostingEnvironment = hostingEnvironment;
+            this.responseDescriptor = responseDescriptor;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.options = options;
             this.sqlHelper = sqlHelper;
@@ -275,77 +278,6 @@ namespace Kull.GenericBackend.SwaggerGeneration
         }
 
 
-        protected virtual OpenApiResponses GetDefaultResponse(string resultTypeName, string? outputObjectName,
-                OperationResponseContext context)
-        {
-            OpenApiResponses responses = new OpenApiResponses();
-            OpenApiResponse response = new OpenApiResponse();
-            response.Description = $"OK"; // Required as per spec
-
-            OpenApiSchema arrayOfResult =
-                    new OpenApiSchema()
-                    {
-                        Type = "array",
-                        Xml = new OpenApiXml()
-                        {
-                            Name = "table"
-                        },
-                        UniqueItems = false,
-                        Items = new OpenApiSchema()
-                        {
-                            Reference = new OpenApiReference()
-                            {
-                                Type = ReferenceType.Schema,
-                                Id = resultTypeName
-                            }
-                        }
-                    };
-            OpenApiSchema schema = arrayOfResult;
-            if (outputObjectName != null || context.AlwaysWrapJson)
-            {
-                schema = new OpenApiSchema()
-                {
-                    Type = "object",
-                    Required = new HashSet<string>(new string[] { codeConvention.FirstResultKey }),
-                    Properties = new Dictionary<string, OpenApiSchema>()
-                   {
-                       {  codeConvention.FirstResultKey, arrayOfResult },
-                        { codeConvention.OtherResultsKey,  new OpenApiSchema()
-                        {
-                            Type="array",
-                            Items = new OpenApiSchema()
-                            {
-                                Type="array",
-                                Items = new OpenApiSchema()
-                                {
-                                    Type="object",
-                                    AdditionalPropertiesAllowed=true
-                                }
-                            }
-                        } }
-                   }
-                };
-                if (outputObjectName != null)
-                {
-                    schema.Properties.Add(codeConvention.OutputParametersKey, new OpenApiSchema()
-                    {
-                        Reference = new OpenApiReference()
-                        {
-                            Type = ReferenceType.Schema,
-                            Id = outputObjectName
-                        }
-                    });
-                    schema.Required.Add(codeConvention.OutputParametersKey);
-                }
-            }
-            response.Content.Add("application/json", new OpenApiMediaType()
-            {
-                Schema = schema
-
-            });
-            responses.Add("200", response);
-            return responses;
-        }
 
 
         private async Task WriteBodyPath(OpenApiOperation operation, Entity entity, OperationType operationType, Method method)
@@ -375,13 +307,11 @@ namespace Kull.GenericBackend.SwaggerGeneration
             var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), method.IgnoreParameters, dbConnection);
 
             var context = new OperationResponseContext(entity, method, sPMiddlewareOptions.AlwaysWrapJson,
-                    outputParameters);
-            operation.Responses = GetDefaultResponse(codeConvention.GetResultTypeName(method),
-                outputParameters.Length > 0 ? codeConvention.GetOutputObjectTypeName(method) : null,
-                context);
-
-            if (serializer != null)
-                operation.Responses = serializer.ModifyResponses(operation.Responses, context);
+                    outputParameters,
+                     codeConvention.GetResultTypeName(method),
+                    outputParameters.Length > 0 ? codeConvention.GetOutputObjectTypeName(method) : null
+                    );
+            operation.Responses =serializer?.GetResponseType(context) ?? responseDescriptor.GetDefaultResponse(context);
 
 
             if (operationType != OperationType.Get && inputParameters.Any(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))

@@ -23,6 +23,7 @@ using Kull.GenericBackend.GenericSP;
 using Kull.GenericBackend.SwaggerGeneration;
 using System.Data.Common;
 using System.IO;
+using Kull.GenericBackend.Error;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -31,7 +32,9 @@ namespace Kull.GenericBackend.Serialization
     /// </summary>
     public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
     {
-        public bool SupportsResultType(string resultType) => resultType == "json";
+        public const string FirstResultSetType = "first";
+
+        public bool SupportsResultType(string resultType) => resultType == "json" || FirstResultSetType == resultType;
         public int? GetSerializerPriority(IEnumerable<MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)
@@ -44,19 +47,22 @@ namespace Kull.GenericBackend.Serialization
         protected readonly Common.NamingMappingHandler namingMappingHandler;
         protected readonly SPMiddlewareOptions options;
         protected readonly ILogger logger;
-        protected readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
         private readonly CodeConvention codeConvention;
+        private readonly ResponseDescriptor responseDescriptor;
+        private readonly JsonErrorHandler jsonErrorHandler;
 
         public GenericSPJsonSerializerBase(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
                 ILogger<GenericSPJsonSerializerBase> logger,
-                IEnumerable<Error.IResponseExceptionHandler> responseExceptions,
-                CodeConvention convention)
+                CodeConvention convention,
+                ResponseDescriptor responseDescriptor,
+                Error.JsonErrorHandler jsonErrorHandler)
         {
             this.namingMappingHandler = namingMappingHandler;
             this.options = options;
             this.logger = logger;
-            this.errorHandlers = responseExceptions; 
             this.codeConvention = convention;
+            this.responseDescriptor = responseDescriptor;
+            this.jsonErrorHandler = jsonErrorHandler;
         }
 
         /// <summary>
@@ -78,8 +84,8 @@ namespace Kull.GenericBackend.Serialization
         private async Task WriteOutputParameters(Stream outputStream, IReadOnlyCollection<DbParameter> outParameters)
         {
             Dictionary<string, object?> outParameterValues = outParameters.Cast<DbParameter>().ToDictionary(
-                p=>p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName,
-                  p=>  p.Value);
+                p => p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName,
+                  p => (object?)p.Value);
 
             Kull.Data.DataReader.ObjectDataReader objectData = new Data.DataReader.ObjectDataReader(
                 new IReadOnlyDictionary<string, object?>[]
@@ -124,7 +130,7 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="fieldNames"></param>
         /// <param name="firstReadResult"></param>
         /// <returns></returns>
-        protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string[] fieldNames, bool? firstReadResult);
+        protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly);
 
         /// <summary>
         /// Writes the result data to the body
@@ -139,6 +145,7 @@ namespace Kull.GenericBackend.Serialization
             var context = serializationContext.HttpContext;
             var method = serializationContext.Method;
             var ent = serializationContext.Entity;
+            var resultType = serializationContext.Method.ResultType;
             var outParameters = serializationContext.GetParameters()
                 .Where(p => p.Direction == System.Data.ParameterDirection.Output || p.Direction == System.Data.ParameterDirection.InputOutput)
                 .ToArray();
@@ -169,7 +176,7 @@ namespace Kull.GenericBackend.Serialization
                     {
                         await WriteRaw(stream, $"{{ \"{codeConvention.FirstResultKey}\": \r\n");
 
-                        await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult);
+                        await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult, resultType == FirstResultSetType);
 
                         bool first = true;
                         bool hasAnyResults = false;
@@ -185,7 +192,7 @@ namespace Kull.GenericBackend.Serialization
                             {
                                 await WriteRaw(stream, ",");
                             }
-                            await WriteCurrentResultSet(stream, rdr, fieldNames, false);
+                            await WriteCurrentResultSet(stream, rdr, fieldNames, false, resultType == FirstResultSetType);
                         }
                         if (hasAnyResults)
                         {
@@ -200,7 +207,7 @@ namespace Kull.GenericBackend.Serialization
                     }
                     else
                     {
-                        await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult);
+                        await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult, resultType == FirstResultSetType);
                     }
                     await stream.FlushAsync();
 #if NET48
@@ -211,51 +218,18 @@ namespace Kull.GenericBackend.Serialization
             }
             catch (Exception err)
             {
-#if NETFX
-                logger.LogWarning($"Error executing {serializationContext} {err}");
-#else
-                logger.LogWarning(err, $"Error executing {serializationContext}");
-#endif
-                bool handled = false;
-                foreach (var hand in errorHandlers)
-                {
-                    var result = hand.GetContent(err, o =>
-                    {
-                        string json = Newtonsoft.Json.JsonConvert.SerializeObject(o);
-                        var content = new System.Net.Http.StringContent(json);
-                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                        return content;
-                    });
-                    if (result != null)
-                    {
-                        (var status, var content) = result.Value;
-#if NETFX
-                        if (!context.Response.HeadersWritten)
-#else
-                        if (!context.Response.HasStarted)
-#endif
-                        {
-                            await PrepareHeader(context, method, ent, status);
-                            await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            logger.LogError(err, $"Could not execute {serializationContext} and could not handle error");
-                        }
-                        handled = true;
-                        break;
-                    }
+                var handled = await jsonErrorHandler.SerializeErrorAsJson(context, err, serializationContext);
 
-                }
                 if (!handled)
                     throw;
             }
         }
 
 
-        public virtual OpenApiResponses ModifyResponses(OpenApiResponses responses, OperationResponseContext operationResponseContext)
+        public virtual OpenApiResponses GetResponseType(OperationResponseContext operationResponseContext)
         {
-            return responses;
+            return responseDescriptor.GetDefaultResponse(operationResponseContext,
+                        operationResponseContext.Method.ResultType == FirstResultSetType);
         }
     }
 }

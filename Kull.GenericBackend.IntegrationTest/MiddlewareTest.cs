@@ -73,17 +73,36 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.Equal("application/json",
                 response.Content.Headers.ContentType.MediaType);
             var getContent = await response.Content.ReadAsStringAsync();
-            var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
-            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts").ToDictionary(k => k, k => d[k])).ToArray();
-            Utils.JsonUtils.AssertJsonEquals(withoutTs, new[]
-            {
+            var asDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(getContent);
+            var withoutTs = asDict.Keys.Where(k => k != "ts").ToDictionary(k => k, k => asDict[k]);
+            Utils.JsonUtils.AssertJsonEquals(withoutTs,
+
                 new
                 {
-                    petId=2,
-                    petName= "Dog 2",
-                    isNice =true
+                    petId = 2,
+                    petName = "Dog 2",
+                    isNice = true
                 }
-            });
+            );
+        }
+
+        [Theory]
+        [InlineData("/rest/Pet/1")]
+        public async Task UpdatePet(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            var postResponse = await client.PostAsync(url,
+                    new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(
+                new { PetName = "tester", IsNice = false })));
+            var postContent = await postResponse.Content.ReadAsStringAsync();
+            postResponse.EnsureSuccessStatusCode();
+            // Must be wraped as it has out parameters
+            Assert.True(string.IsNullOrEmpty(postContent));
+
         }
 
 
@@ -331,7 +350,7 @@ namespace Kull.GenericBackend.IntegrationTest
             var resp = await response.Content.ReadAsStringAsync();
             Assert.True(response.IsSuccessStatusCode);
             // App Error
-            
+
             Assert.Equal("application/json",
                 response.Content.Headers.ContentType.MediaType);
 
@@ -341,6 +360,6 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.True(obj.Value<bool>("prmVl"));
         }
 
-        
+
     }
 }

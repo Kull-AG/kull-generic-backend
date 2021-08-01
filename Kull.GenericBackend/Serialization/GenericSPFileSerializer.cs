@@ -181,10 +181,10 @@ namespace Kull.GenericBackend.Serialization
             }
         }
 
-        public OpenApiResponses ModifyResponses(OpenApiResponses responses, OperationResponseContext context)
+        public OpenApiResponses GetResponseType(OperationResponseContext context)
         {
             // TODO: Implement Output Parameters
-            responses.Remove("200");
+            var responses = new OpenApiResponses();
             responses.Add("200", new OpenApiResponse()
             {
                 Description = "A binary file",

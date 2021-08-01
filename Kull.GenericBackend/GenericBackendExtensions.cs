@@ -54,15 +54,18 @@ namespace Kull.GenericBackend
             services.TryAddSingleton<Config.ConfigProvider>();
             services.TryAddTransient<ParameterProvider>();
             services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
+            services.TryAddSingleton<Serialization.ResponseDescriptor>();
             services.TryAddTransient<Execution.CommandPreparation>();
 #if NETFX || NETSTD
             services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerJsonNet>();
 #else
             services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerSTJ>();
 #endif
+            services.AddTransient<IGenericSPSerializer, GenericSPNoneSerializer>();
             services.AddTransient<SerializerResolver, SerializerResolver>();
             services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
             services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
+            services.AddTransient<Error.JsonErrorHandler, Error.JsonErrorHandler>();
             GenericSP.SPMiddlewareOptions? options = null;
             SwaggerFromSPOptions? swaggerFromSPOptions = null;
             
