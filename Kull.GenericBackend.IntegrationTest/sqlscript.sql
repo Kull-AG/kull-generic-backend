@@ -136,3 +136,15 @@ AS
 BEGIn
 	SELECT @ImASpecialParameter as PrmVl;
 END
+GO
+CREATE SCHEMA tester
+GO
+CREATE TYPE tester.TestData AS TABLE (Id int) 
+GO
+
+CREATE PROCEDURE tester.spTestTableParam
+	@Data tester.TestData READONLY
+AS
+BEGIn
+	SELECT * FROM @Data;
+END

@@ -1,5 +1,6 @@
 using Kull.Data;
 using Kull.DatabaseMetadata;
+using Kull.GenericBackend.SwaggerGeneration;
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
@@ -13,16 +14,19 @@ namespace Kull.GenericBackend.Parameters
         public IEnumerable<Filter.IParameterInterceptor> parameterInterceptors;
         private readonly SPParametersProvider sPParametersProvider;
         private readonly Common.NamingMappingHandler namingMappingHandler;
+        private readonly CodeConvention convention;
         private readonly SqlHelper sqlHelper;
 
         public ParameterProvider(IEnumerable<Filter.IParameterInterceptor> parameterInterceptors,
             SPParametersProvider sPParametersProvider,
             Common.NamingMappingHandler namingMappingHandler,
+            SwaggerGeneration.CodeConvention convention,
             SqlHelper sqlHelper)
         {
             this.parameterInterceptors = parameterInterceptors;
             this.sPParametersProvider = sPParametersProvider;
             this.namingMappingHandler = namingMappingHandler;
+            this.convention = convention;
             this.sqlHelper = sqlHelper;
         }
 
@@ -47,7 +51,9 @@ namespace Kull.GenericBackend.Parameters
             }
             var apiParamsRaw = spParams.Select((s, index) =>
                 (WebApiParameter)new DbApiParameter(s.SqlName, webApiNames[index],
-                   s.DbType, s.IsNullable, s.UserDefinedType, s.UserDefinedType == null ? null: udtFields[s.UserDefinedType], namingMappingHandler)
+                   s.DbType, s.IsNullable, s.UserDefinedType, s.UserDefinedType == null ? null: udtFields[s.UserDefinedType],
+                    convention,
+                   namingMappingHandler)
             );
             var apiParams = new LinkedList<WebApiParameter>(apiParamsRaw);
             foreach (var inter in parameterInterceptors)

@@ -33,6 +33,7 @@ namespace Kull.GenericBackend.Parameters
                 SqlType sqlType, bool isNullable,
                 DBObjectName? userDefinedType,
                 IReadOnlyCollection<SqlFieldDescription>? userDefinedTypeFields,
+                SwaggerGeneration.CodeConvention convention,
                 NamingMappingHandler namingMappingHandler) : base(sqlName, webApiName)
         {
             this.DbType = sqlType;
@@ -41,7 +42,7 @@ namespace Kull.GenericBackend.Parameters
             if (userDefinedType != null)
             {
                 this.TableParameter = new TableValuedParameter(
-                    GetSqlTypeWebApiName(userDefinedType),
+                    convention.GetUserDefinedSqlTypeWebApiName(userDefinedType),
                     userDefinedType,
                     namingMappingHandler, userDefinedTypeFields ?? throw new ArgumentNullException("userDefinedTypeFields"));
             }
@@ -49,11 +50,6 @@ namespace Kull.GenericBackend.Parameters
 
 
 
-        private static string GetSqlTypeWebApiName(DBObjectName userDefinedType)
-        {
-            return (userDefinedType.Schema == "dbo" ? "" :
-                                            userDefinedType.Schema + ".") + userDefinedType.Name;
-        }
 
 
         public override IEnumerable<WebApiParameter> GetRequiredTypes()
@@ -107,7 +103,7 @@ namespace Kull.GenericBackend.Parameters
                 input.Select(s => ToXml(s)));
         }
 
-        
+
 
         public override object? GetValue(HttpContext? http, object? valueProvided)
         {

@@ -115,5 +115,12 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
         public virtual string GetResultTypeName(Method method) => CleanName(method.SP.Name) + "Result";
         public virtual string GetOutputObjectTypeName(Method method) => CleanName(method.SP.Name) + "Output";
+
+
+        public virtual string GetUserDefinedSqlTypeWebApiName(DBObjectName userDefinedType)
+        {
+            return (userDefinedType.Schema == "dbo" || userDefinedType.Schema == null ? "" :
+                                            userDefinedType.Schema + "_") + userDefinedType.Name;
+        }
     }
 }

@@ -7,7 +7,7 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
 
     public static class DatabaseUtils
     {
-        const int expectedVersion = 15;
+        const int expectedVersion = 17;
 
         static object setupObj = new object();
         public static void SetupDb(string dataPath, string constr)
@@ -85,8 +85,11 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
                     connection.Open();
                     foreach (var sql in sqls)
                     {
-                        SqlCommand datacommand = new SqlCommand(sql, connection);
-                        datacommand.ExecuteNonQuery();
+                        if (sql.Trim().Length > 0)
+                        {
+                            SqlCommand datacommand = new SqlCommand(sql, connection);
+                            datacommand.ExecuteNonQuery();
+                        }
                     }
                 }
             }

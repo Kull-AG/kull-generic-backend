@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>1.4.3</VersionPrefix>
+    <VersionPrefix>1.4.4</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -38,8 +38,8 @@
     <None Remove="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Kull.Data" Version="5.4.0" />
-    <PackageReference Include="Kull.DatabaseMetadata" Version="1.0.1" />
+    <PackageReference Include="Kull.Data" Version="5.4.1" />
+    <PackageReference Include="Kull.DatabaseMetadata" Version="1.0.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

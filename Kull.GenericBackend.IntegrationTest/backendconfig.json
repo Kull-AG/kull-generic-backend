@@ -61,6 +61,9 @@
       "GET": {
         "SP": "Procedure with - strange name"
       }
+    },
+    "TestTableDataWithSchema": {
+      "GET": "tester.spTestTableParam"
     }
   }
 }
