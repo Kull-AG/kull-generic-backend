@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
 using Kull.GenericBackend.SwaggerGeneration;
+using Kull.GenericBackend.Error;
 
 namespace Kull.GenericBackend.Serialization
 {
@@ -41,14 +42,14 @@ namespace Kull.GenericBackend.Serialization
 
 
         private readonly ILogger<GenericSPFileSerializer> logger;
-        private readonly IEnumerable<Error.IResponseExceptionHandler> errorHandlers;
+        private readonly JsonErrorHandler jsonErrorHandler;
 
         public GenericSPFileSerializer(
                 ILogger<GenericSPFileSerializer> logger,
-                IEnumerable<Error.IResponseExceptionHandler> errorHandlers)
+                Error.JsonErrorHandler jsonErrorHandler)
         {
             this.logger = logger;
-            this.errorHandlers = errorHandlers;
+            this.jsonErrorHandler = jsonErrorHandler;
         }
 
         /// <summary>
@@ -115,7 +116,7 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns>A Task</returns>
-        public async Task ReadResultToBody(SerializationContext serializationContext)
+        public async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
         {
             var context = serializationContext.HttpContext;
             var method = serializationContext.Method;
@@ -128,7 +129,7 @@ namespace Kull.GenericBackend.Serialization
                     if (!firstRead)
                     {
                         await PrepareHeader(context, method, ent, 404, "application/json", null);
-                        return;
+                        return null;
                     }
                     byte[] content = (byte[])rdr.GetValue(rdr.GetOrdinal(ContentColumn));
                     string? fileName = rdr.GetNString(FileNameColumn);
@@ -141,43 +142,14 @@ namespace Kull.GenericBackend.Serialization
                     await context.Response.Body.WriteAsync(content, 0, content.Length);
 #endif
                 }
-
+                return null;
             }
             catch (Exception err)
             {
-                bool handled = false;
-                foreach (var hand in errorHandlers)
-                {
-                    var result = hand.GetContent(err, o =>
-                    {
-                        string json = Newtonsoft.Json.JsonConvert.SerializeObject(o);
-                        var content = new System.Net.Http.StringContent(json);
-                        content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                        return content;
-                    });
-                    if (result != null)
-                    {
-                        (var status, var content) = result.Value;
-#if NETFX
-                        if (!context.Response.HeadersWritten)
-#else
-                        if (!context.Response.HasStarted)
-#endif
-                        {
-                            await PrepareHeader(context, method, ent, status, "application/json", null);
-                            await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            logger.LogError(err, $"Could not execute {serializationContext} and could not handle error");
-                        }
-                        handled = true;
-                        break;
-                    }
-
-                }
+                var handled = await jsonErrorHandler.SerializeErrorAsJson(context, err, serializationContext);             
                 if (!handled)
                     throw;
+                return err;
             }
         }
 

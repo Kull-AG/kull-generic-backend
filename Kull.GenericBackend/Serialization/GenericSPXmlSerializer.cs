@@ -82,7 +82,7 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns>A Task</returns>
-        public async Task ReadResultToBody(SerializationContext serializationContext)
+        public async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
         {
             var context = serializationContext.HttpContext;
             var method = serializationContext.Method;
@@ -153,6 +153,7 @@ namespace Kull.GenericBackend.Serialization
                         xmlWriter.WriteEndElement();
                     }
                 }
+                return null;
             }
             catch (Exception err)
             {
@@ -195,6 +196,7 @@ namespace Kull.GenericBackend.Serialization
                 }
                 if (!handled)
                     throw;
+                return err;
             }
         }
 

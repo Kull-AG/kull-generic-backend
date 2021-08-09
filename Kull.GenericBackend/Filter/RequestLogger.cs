@@ -17,8 +17,11 @@ namespace Kull.GenericBackend.Filter
 {
     public class RequestLogger
     {
-        public virtual void OnRequestStart(HttpContext context, DbCommand cmd) { }
+        public virtual void OnRequestStart(HttpContext context, RequestStartInfo info) { }
 
-        public virtual void OnRequestEnd(HttpContext context, DbCommand cmd, DateTime startedAtUtc) { }
+        public record RequestStartInfo(DbCommand Command);
+        public record RequestEndInfo(DbCommand Command, DateTime StartedAtUtc, Exception? Error);
+
+        public virtual void OnRequestEnd(HttpContext context, RequestEndInfo info) { }
     }
 }
