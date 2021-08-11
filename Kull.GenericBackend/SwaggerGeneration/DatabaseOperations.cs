@@ -128,9 +128,18 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 else
                 {
                     OpenApiSchema resultSchema = new OpenApiSchema();
-                    var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters!);
-                    WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler, options.ResponseFieldsAreRequired,
-                        options.UseSwagger2);
+                    try
+                    {
+                        var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters!);
+                        WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler, options.ResponseFieldsAreRequired,
+                            options.UseSwagger2);
+                    }
+                    catch(Exception err)
+                    {
+                        WriteJsonSchema(resultSchema, Array.Empty<SqlFieldDescription>(), namingMappingHandler, options.ResponseFieldsAreRequired,
+                            options.UseSwagger2);
+                        logger.LogError($"Error getting result set for {method.SP}. \r\n{err.ToString()}");
+                    }
                     swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
             }
