@@ -28,11 +28,11 @@ namespace Kull.GenericBackend.Serialization
                 ILogger<GenericSPJsonSerializerBase> logger,
                 CodeConvention convention,
                 ResponseDescriptor responseDescriptor,
-                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger, 
+                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger,
                     convention, responseDescriptor, jsonErrorHandler)
         { }
 
-        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, 
+        protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr,
             string[] fieldNamesToUse, bool? firstReadResult, bool objectOfFirstOnly)
         {
 
@@ -42,7 +42,7 @@ namespace Kull.GenericBackend.Serialization
             }
             Type[] types = GetTypesFromReader(rdr);
             var jsonWriter = new Utf8JsonWriter(outputStream);
-            
+
             if (firstReadResult == null)
                 firstReadResult = rdr.Read();
             var jsFields = fieldNamesToUse.Select(s => JsonEncodedText.Encode(s)).ToArray();
@@ -61,7 +61,7 @@ namespace Kull.GenericBackend.Serialization
             }
 
             jsonWriter.WriteStartArray();
-            
+
 
             if (firstReadResult == true)
             {
@@ -90,7 +90,11 @@ namespace Kull.GenericBackend.Serialization
             return types;
         }
 
-        private static void WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
+        static JsonEncodedText charStart = JsonEncodedText.Encode("\"");
+
+        char[] charBuffer;
+
+        private void WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
         {
             jsonWriter.WriteStartObject();
             for (int p = 0; p < fieldNamesToUse.Length; p++)
@@ -101,8 +105,27 @@ namespace Kull.GenericBackend.Serialization
                 }
                 else if (types[p] == typeof(string))
                 {
-                    //rdr.GetChars()
+#if !NET5_0_OR_GREATER
                     jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
+#else
+                    jsonWriter.WritePropertyName(fieldNamesToUse[p]);
+                    jsonWriter.WriteRawValue(charStart.EncodedUtf8Bytes);
+                    charBuffer ??= new char[100];
+                    long offset = 0;
+                    int bytesRead = 0;
+                    do
+                    {
+                        bytesRead = (int)rdr.GetChars(p, offset, charBuffer, 0, charBuffer.Length);
+                        if (bytesRead > 0)
+                        {
+                            ReadOnlySpan<char> rsp = new ReadOnlySpan<char>(charBuffer, 0, bytesRead);
+                            jsonWriter.WriteRawValue(rsp);
+                        }
+                    }
+                    while (bytesRead > 0);
+                    jsonWriter.WriteRawValue(charStart.EncodedUtf8Bytes);
+#endif
+                    //rdr.GetChars()
                 }
                 else if (types[p] == typeof(DateTime))
                 {
