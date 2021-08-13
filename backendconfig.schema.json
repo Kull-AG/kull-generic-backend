@@ -103,7 +103,20 @@
         "CommandTimeout": {
           "type": "integer",
           "title": "Timeout of Database Command",
-          "description":  "The timeout in seconds"
+          "description": "The timeout in seconds"
+        },
+        "IgnoreParameters": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Parameters that you do not want in your API",
+          "description": "Sometimes you might have parameters for your procedures that are not meant for the API. You can set a default value for those and ignore them using the IgnoreParameters"
+        },
+        "ExecuteParameters": {
+          "type": "object",
+          "additionalProperties": true,
+          "title": "Parameters for execution of the Proc in case you have no metadata otherwise"
         }
       }
     }

@@ -33,13 +33,13 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.Equal("application/json; charset=utf-8",
                 response.Content.Headers.ContentType.ToString());
             var resp = await response.Content.ReadAsStringAsync();
-
+            System.IO.File.WriteAllText("test.json", resp);
             var jObj = JsonConvert.DeserializeObject<JObject>(resp);
             var petParameter = (JArray)jObj["paths"]["/rest/Pet"]["get"]["parameters"];
             Assert.Equal(2, petParameter.Count);
-            var onlyNiceParam = 
+            var onlyNiceParam =
                 petParameter.Children<JObject>()
-                .Single(p=>p.Value<string>("name") == "onlyNice");
+                .Single(p => p.Value<string>("name") == "onlyNice");
             Assert.Equal("boolean", onlyNiceParam.Value<string>("type"));
             if (onlyNiceParam.TryGetValue("required", out var token))
             {
@@ -63,4 +63,6 @@ namespace Kull.GenericBackend.IntegrationTest
             Assert.Equal("GetBackend", opId);*/
         }
     }
+
+
 }

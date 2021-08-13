@@ -54,17 +54,21 @@ namespace Kull.GenericBackend
             services.TryAddSingleton<Config.ConfigProvider>();
             services.TryAddTransient<ParameterProvider>();
             services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
-            services.TryAddSingleton<Execution.CommandPreparation>();
+            services.TryAddSingleton<Serialization.ResponseDescriptor>();
+            services.TryAddTransient<Execution.CommandPreparation>();
 #if NETFX || NETSTD
             services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerJsonNet>();
 #else
             services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerSTJ>();
 #endif
+            services.AddTransient<IGenericSPSerializer, GenericSPNoneSerializer>();
             services.AddTransient<SerializerResolver, SerializerResolver>();
             services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
             services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
+            services.AddTransient<Error.JsonErrorHandler, Error.JsonErrorHandler>();
             GenericSP.SPMiddlewareOptions? options = null;
             SwaggerFromSPOptions? swaggerFromSPOptions = null;
+            
             var opts = options ??
                     new GenericSP.SPMiddlewareOptions();
             services.TryAddSingleton(opts);
@@ -91,8 +95,8 @@ namespace Kull.GenericBackend
             IRouteBuilder routeBuilder
             )
         {
-            var service = applicationBuilder.ApplicationServices.GetService<GenericSP.MiddlewareRegistration>();
-            var opts = applicationBuilder.ApplicationServices.GetService<GenericSP.SPMiddlewareOptions>();
+            var service = applicationBuilder.ApplicationServices.GetService<GenericSP.MiddlewareRegistration>()!;
+            var opts = applicationBuilder.ApplicationServices.GetService<GenericSP.SPMiddlewareOptions>()!;
             service.RegisterMiddleware(opts, routeBuilder);
         }
 #endif

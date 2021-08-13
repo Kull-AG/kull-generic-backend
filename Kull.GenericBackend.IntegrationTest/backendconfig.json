@@ -9,8 +9,11 @@
       "PUT": "spUpdateDog"
     },
     "Pet/{petid}": {
-      "GET": "spGetPet",
-      "POST": "spAddPet",
+      "GET": { "SP": "spGetPet", "ResultType": "first" },
+      "POST": {
+        "SP": "spAddPet",
+        "ResultType": "none"
+      },
       "DELETE": "spDeletePet"
     },
     "Pet/search": {
@@ -47,6 +50,23 @@
       "GET": {
         "Sp": "None"
       }
+    },
+    "TestTemp": {
+      "GET": {
+        "SP": "spGetSomeTempTable",
+        "IgnoreParameters": [ "IgnoreMe" ],
+        "ExecuteParameters": {
+          "AnAwesomeParam": 56
+        }
+      }
+    },
+    "TestSystemWithSpecial": {
+      "GET": {
+        "SP": "Procedure with - strange name"
+      }
+    },
+    "TestTableDataWithSchema": {
+      "GET": "tester.spTestTableParam"
     }
   }
 }

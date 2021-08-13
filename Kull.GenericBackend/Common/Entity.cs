@@ -23,14 +23,14 @@ namespace Kull.GenericBackend.Common
         /// <summary>
         /// A map containing all methods of this entity
         /// </summary>
-        public IDictionary<OperationType, Method> Methods { get; }
+        public IReadOnlyDictionary<OperationType, Method> Methods { get; }
 
         /// <summary>
         /// The tag for Open Api
         /// </summary>
         public string? Tag { get; }
 
-        private IDictionary<string, object?> restParameters;
+        private IReadOnlyDictionary<string, object?> restParameters;
 
         /// <summary>
         /// Gets the name and the type of a {} Template
@@ -76,14 +76,14 @@ namespace Kull.GenericBackend.Common
                 .ToArray();
         }
 
-        public Entity(string urlTemplate, IDictionary<OperationType, Method> methods)
+        public Entity(string urlTemplate, IReadOnlyDictionary<OperationType, Method> methods)
             : this(urlTemplate, methods, null, null)
         {
 
         }
 
-        internal Entity(string urlTemplate, IDictionary<OperationType, Method> methods, string? tag,
-                IDictionary<string, object?>? restParameters)
+        internal Entity(string urlTemplate, IReadOnlyDictionary<OperationType, Method> methods, string? tag,
+                IReadOnlyDictionary<string, object?>? restParameters)
         {
             UrlParts = urlTemplate.Replace("|", ":").Split('/').Select(s => s.Trim()).ToArray();
             Methods = methods;
@@ -111,11 +111,11 @@ namespace Kull.GenericBackend.Common
 
         internal static Entity GetFromConfig(string key, object value)
         {
-            var childConfig = (IDictionary<string, object?>)value;
+            var childConfig = (IReadOnlyDictionary<string, object?>)value;
             return new Entity(key, childConfig.Where(c => !c.Key.Equals("Config", StringComparison.CurrentCultureIgnoreCase))
                     .Select(s => Method.GetFromConfig(s.Key, s.Value!))
                     .ToDictionary(s => s.HttpMethod, s => s),
-                    childConfig.GetValue<IDictionary<string, object?>>("Config")?.GetValue<string>("Tag"),
+                    childConfig.GetValue<IReadOnlyDictionary<string, object?>>("Config")?.GetValue<string>("Tag"),
                     childConfig
                     );
         }

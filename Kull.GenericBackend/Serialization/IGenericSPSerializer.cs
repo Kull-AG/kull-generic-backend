@@ -2,7 +2,8 @@ using Kull.GenericBackend.Common;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-#if NET47
+using System;
+#if NET48
 using System.Net.Http.Headers;
 #else
 using Microsoft.Net.Http.Headers;
@@ -40,14 +41,14 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="cmd">The command</param>
         /// <param name="method">The method</param>
         /// <param name="ent">The entity</param>
-        /// <returns></returns>
-        Task ReadResultToBody(SerializationContext context);
+        /// <returns>The exception object if there was one that was handled. used for logging only</returns>
+        Task<Exception?> ReadResultToBody(SerializationContext context);
 
         /// <summary>
         /// Hook to allow modifing the open api schema
         /// </summary>
         /// <param name="responses">The respones object</param>
         /// <param name="operationResponseContext">Some context</param>
-        OpenApiResponses ModifyResponses(OpenApiResponses responses, SwaggerGeneration.OperationResponseContext operationResponseContext);
+        OpenApiResponses GetResponseType(SwaggerGeneration.OperationResponseContext operationResponseContext);
     }
 }

@@ -55,6 +55,57 @@ namespace Kull.GenericBackend.IntegrationTest
             });
         }
 
+
+        [Theory]
+        [InlineData("/rest/Pet/2")]
+        public async Task GetSinglePet(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+            var getContent = await response.Content.ReadAsStringAsync();
+            var asDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(getContent);
+            var withoutTs = asDict.Keys.Where(k => k != "ts").ToDictionary(k => k, k => asDict[k]);
+            Utils.JsonUtils.AssertJsonEquals(withoutTs,
+
+                new
+                {
+                    petId = 2,
+                    petName = "Dog 2",
+                    isNice = true
+                }
+            );
+        }
+
+        [Theory]
+        [InlineData("/rest/Pet/1")]
+        public async Task UpdatePet(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+
+            var postResponse = await client.PostAsync(url,
+                    new System.Net.Http.StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(
+                new { PetName = "tester", IsNice = false })));
+            var postContent = await postResponse.Content.ReadAsStringAsync();
+            postResponse.EnsureSuccessStatusCode();
+            // Must be wraped as it has out parameters
+            Assert.True(string.IsNullOrEmpty(postContent));
+
+        }
+
+
         [Theory]
         [InlineData("/rest/Dog/1")]
         public async Task UpdateDog(string url)
@@ -286,5 +337,29 @@ namespace Kull.GenericBackend.IntegrationTest
             var obj = Newtonsoft.Json.JsonConvert.DeserializeObject<JObject>(resp);
 
         }
+
+        [Theory]
+        [InlineData("/rest/TestSystemWithSpecial")]
+        public async Task TestSystemWithSpecial(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+
+            // Act
+            var response = await client.GetAsync(url);
+            var resp = await response.Content.ReadAsStringAsync();
+            Assert.True(response.IsSuccessStatusCode);
+            // App Error
+
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+
+            var ar = Newtonsoft.Json.JsonConvert.DeserializeObject<JArray>(resp);
+            Assert.Single(ar);
+            var obj = (JObject)ar[0];
+            Assert.True(obj.Value<bool>("prmVl"));
+        }
+
+
     }
 }

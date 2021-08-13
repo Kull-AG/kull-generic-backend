@@ -24,11 +24,16 @@ namespace Kull.GenericBackend.Serialization
     /// </summary>
     public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericSPSerializer
     {
-        public GenericSPJsonSerializerSTJ(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
+        public GenericSPJsonSerializerSTJ(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+                ILogger<GenericSPJsonSerializerBase> logger,
+                CodeConvention convention,
+                ResponseDescriptor responseDescriptor,
+                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger, 
+                    convention, responseDescriptor, jsonErrorHandler)
+        { }
 
-        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNamesToUse, bool? firstReadResult)
+        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, 
+            string[] fieldNamesToUse, bool? firstReadResult, bool objectOfFirstOnly)
         {
 
             if (options.Encoding.BodyName != "utf-8")
@@ -37,16 +42,32 @@ namespace Kull.GenericBackend.Serialization
             }
             Type[] types = GetTypesFromReader(rdr);
             var jsonWriter = new Utf8JsonWriter(outputStream);
-            jsonWriter.WriteStartArray();
-           
+            
             if (firstReadResult == null)
                 firstReadResult = rdr.Read();
+            var jsFields = fieldNamesToUse.Select(s => JsonEncodedText.Encode(s)).ToArray();
+            if (objectOfFirstOnly)
+            {
+                if (firstReadResult.Value)
+                {
+                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
+                }
+                else
+                {
+                    jsonWriter.WriteNullValue();
+                }
+                await jsonWriter.FlushAsync();
+                return;
+            }
+
+            jsonWriter.WriteStartArray();
+            
 
             if (firstReadResult == true)
             {
                 do
                 {
-                    WriteSingleRow(rdr, fieldNamesToUse, types, jsonWriter);
+                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
                 }
                 while (rdr.Read());
             }
@@ -69,7 +90,7 @@ namespace Kull.GenericBackend.Serialization
             return types;
         }
 
-        private static void WriteSingleRow(System.Data.IDataRecord rdr, string[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
+        private static void WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
         {
             jsonWriter.WriteStartObject();
             for (int p = 0; p < fieldNamesToUse.Length; p++)
@@ -80,6 +101,7 @@ namespace Kull.GenericBackend.Serialization
                 }
                 else if (types[p] == typeof(string))
                 {
+                    //rdr.GetChars()
                     jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
                 }
                 else if (types[p] == typeof(DateTime))
@@ -140,7 +162,8 @@ namespace Kull.GenericBackend.Serialization
 
             var jsonWriter = new Utf8JsonWriter(outputStream);
             var types = GetTypesFromReader(objectData);
-            WriteSingleRow(objectData, fieldNames, types, jsonWriter);
+            var jsFields = fieldNames.Select(s => JsonEncodedText.Encode(s)).ToArray();
+            WriteSingleRow(objectData, jsFields, types, jsonWriter);
             await jsonWriter.FlushAsync();
         }
     }

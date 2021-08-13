@@ -12,18 +12,24 @@ using Microsoft.OpenApi.Any;
 using Kull.GenericBackend.Config;
 using System;
 using System.Threading.Tasks;
+using Kull.GenericBackend.Utils;
 #if NETFX
 using Swashbuckle.Swagger;
 using Kull.MvcCompat;
 using System.Web.Http.Description;
+using IWebHostEnvironment = Kull.MvcCompat.IHostingEnvironment;
 #else
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Hosting;
+#endif
+#if NETSTD2
+using IWebHostEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
 #endif
 
 namespace Kull.GenericBackend.SwaggerGeneration
 {
-#if NET47
+#if NET48
     public class DatabaseOperationWrap : IDocumentFilter
     {
         public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
@@ -49,6 +55,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
         private readonly ParameterProvider parametersProvider;
         private readonly NamingMappingHandler namingMappingHandler;
         private readonly CodeConvention codeConvention;
+        private readonly IWebHostEnvironment hostingEnvironment;
+        private readonly ResponseDescriptor responseDescriptor;
 
         public DatabaseOperations(
          SPMiddlewareOptions sPMiddlewareOptions,
@@ -60,9 +68,13 @@ namespace Kull.GenericBackend.SwaggerGeneration
          SerializerResolver serializerResolver,
          NamingMappingHandler namingMappingHandler,
          CodeConvention codeConvention,
-         ConfigProvider configProvider)
+         ConfigProvider configProvider,
+         IWebHostEnvironment hostingEnvironment,
+         ResponseDescriptor responseDescriptor)
         {
             this.codeConvention = codeConvention;
+            this.hostingEnvironment = hostingEnvironment;
+            this.responseDescriptor = responseDescriptor;
             this.sPMiddlewareOptions = sPMiddlewareOptions;
             this.options = options;
             this.sqlHelper = sqlHelper;
@@ -74,11 +86,11 @@ namespace Kull.GenericBackend.SwaggerGeneration
             entities = configProvider.Entities;
         }
 
-#if NET47
+#if NET48
         public class DocumentFilterContext { }
 #endif
 
-        public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+        public async Task ApplyAsync(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
             if (swaggerDoc.Paths == null) swaggerDoc.Paths = new OpenApiPaths();
             if (swaggerDoc.Components == null) swaggerDoc.Components = new OpenApiComponents();
@@ -96,7 +108,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     {
                         var opType = method.Key;
                         OpenApiOperation bodyOperation = new OpenApiOperation();
-                        WriteBodyPath(bodyOperation, ent, opType, method.Value).Wait();
+                        await WriteBodyPath(bodyOperation, ent, opType, method.Value);
                         openApiPathItem.Operations.Add(opType, bodyOperation);
                     }
                     swaggerDoc.Paths.Add(ent.GetUrl(this.sPMiddlewareOptions.Prefix, false), openApiPathItem);
@@ -105,6 +117,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
 
             var allMethods = entities.SelectMany(e => e.Methods.Values);
+            var resultSetPath = options.PersistResultSets ? (options.PersistedResultSetPath ?? System.IO.Path.Combine(hostingEnvironment.ContentRootPath, "ResultSets")) : null;
             foreach (var method in allMethods)
             {
                 string typeName = codeConvention.GetResultTypeName(method);
@@ -115,10 +128,18 @@ namespace Kull.GenericBackend.SwaggerGeneration
                 else
                 {
                     OpenApiSchema resultSchema = new OpenApiSchema();
-                    var res = sqlHelper.GetSPResultSet(dbConnection, method.SP, options.PersistResultSets);
-                    res.Wait();
-                    var dataToWrite = res.Result;
-                    WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler);
+                    try
+                    {
+                        var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters!);
+                        WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler, options.ResponseFieldsAreRequired,
+                            options.UseSwagger2);
+                    }
+                    catch(Exception err)
+                    {
+                        WriteJsonSchema(resultSchema, Array.Empty<SqlFieldDescription>(), namingMappingHandler, options.ResponseFieldsAreRequired,
+                            options.UseSwagger2);
+                        logger.LogError($"Error getting result set for {method.SP}. \r\n{err.ToString()}");
+                    }
                     swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
             }
@@ -127,9 +148,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
             {
                 foreach (var method in ent.Methods)
                 {
-                    var prmMethod = GetBodyOrQueryStringParameters(ent, method.Value);
-                    prmMethod.Wait();
-                    var parameters = prmMethod.Result;
+                    var allParameters = (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method.Value, true), method.Value.IgnoreParameters, dbConnection));
+                    
+                    var parameters = GetBodyOrQueryStringParameters(allParameters.inputParameters, ent, method.Value);
                     var addTypes = parameters.SelectMany(sm => sm.GetRequiredTypes()).Distinct();
                     foreach (var addType in addTypes)
                     {
@@ -145,47 +166,70 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     if (parameters.Any())
                     {
                         OpenApiSchema parameterSchema = new OpenApiSchema();
-                        WriteJsonSchema(parameterSchema, parameters);
-
-
+                        WriteJsonSchema(parameterSchema, parameters, options.ParameterFieldsAreRequired,
+                                options.UseSwagger2);
                         swaggerDoc.Components.Schemas.Add(codeConvention.GetParameterObjectName(ent, method.Value),
                             parameterSchema);
+                    }
+                    if(allParameters.outputParameters.Any())
+                    {
+                        OpenApiSchema outputSchema = new OpenApiSchema();
+                        WriteJsonSchema(outputSchema, allParameters.outputParameters, namingMappingHandler, true, options.UseSwagger2);
+                        swaggerDoc.Components.Schemas.Add(codeConvention.GetOutputObjectTypeName(method.Value),
+                            outputSchema);
                     }
                 }
             }
 
         }
-
-
-        private async Task<Parameters.WebApiParameter[]> GetBodyOrQueryStringParameters(Entity ent, Method method)
+        public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
-            return (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, true), dbConnection))
-                .inputParameters
+            AsyncHelpers.RunSync(() => ApplyAsync(swaggerDoc, context));
+        }
+
+
+        private IReadOnlyCollection<Parameters.WebApiParameter> GetBodyOrQueryStringParameters(IEnumerable<WebApiParameter> inputParameters, Entity ent, Method method)
+        {
+            return inputParameters
                 .Where(s => s.WebApiName != null && !ent.ContainsPathParameter(s.WebApiName))
                 .ToArray();
         }
 
-        private void WriteJsonSchema(OpenApiSchema parameterSchema, Parameters.WebApiParameter[] parameters)
+        private void WriteJsonSchema(OpenApiSchema parameterSchema, IReadOnlyCollection<Parameters.WebApiParameter> parameters,
+            bool addRequired,
+            bool forSwagger2)
         {
             parameterSchema.Type = "object";
+            if(parameterSchema.Required == null && addRequired)
+                parameterSchema.Required = new HashSet<string>();
             foreach (var item in parameters)
             {
+                var prop = item.GetSchema();
+                if (forSwagger2 && prop.Nullable)
+                {
+                    prop.AddExtension("x-nullable", new OpenApiBoolean(true));
+                }
                 parameterSchema.Properties.Add(
                      item.WebApiName,
-                    item.GetSchema());
+                     prop);
+                if (addRequired)
+                    parameterSchema.Required!.Add(item.WebApiName);
+                
             }
         }
 
         private static void WriteJsonSchema(OpenApiSchema schema,
             IEnumerable<SqlFieldDescription> props,
-            NamingMappingHandler namingMappingHandler)
+            NamingMappingHandler namingMappingHandler,
+            bool addRequired,
+            bool forSwagger2)
         {
             schema.Type = "object";
             var names = namingMappingHandler.GetNames(props.Select(p => p.Name))
                 .GetEnumerator();
             if (schema.Xml == null) schema.Xml = new OpenApiXml();
             schema.Xml.Name = "tr";//it's always tr
-            if (schema.Required == null)
+            if (schema.Required == null && addRequired)
                 schema.Required = new HashSet<string>();
             foreach (var prop in props)
             {
@@ -197,85 +241,52 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     property.Format = prop.DbType.JsFormat;
                 }
                 property.Nullable = prop.IsNullable;
-
+                if(forSwagger2 && prop.IsNullable)
+                {
+                    property.AddExtension("x-nullable", new OpenApiBoolean(true));
+                }
                 names.MoveNext();
                 schema.Properties.Add(names.Current, property);
-                schema.Required.Add(names.Current);
+                if (addRequired)
+                    schema.Required!.Add(names.Current);
             }
         }
 
-
-        protected virtual OpenApiResponses GetDefaultResponse(string resultTypeName, string? outputObjectName,
-                OperationResponseContext context)
+        private static void WriteJsonSchema(OpenApiSchema schema,
+            IEnumerable<OutputParameter> props,
+            NamingMappingHandler namingMappingHandler,
+            bool addRequired,
+            bool forSwagger2)
         {
-            OpenApiResponses responses = new OpenApiResponses();
-            OpenApiResponse response = new OpenApiResponse();
-            response.Description = $"OK"; // Required as per spec
-
-            OpenApiSchema arrayOfResult =
-                    new OpenApiSchema()
-                    {
-                        Type = "array",
-                        Xml = new OpenApiXml()
-                        {
-                            Name = "table"
-                        },
-                        UniqueItems = false,
-                        Items = new OpenApiSchema()
-                        {
-                            Reference = new OpenApiReference()
-                            {
-                                Type = ReferenceType.Schema,
-                                Id = resultTypeName
-                            }
-                        }
-                    };
-            OpenApiSchema schema = arrayOfResult;
-            if (outputObjectName != null || context.AlwaysWrapJson)
+            schema.Type = "object";
+            var names = namingMappingHandler.GetNames(props.Select(p => p.SqlName))
+                .GetEnumerator();
+            if (schema.Xml == null) schema.Xml = new OpenApiXml();
+            schema.Xml.Name = "tr";//it's always tr
+            if (schema.Required == null && addRequired)
+                schema.Required = new HashSet<string>();
+            foreach (var prop in props)
             {
-                schema = new OpenApiSchema()
+
+                OpenApiSchema property = new OpenApiSchema();
+                property.Type = prop.DbType.JsType;
+                if (prop.DbType.JsFormat != null)
                 {
-                    Type = "object",
-                    Required = new HashSet<string>(new string[] { codeConvention.FirstResultKey }),
-                    Properties = new Dictionary<string, OpenApiSchema>()
-                   {
-                       {  codeConvention.FirstResultKey, arrayOfResult },
-                        { codeConvention.OtherResultsKey,  new OpenApiSchema()
-                        {
-                            Type="array",
-                            Items = new OpenApiSchema()
-                            {
-                                Type="array",
-                                Items = new OpenApiSchema()
-                                {
-                                    Type="object",
-                                    AdditionalPropertiesAllowed=true
-                                }
-                            }
-                        } }
-                   }
-                };
-                if (outputObjectName != null)
-                {
-                    schema.Properties.Add(codeConvention.OutputParametersKey, new OpenApiSchema()
-                    {
-                        Reference = new OpenApiReference()
-                        {
-                            Type = ReferenceType.Schema,
-                            Id = outputObjectName
-                        }
-                    });
-                    schema.Required.Add(codeConvention.OutputParametersKey);
+                    property.Format = prop.DbType.JsFormat;
                 }
+                property.Nullable = true;
+                if (forSwagger2)
+                {
+                    property.AddExtension("x-nullable", new OpenApiBoolean(true));
+                }
+                names.MoveNext();
+                schema.Properties.Add(names.Current, property);
+                if (addRequired)
+                    schema.Required!.Add(names.Current);
             }
-            response.Content.Add("application/json", new OpenApiMediaType()
-            {
-                Schema = schema
-
-            });
-            responses.Add("200", response);
-            return responses;
         }
+
+
 
 
         private async Task WriteBodyPath(OpenApiOperation operation, Entity entity, OperationType operationType, Method method)
@@ -302,16 +313,14 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
             IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, entity, method);
 
-            var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), dbConnection);
+            var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), method.IgnoreParameters, dbConnection);
 
             var context = new OperationResponseContext(entity, method, sPMiddlewareOptions.AlwaysWrapJson,
-                    outputParameters);
-            operation.Responses = GetDefaultResponse(codeConvention.GetResultTypeName(method),
-                outputParameters.Length > 0 ? codeConvention.GetOutputObjectTypeName(method) : null,
-                context);
-
-            if (serializer != null)
-                operation.Responses = serializer.ModifyResponses(operation.Responses, context);
+                    outputParameters,
+                     codeConvention.GetResultTypeName(method),
+                    outputParameters.Length > 0 ? codeConvention.GetOutputObjectTypeName(method) : null
+                    );
+            operation.Responses =serializer?.GetResponseType(context) ?? responseDescriptor.GetDefaultResponse(context);
 
 
             if (operationType != OperationType.Get && inputParameters.Any(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))
@@ -370,7 +379,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             }
         }
 
-#if NET47
+#if NET48
         public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
         {
             var doc = new OpenApiDocument();

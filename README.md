@@ -90,7 +90,12 @@ In a File called backendconfig.json, set the URI's:
             "Get": "api.spGetBrands",
             "Post": {
                 "SP": "api.spAddUpdateBrands",
-                "OperationId": "AddOrUpdateBrands"
+                "OperationId": "AddOrUpdateBrands",
+                "IgnoreParameters":["AParameterMyApiDoesnotCare"],
+                "ExecuteParameters": {
+                    "ParamterName": "Set this object for strange cases where SQL Server does not return meta",
+                    "AnotherParamter": "Be sure not to edit any data."
+                }
             }
         }
     }
@@ -112,9 +117,9 @@ For a full documentation of allowed route constraints, please see [here](https:/
 
 For best practices for defining a REST Api, see [here](https://docs.microsoft.com/en-us/azure/architecture/best-practices/api-design)
 
-### Futher features
+### Further features
 
-For usage on Output Parameters, Talued Parameters and multiple Result Sets, view the wiki
+For usage on Output Parameters, Table Valued Parameters and multiple Result Sets, view the wiki
 
 ## Main parts of the generic API
 
@@ -150,7 +155,10 @@ If you would like to add something to this, or remove the default ones, you can 
     .AddSystemParameters(prms=>
     {
         prms.Clear();
+        //Usually you will want to set global system parameters
         prms.AddSystemParameter("UserClaims", c => Newtonsoft.Json.JsonConvert.SerializeObject(c.User.Claims));
+        //But if you want one for just one SP, you can do this by using the dot
+        prms.AddSystemParameter("ProcecureName.ParameterNameInThere", c => c.GetType().ToString());
     });
 ```
 
@@ -166,9 +174,9 @@ If you want to set the status code, use throw with code 50000 + Http Status Code
 throw 50503, 'No access to this', 1 
 ```
 
-# .Net 4.7
+# .Net 4.8
 
-It works in theory, but requires a lot of #if's and is not integration-tested.
+It works in theory, but requires a lot of #if's and is not integration-tested. It's used in a number of projects though and does it's job.
 See [wiki](https://github.com/Kull-AG/kull-generic-backend/wiki/Usage-with-MVC-5)
 
 # Possible futher development

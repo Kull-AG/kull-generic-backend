@@ -1,5 +1,5 @@
 
-#if NET47
+#if NET48
 using Kull.MvcCompat;
 using HttpContext=System.Web.HttpContextBase;
 using System.Net.Http.Headers;
@@ -29,19 +29,38 @@ namespace Kull.GenericBackend.Serialization
     /// </summary>
     public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGenericSPSerializer
     {
-        public GenericSPJsonSerializerJsonNet(IServiceProvider serviceProvider) : base(serviceProvider)
-        {
-        }
+        public GenericSPJsonSerializerJsonNet(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+                ILogger<GenericSPJsonSerializerBase> logger,
+                CodeConvention convention,
+                ResponseDescriptor responseDescriptor,
+                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger, convention,
+                     responseDescriptor,
+                     jsonErrorHandler
+                    )
+        { }
 
-        protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNames, bool? firstReadResult)
+        protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly)
         {
             var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
             var jsonWriter = new JsonTextWriter(streamWriter);
-
+           
+            if (firstReadResult == null)
+                firstReadResult = rdr.Read();
+            if (objectOfFirstOnly)
+            {
+                if (firstReadResult.Value)
+                {
+                    WriteSingleRow(rdr, fieldNames, jsonWriter);
+                }
+                else
+                {
+                    jsonWriter.WriteNull();
+                }
+                await jsonWriter.FlushAsync();
+                await streamWriter.FlushAsync();
+                return;
+            }
             jsonWriter.WriteStartArray();
-            if (firstReadResult==null)
-                firstReadResult=rdr.Read();
-
             if (firstReadResult == true)
             {
                 do

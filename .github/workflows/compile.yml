@@ -11,5 +11,5 @@ jobs:
     - uses: actions/checkout@master
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '3.1.100'
-    - run: dotnet build Kull.GenericBackend -f netcoreapp3.1
+        dotnet-version: '5.0.100'
+    - run: dotnet build Kull.GenericBackend -f net5

@@ -118,5 +118,33 @@ CREATE PROCEDURE dbo.spFile
 	@FileDesc varchar(1000)
 AS
 BEGIN
-	SELECT @Image_Content AS Content, @Image_ContentType as ContentType, @Image_FileName AS [FileName]
+	SELECT @Image_ContentType as ContentType, @Image_FileName AS [FileName], @Image_Content AS Content
+END
+GO
+CREATE PROCEDURE dbo.spGetSomeTempTable
+	@IgnoreMe bit=0,
+	@AnAwesomeParam int
+AS
+BEGIn
+	SELECT @AnAwesomeParam AS Nr INTO #out
+	SELECT *FROM #out;
+END
+GO
+CREATE PROCEDURE dbo.[Procedure with - strange name]
+	@ImASpecialParameter bit
+AS
+BEGIn
+	SELECT @ImASpecialParameter as PrmVl;
+END
+GO
+CREATE SCHEMA tester
+GO
+CREATE TYPE tester.TestData AS TABLE (Id int) 
+GO
+
+CREATE PROCEDURE tester.spTestTableParam
+	@Data tester.TestData READONLY
+AS
+BEGIn
+	SELECT * FROM @Data;
 END

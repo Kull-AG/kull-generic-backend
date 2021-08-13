@@ -1,5 +1,5 @@
 using Kull.GenericBackend.Common;
-#if NET47
+#if NET48
 using HttpContext = System.Web.HttpContextBase;
 #else
 using Microsoft.AspNetCore.Http;
@@ -41,12 +41,12 @@ namespace Kull.GenericBackend.Serialization
             Entity = entity;
         }
 
-#if NET47
-        public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync();
+#if NET48
+        public virtual Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior=System.Data.CommandBehavior.Default) => cmd.ExecuteReaderAsync(commandBehavior);
         public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync();
 
 #else
-        public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync(HttpContext.RequestAborted);
+        public virtual Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior=System.Data.CommandBehavior.Default) => cmd.ExecuteReaderAsync(commandBehavior, HttpContext.RequestAborted);
         public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync(HttpContext.RequestAborted);
 
 #endif

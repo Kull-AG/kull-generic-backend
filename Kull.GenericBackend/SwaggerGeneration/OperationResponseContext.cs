@@ -23,17 +23,27 @@ namespace Kull.GenericBackend.SwaggerGeneration
         /// </summary>
         public bool AlwaysWrapJson { get; }
 
+        public string? OutputObjectTypeName { get; }
+
+
+        public string ResultTypeName { get; }
+
         /// <summary>
         /// The output parameters of the Procedure
         /// </summary>
         public IReadOnlyCollection<OutputParameter> OutputParameters { get; }
 
-        internal OperationResponseContext(Entity ent, Method method, bool alwaysWrapJson, IReadOnlyCollection<OutputParameter> outputParameters)
+        internal OperationResponseContext(Entity ent, Method method, bool alwaysWrapJson, 
+            IReadOnlyCollection<OutputParameter> outputParameters,
+            string resultTypeName,
+            string? outputObjectTypeName)
         {
             this.Entity = ent;
             this.Method = method;
             AlwaysWrapJson = alwaysWrapJson;
             this.OutputParameters = outputParameters;
+            this.ResultTypeName = resultTypeName;
+            this.OutputObjectTypeName = outputObjectTypeName;
         }
 
     }
