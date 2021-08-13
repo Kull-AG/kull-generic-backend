@@ -42,11 +42,11 @@ namespace Kull.GenericBackend.Serialization
         }
 
 #if NET48
-        public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync();
+        public virtual Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior=System.Data.CommandBehavior.Default) => cmd.ExecuteReaderAsync(commandBehavior);
         public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync();
 
 #else
-        public virtual Task<DbDataReader> ExecuteReaderAsync() => cmd.ExecuteReaderAsync(HttpContext.RequestAborted);
+        public virtual Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior=System.Data.CommandBehavior.Default) => cmd.ExecuteReaderAsync(commandBehavior, HttpContext.RequestAborted);
         public virtual Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync(HttpContext.RequestAborted);
 
 #endif

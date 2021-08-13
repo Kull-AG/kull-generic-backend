@@ -118,7 +118,7 @@ CREATE PROCEDURE dbo.spFile
 	@FileDesc varchar(1000)
 AS
 BEGIN
-	SELECT @Image_Content AS Content, @Image_ContentType as ContentType, @Image_FileName AS [FileName]
+	SELECT @Image_ContentType as ContentType, @Image_FileName AS [FileName], @Image_Content AS Content
 END
 GO
 CREATE PROCEDURE dbo.spGetSomeTempTable

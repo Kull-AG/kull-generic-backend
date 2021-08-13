@@ -153,7 +153,8 @@ namespace Kull.GenericBackend.Serialization
 
             try
             {
-                using (var rdr = await serializationContext.ExecuteReaderAsync())
+                using (var rdr = await serializationContext.ExecuteReaderAsync(resultType == FirstResultSetType ? System.Data.CommandBehavior.SingleRow:
+                    System.Data.CommandBehavior.SequentialAccess))
                 {
                     bool firstReadResult = rdr.Read();
                     await PrepareHeader(context, method, ent, 200);

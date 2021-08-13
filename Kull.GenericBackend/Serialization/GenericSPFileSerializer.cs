@@ -59,10 +59,10 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns></returns>
-        protected Task PrepareHeader(HttpContext context, Method method, Entity ent, int statusCode, string contentType, string? fileName)
+        protected Task PrepareHeader(HttpContext context, Method method, Entity ent, int statusCode, string? contentType, string? fileName)
         {
             context.Response.StatusCode = statusCode;
-            context.Response.ContentType = contentType;
+            context.Response.ContentType = contentType ??  DefaultContentType;
             if (statusCode == 200)
             {
                 if (string.IsNullOrEmpty(fileName))
@@ -116,14 +116,14 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns>A Task</returns>
-        public async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
+        public virtual async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
         {
             var context = serializationContext.HttpContext;
             var method = serializationContext.Method;
             var ent = serializationContext.Entity;
             try
             {
-                using (var rdr = await serializationContext.ExecuteReaderAsync())
+                using (var rdr = await serializationContext.ExecuteReaderAsync(System.Data.CommandBehavior.SequentialAccess | System.Data.CommandBehavior.SingleResult | System.Data.CommandBehavior.SingleRow))
                 {
                     bool firstRead = rdr.Read();
                     if (!firstRead)
@@ -131,26 +131,56 @@ namespace Kull.GenericBackend.Serialization
                         await PrepareHeader(context, method, ent, 404, "application/json", null);
                         return null;
                     }
-                    byte[] content = (byte[])rdr.GetValue(rdr.GetOrdinal(ContentColumn));
-                    string? fileName = rdr.GetNString(FileNameColumn);
-                    string contentType = rdr.GetNString(ContentTypeColumn) ?? DefaultContentType;
+                    int fileNameOrdinal = rdr.GetOrdinal(FileNameColumn);
+                    int contentTypeOrdinal = rdr.GetOrdinal(ContentTypeColumn);
+                    int contentColOrdinal = rdr.GetOrdinal(ContentColumn);
+                    string? firstValue = rdr.GetNString(Math.Min(fileNameOrdinal, contentTypeOrdinal));
+                    string? secondValue = rdr.GetNString(Math.Max(fileNameOrdinal, contentTypeOrdinal));
+                    if(Math.Max(contentColOrdinal,Math.Max(fileNameOrdinal, contentTypeOrdinal)) != contentColOrdinal)
+                    {
+                        await PrepareHeader(context, method, ent, 500, "text/plain", null);
+                        await HttpHandlingUtils.HttpContentToResponse(new System.Net.Http.StringContent($"{ContentColumn} must come after Filename and content type"), context.Response);
+                    }
+                    string? fileName = fileNameOrdinal > contentTypeOrdinal ? secondValue : firstValue;
+                    string? contentType = (fileNameOrdinal > contentTypeOrdinal ? firstValue : secondValue);
+
 
                     await PrepareHeader(context, method, ent, 200, contentType, fileName);
-#if NETFX
-                    await context.Response.OutputStream.WriteAsync(content, 0, content.Length);
-#else
-                    await context.Response.Body.WriteAsync(content, 0, content.Length);
-#endif
+                    await SendContentToBody(context, rdr, contentColOrdinal);
+
                 }
                 return null;
             }
             catch (Exception err)
             {
-                var handled = await jsonErrorHandler.SerializeErrorAsJson(context, err, serializationContext);             
+                var handled = await jsonErrorHandler.SerializeErrorAsJson(context, err, serializationContext);
                 if (!handled)
                     throw;
                 return err;
             }
+        }
+
+        protected async Task SendContentToBody(HttpContext context, System.Data.Common.DbDataReader rdr, int contentColumnOrdinal)
+        {
+            //byte[] content = (byte[])rdr.GetValue(rdr.GetOrdinal(ContentColumn));
+
+            long offset = 0;
+            byte[] buffer = new byte[8 * 1024];//8K
+            int bytesRead;
+            do
+            {
+                bytesRead = (int)rdr.GetBytes(contentColumnOrdinal, offset, buffer, 0, buffer.Length);
+#if NETFX
+                await context.Response.OutputStream.WriteAsync(buffer, 0, bytesRead);
+                await context.Response.OutputStream.FlushAsync();
+#else
+                await context.Response.Body.WriteAsync(buffer, 0, bytesRead);
+                await context.Response.Body.FlushAsync();
+#endif
+
+                offset += bytesRead;
+            }
+            while (bytesRead == buffer.Length);//has more bytes to read
         }
 
         public OpenApiResponses GetResponseType(OperationResponseContext context)

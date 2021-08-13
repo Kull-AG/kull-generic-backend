@@ -45,12 +45,12 @@ namespace Kull.GenericBackend.Serialization
             
             if (firstReadResult == null)
                 firstReadResult = rdr.Read();
-
+            var jsFields = fieldNamesToUse.Select(s => JsonEncodedText.Encode(s)).ToArray();
             if (objectOfFirstOnly)
             {
                 if (firstReadResult.Value)
                 {
-                    WriteSingleRow(rdr, fieldNamesToUse, types, jsonWriter);
+                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
                 }
                 else
                 {
@@ -61,13 +61,13 @@ namespace Kull.GenericBackend.Serialization
             }
 
             jsonWriter.WriteStartArray();
-           
+            
 
             if (firstReadResult == true)
             {
                 do
                 {
-                    WriteSingleRow(rdr, fieldNamesToUse, types, jsonWriter);
+                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
                 }
                 while (rdr.Read());
             }
@@ -90,7 +90,7 @@ namespace Kull.GenericBackend.Serialization
             return types;
         }
 
-        private static void WriteSingleRow(System.Data.IDataRecord rdr, string[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
+        private static void WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
         {
             jsonWriter.WriteStartObject();
             for (int p = 0; p < fieldNamesToUse.Length; p++)
@@ -101,6 +101,7 @@ namespace Kull.GenericBackend.Serialization
                 }
                 else if (types[p] == typeof(string))
                 {
+                    //rdr.GetChars()
                     jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
                 }
                 else if (types[p] == typeof(DateTime))
@@ -161,7 +162,8 @@ namespace Kull.GenericBackend.Serialization
 
             var jsonWriter = new Utf8JsonWriter(outputStream);
             var types = GetTypesFromReader(objectData);
-            WriteSingleRow(objectData, fieldNames, types, jsonWriter);
+            var jsFields = fieldNames.Select(s => JsonEncodedText.Encode(s)).ToArray();
+            WriteSingleRow(objectData, jsFields, types, jsonWriter);
             await jsonWriter.FlushAsync();
         }
     }
