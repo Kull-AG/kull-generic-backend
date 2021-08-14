@@ -50,7 +50,7 @@ namespace Kull.GenericBackend.Serialization
             {
                 if (firstReadResult.Value)
                 {
-                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
+                    await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream);
                 }
                 else
                 {
@@ -67,7 +67,7 @@ namespace Kull.GenericBackend.Serialization
             {
                 do
                 {
-                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
+                    await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream);
                 }
                 while (rdr.Read());
             }
@@ -94,7 +94,12 @@ namespace Kull.GenericBackend.Serialization
 
         char[] charBuffer;
 
-        private void WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
+        private byte[] GetJsonEncodedText(char[] input, int from, int maxChars)  {
+            ReadOnlySpan<char> rsp = new ReadOnlySpan<char>(input, from, maxChars);
+            return JsonEncodedText.Encode(rsp).EncodedUtf8Bytes.ToArray();
+            }
+
+        private async Task WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter, Stream baseStream)
         {
             jsonWriter.WriteStartObject();
             for (int p = 0; p < fieldNamesToUse.Length; p++)
@@ -109,21 +114,27 @@ namespace Kull.GenericBackend.Serialization
                     jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
 #else
                     jsonWriter.WritePropertyName(fieldNamesToUse[p]);
-                    jsonWriter.WriteRawValue(charStart.EncodedUtf8Bytes);
+                    byte[] charStart = new byte[] { ((byte)'"') };
+                    jsonWriter.WriteRawValue(charStart, true);// We need this one call to WriteRawValue to have correcct internal state
+                    await jsonWriter.FlushAsync();
+
+                    
+                    
                     charBuffer ??= new char[100];
                     long offset = 0;
                     int bytesRead = 0;
                     do
                     {
                         bytesRead = (int)rdr.GetChars(p, offset, charBuffer, 0, charBuffer.Length);
+                        offset += bytesRead;
                         if (bytesRead > 0)
                         {
-                            ReadOnlySpan<char> rsp = new ReadOnlySpan<char>(charBuffer, 0, bytesRead);
-                            jsonWriter.WriteRawValue(rsp);
+                            var j = GetJsonEncodedText(charBuffer, 0, bytesRead);                            
+                            await baseStream.WriteAsync(j);
                         }
                     }
                     while (bytesRead > 0);
-                    jsonWriter.WriteRawValue(charStart.EncodedUtf8Bytes);
+                    await baseStream.WriteAsync(charStart);
 #endif
                     //rdr.GetChars()
                 }
@@ -186,7 +197,7 @@ namespace Kull.GenericBackend.Serialization
             var jsonWriter = new Utf8JsonWriter(outputStream);
             var types = GetTypesFromReader(objectData);
             var jsFields = fieldNames.Select(s => JsonEncodedText.Encode(s)).ToArray();
-            WriteSingleRow(objectData, jsFields, types, jsonWriter);
+            await WriteSingleRow(objectData, jsFields, types, jsonWriter, outputStream);
             await jsonWriter.FlushAsync();
         }
     }
