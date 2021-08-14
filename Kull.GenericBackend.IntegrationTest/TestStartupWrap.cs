@@ -55,8 +55,12 @@ namespace Kull.GenericBackend.IntegrationTest
                 var hostenv = s.GetRequiredService<Microsoft.AspNetCore.Hosting.IHostingEnvironment>();
                 var constr = conf["ConnectionStrings:DefaultConnection"];
                 constr = constr.Replace("{{workdir}}", hostenv.ContentRootPath);
-
+#if !NETSTD2
+                return Kull.Data.DatabaseUtils.GetConnectionFromEFString(constr, Microsoft.Data.SqlClient.SqlClientFactory.Instance);
+#else
+                Kull.Data.DatabaseUtils.UseNewMSSqlClient=true;
                 return Kull.Data.DatabaseUtils.GetConnectionFromEFString(constr, true);
+#endif
             });
         }
 
