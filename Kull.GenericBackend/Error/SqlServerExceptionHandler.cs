@@ -13,10 +13,31 @@ namespace Kull.GenericBackend.Error
 
         public (int statusCode, System.Net.Http.HttpContent dataToDisplay)? GetContent(Exception exp, Func<object, System.Net.Http.HttpContent> format)
         {
-
+#if NET48
             if (exp is System.Data.SqlClient.SqlException err)
             {
                 var errors = err.Errors.Cast<System.Data.SqlClient.SqlError>();
+                if (!errors.All(e => e.Number >= SQLServerUserErrorLowerBound && e.Number <= SQLServerUserErrorUpperBound))
+                {
+                    return (500, format(new object()));
+                }
+                else
+                {
+                    var content = format (new SqlExceptionInfo(
+                        errors.Select(s => new SqlExceptionItem(s.State, s.Message)).ToArray()
+                    )); 
+                    int responseCode = 400;
+                    responseCode = errors.FirstOrDefault(e => e.Number >= SQLServerUserErrorLowerBound + 400 && e.Number <= SQLServerUserErrorLowerBound + 599)?.Number - SQLServerUserErrorLowerBound
+
+                        ?? responseCode;
+                    return (responseCode, content);
+
+                }
+            }
+#endif
+            if (exp is Microsoft.Data.SqlClient.SqlException err)
+            {
+                var errors = err.Errors.Cast<Microsoft.Data.SqlClient.SqlError>();
                 if (!errors.All(e => e.Number >= SQLServerUserErrorLowerBound && e.Number <= SQLServerUserErrorUpperBound))
                 {
                     return (500, format(new object()));

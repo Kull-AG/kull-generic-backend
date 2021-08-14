@@ -105,7 +105,7 @@ namespace Kull.GenericBackend.Serialization
                 }
                 else if (types[p] == typeof(string))
                 {
-#if !NET5_0_OR_GREATER
+#if !NET6_0_OR_GREATER
                     jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
 #else
                     jsonWriter.WritePropertyName(fieldNamesToUse[p]);
