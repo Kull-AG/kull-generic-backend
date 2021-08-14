@@ -14,6 +14,8 @@ namespace Kull.GenericBackend.IntegrationTest
     {
         private readonly TestWebApplicationFactoryWrap _factory;
 
+
+
         public MiddlewareTestWrap(TestWebApplicationFactoryWrap factory)
         {
             _factory = factory;
@@ -40,8 +42,8 @@ namespace Kull.GenericBackend.IntegrationTest
             var valueString = Newtonsoft.Json.JsonConvert.SerializeObject(asDict["value"]);
             var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(valueString);
 
-            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts").ToDictionary(k => k, k => d[k])).ToArray();
-            Utils.JsonUtils.AssertJsonEquals(withoutTs, new[]
+            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => d[k])).ToArray();
+            Utils.JsonUtils.AssertJsonEquals(new[]
             {
                 new
                 {
@@ -52,10 +54,12 @@ namespace Kull.GenericBackend.IntegrationTest
                 new
                 {
                     petId=2,
-                    petName= "Dog 2",
+                    petName= "Dog 2 with \" in name \r\nand a newline ä$¨^ `",
                     isNice =true
                 }
-            });
+            }, withoutTs);
+
+            Console.WriteLine("RAM: " + GC.GetTotalMemory(false).ToString("#,0"));
         }
 
         [Theory]

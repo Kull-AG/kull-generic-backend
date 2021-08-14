@@ -37,8 +37,8 @@ namespace Kull.GenericBackend.IntegrationTest
                 response.Content.Headers.ContentType.MediaType);
             var getContent = await response.Content.ReadAsStringAsync();
             var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
-            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts").ToDictionary(k => k, k => d[k])).ToArray();
-            Utils.JsonUtils.AssertJsonEquals(withoutTs, new[]
+            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => d[k])).ToArray();
+            Utils.JsonUtils.AssertJsonEquals(new[]
             {
                 new
                 {
@@ -49,10 +49,10 @@ namespace Kull.GenericBackend.IntegrationTest
                 new
                 {
                     petId=2,
-                    petName= "Dog 2",
+                    petName= "Dog 2 with \" in name \r\nand a newline ä$¨^ `",
                     isNice =true
                 }
-            });
+            }, withoutTs);
         }
 
 
@@ -74,16 +74,15 @@ namespace Kull.GenericBackend.IntegrationTest
                 response.Content.Headers.ContentType.MediaType);
             var getContent = await response.Content.ReadAsStringAsync();
             var asDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(getContent);
-            var withoutTs = asDict.Keys.Where(k => k != "ts").ToDictionary(k => k, k => asDict[k]);
-            Utils.JsonUtils.AssertJsonEquals(withoutTs,
-
+            var withoutTs = asDict.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => asDict[k]);
+            Utils.JsonUtils.AssertJsonEquals(
                 new
                 {
                     petId = 2,
-                    petName = "Dog 2",
+                    petName = "Dog 2 with \" in name \r\nand a newline ä$¨^ `",
                     isNice = true
                 }
-            );
+            , withoutTs);
         }
 
         [Theory]
@@ -179,6 +178,7 @@ namespace Kull.GenericBackend.IntegrationTest
             var timeStamp = obj.Value<string>("ts");
             Assert.NotEqual("System.Byte[]", timeStamp);
             Assert.NotNull(timeStamp);
+
 
             var putParameter = Newtonsoft.Json.JsonConvert.SerializeObject(
                 new { petId, ts = timeStamp });

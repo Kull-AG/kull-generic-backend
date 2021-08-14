@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFrameworks>netcoreapp3.1;netcoreapp2.1;net5;net6.0</TargetFrameworks>
-    <LangVersion>8.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.OpenApi" Version="1.2.3" />
@@ -10,10 +10,11 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.2" />
     <PackageReference Include="xunit" Version="2.4.1" />
-    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="Kull.Data" Version="5.4.1" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="3.0.0"></PackageReference>
     <PackageReference Include="Kull.DatabaseMetadata" Version="1.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='netcoreapp2.1'">
     <PackageReference Include="Microsoft.AspNetCore.App" />
@@ -33,6 +34,9 @@
 
   <ItemGroup>
     <None Update="sampleImage.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="somelargetext.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="sqlscript.sql">

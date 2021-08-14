@@ -7,7 +7,7 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
 
     public static class DatabaseUtils
     {
-        const int expectedVersion = 18;
+        const int expectedVersion = 20;
 
         static object setupObj = new object();
         public static void SetupDb(string dataPath, string constr)
@@ -73,9 +73,10 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
 
 
                 }
-
+                var largeText = System.IO.File.ReadAllText(System.IO.Path.Combine(dataPath, "somelargetext.txt"));
                 var sqls = System.IO.File.ReadAllText(System.IO.Path.Combine(dataPath, "sqlscript.sql"))
                     .Replace("{{DbVersion}}", expectedVersion.ToString())
+                    .Replace("{{largetxt}}", largeText.Replace("'", "''"))
                     .Replace("\r\n", "\n")
                     .Replace("\r", "\n")
                     .Split("\nGO\n")
