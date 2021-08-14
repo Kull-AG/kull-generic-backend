@@ -5,11 +5,12 @@ on: [push]
 jobs:
   build:
 
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@master
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '5.0.100'
-    - run: dotnet build Kull.GenericBackend -f net5
+        dotnet-version: '6.0.x'
+        include-prerelease: true
+    - run: dotnet build Kull.GenericBackend -f net6.0
