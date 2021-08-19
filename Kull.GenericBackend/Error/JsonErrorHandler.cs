@@ -30,13 +30,13 @@ namespace Kull.GenericBackend.Error
             this.logger = logger;
             this.options = options;
         }
-        public async Task<bool> SerializeErrorAsJson(HttpContext context, Exception err,
-            
-            SerializationContext serializationContext            )
+        public async Task<bool> SerializeErrorAsJson(Exception err,
+
+            SerializationContext serializationContext)
         {
 
 #if NETFX
-                logger.LogWarning($"Error executing {serializationContext} {err}");
+            logger.LogWarning($"Error executing {serializationContext} {err}");
 #else
             logger.LogWarning(err, $"Error executing {serializationContext}");
 #endif
@@ -53,17 +53,10 @@ namespace Kull.GenericBackend.Error
                 if (result != null)
                 {
                     (var status, var content) = result.Value;
-#if NETFX
-                        if (!context.Response.HeadersWritten)
-#else
-                    if (!context.Response.HasStarted)
-#endif
+                    if (!serializationContext.HasResponseStarted)
                     {
-                        context.Response.StatusCode = status;
-                        context.Response.ContentType = "application/json; charset=" + options.Encoding.BodyName;
-                        context.Response.Headers["Cache-Control"] = "no-store";
-                        context.Response.Headers["Expires"] = "0";
-                        await Common.HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
+                        serializationContext.SetHeaders("application/json; charset=" + options.Encoding.BodyName, status, true);
+                        await serializationContext.HttpContentToResponse(content).ConfigureAwait(false);
                     }
                     else
                     {

@@ -57,11 +57,9 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns></returns>
-        protected Task PrepareHeader(HttpContext context, Method method, Entity ent, int statusCode)
+        protected Task PrepareHeader(SerializationContext context, Method method, Entity ent, int statusCode)
         {
-            context.Response.StatusCode = statusCode;
-            context.Response.Headers["Cache-Control"] = "no-store";
-            context.Response.Headers["Expires"] = "0";
+            context.SetHeaders("text/plain", statusCode, true);
             return Task.CompletedTask;
         }
 
@@ -75,25 +73,18 @@ namespace Kull.GenericBackend.Serialization
         /// <returns>A Task</returns>
         public async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
         {
-            var context = serializationContext.HttpContext;
+            
             var method = serializationContext.Method;
             var ent = serializationContext.Entity;
-#if !NETSTD2 && !NETFX
-            var syncIOFeature = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpBodyControlFeature>();
-            if (syncIOFeature != null)
-            {
-                syncIOFeature.AllowSynchronousIO = true;
-            }
-#endif
             try
             {
                 await serializationContext.ExecuteNonQueryAsync();
-                await PrepareHeader(context, method, ent, 200);
+                await PrepareHeader(serializationContext, method, ent, 200);
                 return null;
             }
             catch (Exception err)
             {
-                var handled = await jsonErrorHandler.SerializeErrorAsJson(context, err, serializationContext);
+                var handled = await jsonErrorHandler.SerializeErrorAsJson( err, serializationContext);
 
                 if (!handled)
                     throw;

@@ -59,41 +59,36 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns></returns>
-        protected Task PrepareHeader(HttpContext context, Method method, Entity ent, int statusCode, string? contentType, string? fileName)
+        protected Task PrepareHeader(SerializationContext context, Method method, Entity ent, int statusCode, string? contentType, string? fileName)
         {
-            context.Response.StatusCode = statusCode;
-            context.Response.ContentType = contentType ??  DefaultContentType;
+            string? contentDist=null;
             if (statusCode == 200)
             {
                 if (string.IsNullOrEmpty(fileName))
                 {
-                    context.Response.Headers["Content-Disposition"] = "inline";
+                    contentDist = "inline";
                 }
                 else
                 {
-                    SetContentAttachmentDisposition(context, fileName!);
+                    contentDist=GetContentAttachmentDisposition(context, fileName!, context.GetRequestHeader("User-Agent"));
                 }
             }
-            context.Response.Headers["Cache-Control"] = "no-store";
-            context.Response.Headers["Expires"] = "0";
-
+            context.SetHeaders(contentType ?? DefaultContentType, statusCode, true, new Dictionary<string, string?>()
+            {
+                { "Content-Disposition", contentDist }
+            });
             return Task.CompletedTask;
         }
 
-        protected void SetContentAttachmentDisposition(HttpContext context, string fileName)
+        protected string GetContentAttachmentDisposition(SerializationContext context, string fileName, string? userAgent)
         {
             // Thanks, https://stackoverflow.com/questions/93551/how-to-encode-the-filename-parameter-of-content-disposition-header-in-http
             string contentDisposition;
-#if NETFX
-            string? userAgent = context.Request.Headers["User-Agent"];
-#else
-            string? userAgent = context.Request.Headers["User-Agent"].FirstOrDefault();
-#endif
             if (userAgent != null && userAgent.ToLowerInvariant().Contains("android")) // android built-in download manager (all browsers on android)
                 contentDisposition = "attachment; filename=\"" + MakeAndroidSafeFileName(fileName) + "\"";
             else
                 contentDisposition = "attachment; filename=\"" + fileName + "\"; filename*=UTF-8''" + Uri.EscapeDataString(fileName);
-            context.Response.Headers["Content-Disposition"] = contentDisposition;
+            return contentDisposition;
         }
 
         private static readonly Dictionary<char, char> AndroidAllowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ._-+,@£$€!½§~'=()[]{}0123456789".ToDictionary(c => c);
@@ -118,7 +113,6 @@ namespace Kull.GenericBackend.Serialization
         /// <returns>A Task</returns>
         public virtual async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
         {
-            var context = serializationContext.HttpContext;
             var method = serializationContext.Method;
             var ent = serializationContext.Entity;
             try
@@ -128,7 +122,7 @@ namespace Kull.GenericBackend.Serialization
                     bool firstRead = rdr.Read();
                     if (!firstRead)
                     {
-                        await PrepareHeader(context, method, ent, 404, "application/json", null);
+                        await PrepareHeader(serializationContext, method, ent, 404, "application/json", null);
                         return null;
                     }
                     int fileNameOrdinal = rdr.GetOrdinal(FileNameColumn);
@@ -138,29 +132,29 @@ namespace Kull.GenericBackend.Serialization
                     string? secondValue = rdr.GetNString(Math.Max(fileNameOrdinal, contentTypeOrdinal));
                     if(Math.Max(contentColOrdinal,Math.Max(fileNameOrdinal, contentTypeOrdinal)) != contentColOrdinal)
                     {
-                        await PrepareHeader(context, method, ent, 500, "text/plain", null);
-                        await HttpHandlingUtils.HttpContentToResponse(new System.Net.Http.StringContent($"{ContentColumn} must come after Filename and content type"), context.Response);
+                        await PrepareHeader(serializationContext, method, ent, 500, "text/plain", null);
+                        await serializationContext.HttpContentToResponse(new System.Net.Http.StringContent($"{ContentColumn} must come after Filename and content type"));
                     }
                     string? fileName = fileNameOrdinal > contentTypeOrdinal ? secondValue : firstValue;
                     string? contentType = (fileNameOrdinal > contentTypeOrdinal ? firstValue : secondValue);
 
 
-                    await PrepareHeader(context, method, ent, 200, contentType, fileName);
-                    await SendContentToBody(context, rdr, contentColOrdinal);
+                    await PrepareHeader(serializationContext, method, ent, 200, contentType, fileName);
+                    await SendContentToBody(serializationContext, rdr, contentColOrdinal);
 
                 }
                 return null;
             }
             catch (Exception err)
             {
-                var handled = await jsonErrorHandler.SerializeErrorAsJson(context, err, serializationContext);
+                var handled = await jsonErrorHandler.SerializeErrorAsJson(err, serializationContext);
                 if (!handled)
                     throw;
                 return err;
             }
         }
 
-        protected async Task SendContentToBody(HttpContext context, System.Data.Common.DbDataReader rdr, int contentColumnOrdinal)
+        protected async Task SendContentToBody(SerializationContext context, System.Data.Common.DbDataReader rdr, int contentColumnOrdinal)
         {
             //byte[] content = (byte[])rdr.GetValue(rdr.GetOrdinal(ContentColumn));
 
@@ -170,17 +164,13 @@ namespace Kull.GenericBackend.Serialization
             do
             {
                 bytesRead = (int)rdr.GetBytes(contentColumnOrdinal, offset, buffer, 0, buffer.Length);
-#if NETFX
-                await context.Response.OutputStream.WriteAsync(buffer, 0, bytesRead);
-                await context.Response.OutputStream.FlushAsync();
-#else
-                await context.Response.Body.WriteAsync(buffer, 0, bytesRead);
-                await context.Response.Body.FlushAsync();
-#endif
+                await context.OutputStream.WriteAsync(buffer, 0, bytesRead);
+                await context.OutputStream.FlushAsync();
 
                 offset += bytesRead;
             }
             while (bytesRead == buffer.Length);//has more bytes to read
+            await context.FlushResponseAsync();
         }
 
         public OpenApiResponses GetResponseType(OperationResponseContext context)
