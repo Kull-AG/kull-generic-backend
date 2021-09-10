@@ -11,20 +11,26 @@ namespace Kull.GenericBackend.Common
     public class NamingMappingHandler
     {
         private readonly SPMiddlewareOptions options;
+        internal static readonly string IgnoreFieldPlaceHolder = "________ignore";
 
         public NamingMappingHandler(SPMiddlewareOptions options)
         {
             this.options = options;
         }
 
-        public IEnumerable<string> GetNames(IEnumerable<string> dt)
+        public IEnumerable<string> GetNames(IEnumerable<string?> dt)
         {
             var setNames = new List<string>();
             int nullCount = 0;
             foreach (var item in dt)
             {
                 string name = options.NamingStrategy.GetPropertyName(item, false);
-                if(name == null)
+                if (name == IgnoreFieldPlaceHolder)
+                {
+                    yield return name;
+                    continue;
+                }
+                if (name == null)
                 {
                     name = "column" + (nullCount == 0 ? "" : nullCount.ToString());
                     nullCount++;

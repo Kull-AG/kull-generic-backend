@@ -131,6 +131,11 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     try
                     {
                         var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters!);
+
+                        if(method.IgnoreFields != null)
+                        {
+                            dataToWrite = dataToWrite.Where(dw => method.IgnoreFields.Contains(dw.Name, StringComparer.OrdinalIgnoreCase)).ToArray();
+                        }
                         WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler, options.ResponseFieldsAreRequired,
                             options.UseSwagger2);
                     }

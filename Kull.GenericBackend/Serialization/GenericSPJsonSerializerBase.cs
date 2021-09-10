@@ -149,21 +149,32 @@ namespace Kull.GenericBackend.Serialization
 
             try
             {
-                using (var rdr = await serializationContext.ExecuteReaderAsync(resultType == FirstResultSetType ? System.Data.CommandBehavior.SingleRow:
+                using (var rdr = await serializationContext.ExecuteReaderAsync(resultType == FirstResultSetType ? System.Data.CommandBehavior.SingleRow :
                     System.Data.CommandBehavior.SequentialAccess))
                 {
                     bool firstReadResult = rdr.Read();
                     await PrepareHeader(serializationContext, method, ent, 200);
 
 
-                    string[] fieldNames = new string[rdr.FieldCount];
+                    string?[] fieldNames = new string[rdr.FieldCount];
 
                     // Will store the types of the fields. Nullable datatypes will map to normal types
                     for (int i = 0; i < fieldNames.Length; i++)
                     {
                         fieldNames[i] = rdr.GetName(i);
                     }
-                    fieldNames = namingMappingHandler.GetNames(fieldNames).ToArray();
+                    if (method.IgnoreFields.Count > 0)
+                    {
+                        fieldNames = fieldNames.Select(f => !method.IgnoreFields.Contains(f, StringComparer.OrdinalIgnoreCase) ?
+                             f : NamingMappingHandler.IgnoreFieldPlaceHolder).ToArray();
+                        fieldNames = namingMappingHandler.GetNames(fieldNames)
+                            .Select(s => s == NamingMappingHandler.IgnoreFieldPlaceHolder ? null : s)
+                            .ToArray();
+                    }
+                    else
+                    {
+                        fieldNames = namingMappingHandler.GetNames(fieldNames).ToArray();
+                    }
                     var stream = serializationContext.OutputStream;
                     if (wrap)
                     {
