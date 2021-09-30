@@ -1,7 +1,9 @@
 #if !NETFX
 using Microsoft.Extensions.Configuration;
 #endif
+#if NEWTONSOFTJSON
 using Newtonsoft.Json.Linq;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,10 +26,14 @@ namespace Kull.GenericBackend.Config
                 }
                 if (typeof(T) == typeof(IReadOnlyCollection<string>))
                 {
+#if NEWTONSOFTJSON
                     if (value is JArray ar)
                     {
                         return (T)(object)ar.Children().Select(s => s.Value<string>()).ToList();
                     }
+#else
+                    if(false){}
+#endif
                     else if (value is IEnumerable<string> es)
                     {
                         return (T)(object)es.ToList();
@@ -58,6 +64,7 @@ namespace Kull.GenericBackend.Config
         internal static object? ConvertToDeepIDictionary(object? input, StringComparer stringComparer)
         {
             if (input == null) return null;
+#if NEWTONSOFTJSON
             if (input is JObject obj)
             {
                 return obj.Properties().ToDictionary(o => o.Name, obj => ConvertToDeepIDictionary(obj.Value, stringComparer), stringComparer);
@@ -86,6 +93,7 @@ namespace Kull.GenericBackend.Config
                         throw new NotSupportedException("Cannot convert Json");
                 }
             }
+#endif
             if (input is IReadOnlyDictionary<string, object> dict)
             {
                 return dict.ToDictionary(o => o.Key, o => ConvertToDeepIDictionary(o.Value, stringComparer), stringComparer);

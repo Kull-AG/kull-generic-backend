@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Serialization;
 using System.Text;
 
 namespace Kull.GenericBackend.GenericSP
@@ -14,10 +13,18 @@ namespace Kull.GenericBackend.GenericSP
 
         public bool RequireAuthenticated { get; set; } = false;
 
+#if NEWTONSOFTJSON
         /// <summary>
         /// Naming strategy for properties etc
         /// </summary>
-        public NamingStrategy NamingStrategy { get; set; } = new CamelCaseNamingStrategy();
+        public Newtonsoft.Json.Serialization.NamingStrategy NamingStrategy { get; set; } = new Newtonsoft.Json.Serialization.CamelCaseNamingStrategy();
+#else
+
+        /// <summary>
+        /// Naming strategy for properties etc
+        /// </summary>
+        public System.Text.Json.JsonNamingPolicy NamingStrategy { get; set; } = System.Text.Json.JsonNamingPolicy.CamelCase;
+#endif
 
         /// <summary>
         /// Set this to true to always wrap your result in an object

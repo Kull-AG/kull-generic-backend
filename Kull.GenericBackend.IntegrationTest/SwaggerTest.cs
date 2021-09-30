@@ -9,11 +9,11 @@ using System.Linq;
 namespace Kull.GenericBackend.IntegrationTest
 {
     public class SwaggerTest
-        : IClassFixture<TestWebApplicationFactory>
+        : IClassFixture<TestWebApplicationFactory<TestStartup>>
     {
-        private readonly TestWebApplicationFactory _factory;
+        private readonly TestWebApplicationFactory<TestStartup> _factory;
 
-        public SwaggerTest(TestWebApplicationFactory factory)
+        public SwaggerTest(TestWebApplicationFactory<TestStartup> factory)
         {
             _factory = factory;
         }

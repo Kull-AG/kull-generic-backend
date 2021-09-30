@@ -1,4 +1,4 @@
-
+#if NEWTONSOFTJSON
 #if NET48
 using Kull.MvcCompat;
 using HttpContext=System.Web.HttpContextBase;
@@ -102,3 +102,4 @@ namespace Kull.GenericBackend.Serialization
 
 
 }
+#endif

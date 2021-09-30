@@ -120,7 +120,7 @@ namespace Kull.GenericBackend.Parameters
 #if NETFX
                 return null;
 #else
-                return Newtonsoft.Json.JsonConvert.SerializeObject(file.Headers);
+                return Utils.JsonHelper.SerializeObject(file.Headers);
 #endif
             }
             throw new NotSupportedException("Not supported");

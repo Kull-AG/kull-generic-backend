@@ -10,13 +10,14 @@ using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.IntegrationTest
 {
-    public class TestWebApplicationFactory
-        : Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<TestStartup>
+    public class TestWebApplicationFactory<T>
+        : Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<T>
+        where T: class
     {
         protected override IWebHostBuilder CreateWebHostBuilder()
         {
             return Microsoft.AspNetCore.WebHost.CreateDefaultBuilder()
-                .UseStartup<TestStartup>();
+                .UseStartup<T>();
         }
 
         protected override void Dispose(bool disposing)

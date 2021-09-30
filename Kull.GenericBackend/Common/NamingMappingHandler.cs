@@ -1,5 +1,4 @@
 using Kull.GenericBackend.GenericSP;
-using Newtonsoft.Json.Serialization;
 using System.Collections.Generic;
 
 namespace Kull.GenericBackend.Common
@@ -24,7 +23,11 @@ namespace Kull.GenericBackend.Common
             int nullCount = 0;
             foreach (var item in dt)
             {
-                string name = options.NamingStrategy.GetPropertyName(item, false);
+#if NEWTONSOFTJSON
+                string? name = item == null ? null:options.NamingStrategy.GetPropertyName(item, false);
+#else
+                string? name = item == null ? null : options.NamingStrategy.ConvertName(item);
+#endif
                 if (name == IgnoreFieldPlaceHolder)
                 {
                     yield return name;

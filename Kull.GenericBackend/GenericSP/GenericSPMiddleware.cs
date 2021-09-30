@@ -12,7 +12,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Routing;
 #endif
 using Kull.Data;
-using Newtonsoft.Json;
 using System.Threading.Tasks;
 using System.Data.Common;
 using Kull.DatabaseMetadata;
@@ -197,8 +196,13 @@ namespace Kull.GenericBackend.GenericSP
                 var streamReader = new System.IO.StreamReader(request.Body);
 #endif
                 string json = await streamReader.ReadToEndAsync();
+#if NEWTONSOFTJSON
                 parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
-                JsonConvert.PopulateObject(json, parameterObject);
+                Newtonsoft.Json.JsonConvert.PopulateObject(json, parameterObject);
+#else
+                var retValue = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+                parameterObject = new Dictionary<string, object>(retValue!, StringComparer.CurrentCultureIgnoreCase);
+#endif
             }
             var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
             var start = DateTime.UtcNow;

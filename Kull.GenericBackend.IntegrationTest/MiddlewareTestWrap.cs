@@ -10,13 +10,13 @@ using Xunit;
 namespace Kull.GenericBackend.IntegrationTest
 {
     public class MiddlewareTestWrap
-        : IClassFixture<TestWebApplicationFactoryWrap>
+        : IClassFixture<TestWebApplicationFactory<TestStartupWrap>>
     {
-        private readonly TestWebApplicationFactoryWrap _factory;
+        private readonly TestWebApplicationFactory<TestStartupWrap> _factory;
 
 
 
-        public MiddlewareTestWrap(TestWebApplicationFactoryWrap factory)
+        public MiddlewareTestWrap(TestWebApplicationFactory<TestStartupWrap> factory)
         {
             _factory = factory;
         }

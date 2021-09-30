@@ -11,11 +11,11 @@ using Microsoft.OpenApi.Models;
 namespace Kull.GenericBackend.IntegrationTest
 {
     public class SwaggerTestWrap
-        : IClassFixture<TestWebApplicationFactoryWrap>
+        : IClassFixture<TestWebApplicationFactory<TestStartupWrap>>
     {
-        private readonly TestWebApplicationFactoryWrap _factory;
+        private readonly TestWebApplicationFactory<TestStartupWrap> _factory;
 
-        public SwaggerTestWrap(TestWebApplicationFactoryWrap factory)
+        public SwaggerTestWrap(TestWebApplicationFactory<TestStartupWrap> factory)
         {
             _factory = factory;
         }

@@ -45,7 +45,11 @@ namespace Kull.GenericBackend.Error
             {
                 var result = hand.GetContent(err, o =>
                 {
+#if NEWTONSOFTJSON
                     string json = Newtonsoft.Json.JsonConvert.SerializeObject(o);
+#else
+                    string json = System.Text.Json.JsonSerializer.Serialize(o);
+#endif
                     var content = new System.Net.Http.StringContent(json, options.Encoding);
                     content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
                     return content;

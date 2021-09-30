@@ -33,6 +33,9 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
     <DefineConstants>$(DefineConstants);NETFX</DefineConstants>
   </PropertyGroup>
+	<PropertyGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
+		<DefineConstants>$(DefineConstants);NEWTONSOFTJSON</DefineConstants>
+	</PropertyGroup>
   
   <ItemGroup>
     <None Remove="README.md" />

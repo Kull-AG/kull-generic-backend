@@ -70,8 +70,13 @@ namespace Kull.GenericBackend.Config
         private IDictionary<string, object> ReadJsonFromFile(string file)
         {
             string json = System.IO.File.ReadAllText(file);
+#if NEWTONSOFTJSON
             var target = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
             Newtonsoft.Json.JsonConvert.PopulateObject(json, target);
+#else
+            var target1 = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            var target = new Dictionary<string, object>(target1!, StringComparer.CurrentCultureIgnoreCase);
+#endif
             return target;
         }
 
