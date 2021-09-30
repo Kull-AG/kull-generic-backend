@@ -87,10 +87,10 @@ namespace Kull.GenericBackend.GenericSP
                 context.Response.StatusCode = 415;
                 return Task.CompletedTask;
             }
-            if (this.sPMiddlewareOptions.RequireAuthenticated && context.User?.Identity == null)
+            if (this.sPMiddlewareOptions.RequireAuthenticated && context.User?.Identity?.IsAuthenticated != true)
             {
                 context.Response.StatusCode = 401;
-                return Task.CompletedTask;
+                return Handle401(context, ent, method, serializer);
             }
 #if NET48
             if (context.Request.HttpMethod.ToUpper() == "GET")
@@ -101,6 +101,22 @@ namespace Kull.GenericBackend.GenericSP
                 return HandleGetRequest(context, ent, serializer);
             }
             return HandleBodyRequest(context, method, ent, serializer);
+        }
+
+        protected async Task Handle401(HttpContext context, Entity ent, Method method, IGenericSPSerializer serializer)
+        {
+            context.Response.StatusCode = 401;
+            foreach (var log in requestLoggers)
+            {
+                log.OnRequestValidationFailed(context, new RequestLogger.RequestValidationFailedInfo(RequestLogger.RequestValidationFailedReason.AuthenticationNotGiven));
+            }
+            var objReader = new Kull.Data.DataReader.ObjectDataReader(new IReadOnlyDictionary<string, object?>[]{ new Dictionary<string, object?>()
+                {
+                    {"Error", "You are Unauthenticated" }
+                } });
+            var sercontext = new SerializationContextResult(objReader, context, method, ent, 401);
+            await serializer.ReadResultToBody(sercontext);
+           
         }
 
         protected async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
@@ -133,7 +149,7 @@ namespace Kull.GenericBackend.GenericSP
             {
                 log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
             }
-            var excep = await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
+            var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
             foreach (var log in requestLoggers)
             {
                 log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
@@ -201,7 +217,7 @@ namespace Kull.GenericBackend.GenericSP
                 Newtonsoft.Json.JsonConvert.PopulateObject(json, parameterObject);
 #else
                 var retValue = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-                parameterObject = new Dictionary<string, object>(retValue!, StringComparer.CurrentCultureIgnoreCase);
+                parameterObject = retValue!.ToDictionary(k=>k.Key, v=> Config.DictionaryHelper.ConvertToDeepIDictionary(v.Value, StringComparer.CurrentCultureIgnoreCase), StringComparer.CurrentCultureIgnoreCase)!;
 #endif
             }
             var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
@@ -210,7 +226,7 @@ namespace Kull.GenericBackend.GenericSP
             {
                 log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
             }
-            var excep = await serializer.ReadResultToBody(new SerializationContext(cmd, context, method, ent));
+            var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
             foreach (var log in requestLoggers)
             {
                 log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));

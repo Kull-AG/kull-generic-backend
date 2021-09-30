@@ -74,7 +74,7 @@ namespace Kull.GenericBackend.Serialization
         /// <returns></returns>
         protected Task PrepareHeader(SerializationContext context, Method method, Entity ent, int statusCode)
         {
-            context.SetHeaders("application/json; charset=" + options.Encoding.BodyName, statusCode, true);
+            context.SetHeaders("application/json; charset=" + options.Encoding.BodyName, statusCode,  true);
             return Task.CompletedTask;
         }
 
@@ -234,5 +234,6 @@ namespace Kull.GenericBackend.Serialization
             return responseDescriptor.GetDefaultResponse(operationResponseContext,
                         operationResponseContext.Method.ResultType == FirstResultSetType);
         }
+
     }
 }
