@@ -10,6 +10,14 @@ UNION ALL
 SELECT 2, 'Dog 2 with " in name 
 and a newline ä$¨^ `', '{{largetxt}}', 1
 GO
+CREATE SCHEMA reporting
+GO
+CREATE VIEW reporting.[Pet Names] AS SELECT PetName, IsNice FrOM dbo.Pets
+GO
+CREATE FUNCTION reporting.FT_GetIsNiceFor(@PetName varchar(100))
+RETURNS TABLE AS
+	RETURN (sELECT IsNice, PetId FROM dbo.Pets WHERE PetName=@PetName)
+GO
 CREATE PROCEDURE spGetPets
 	@OnlyNice bit=0,
 	@SearchString varchar(100)='',

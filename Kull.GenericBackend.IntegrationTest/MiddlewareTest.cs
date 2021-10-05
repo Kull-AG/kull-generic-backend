@@ -56,6 +56,71 @@ namespace Kull.GenericBackend.IntegrationTest
         }
 
 
+
+
+        [Theory]
+        [InlineData("/rest/Reporting/Pet")]
+        public async Task GetPetsByView(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+            var getContent = await response.Content.ReadAsStringAsync();
+            var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
+                new
+                {
+                    petName="Dog",
+                    isNice=false
+                },
+                new
+                {
+                    petName= "Dog 2 with \" in name \r\nand a newline ä$¨^ `",
+                    isNice =true
+                }
+            }, asDictList);
+        }
+
+
+
+        [Theory]
+        [InlineData("/rest/NiceForPets?petName=Dog")]
+        public async Task GetPetsByFunction(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+            var getContent = await response.Content.ReadAsStringAsync();
+            var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
+                new
+                {
+                    petId=1,
+                    isNice=false
+                }
+            }, asDictList);
+        }
+
         [Theory]
         [InlineData("/rest/Pet/2")]
         public async Task GetSinglePet(string url)

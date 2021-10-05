@@ -57,6 +57,10 @@ namespace Kull.GenericBackend.Common
             HttpMethod = httpMethod;
             DbObject = dbObjectName;
             DbObjectType = dBObjectType;
+            if(dBObjectType != DatabaseMetadata.DBObjectType.StoredProcedure && httpMethod != OperationType.Get)
+            {
+                throw new InvalidOperationException("Cannot use method other then GET for " + dBObjectType + " (object " + dbObjectName + ")");
+            }
             OperationId = operationId;
             OperationName = operationName;
             ResultType = resultType;

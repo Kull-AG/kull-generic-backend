@@ -97,6 +97,16 @@ In a File called backendconfig.json, set the URI's:
                     "AnotherParamter": "Be sure not to edit any data."
                 }
             }
+        },
+        "Sample": {
+            "GET": {
+                "View": "dbo.[use a view if you want]" //  (readonly, get only)
+            }
+        },
+        "SampleFunction": {
+            "GET": {
+                "Function": "dbo.[use a table valued function if you want]" //  (readonly, get only)
+            }
         }
     }
 }

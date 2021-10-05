@@ -39,14 +39,22 @@ namespace Kull.GenericBackend.Execution
             {
                 return con.CreateSPCommand(name);
             }
-            else if (type == DBObjectType.TableOrView || type == DBObjectType.TableValuedFunction)
+            else if (type == DBObjectType.TableOrView)
+            {
+                var cmd = con.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = "SELECT * FROM " + name.ToString(false, true);
+                return cmd;
+            }
+            else if(type == DBObjectType.TableValuedFunction)
             {
                 var cmd = con.CreateCommand();
                 cmd.CommandType = CommandType.Text;
                 cmd.CommandText = "SELECT * FROM " + name.ToString(false, true) + "(" +
-                    string.Join(", ", parameters.Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => p.SqlName))
-                    + ")";
+                   string.Join(", ", parameters.Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => "@" + p.SqlName))
+                   + ")";
                 return cmd;
+               
             }
             else if (type == DBObjectType.ScalarFunction)
             {
