@@ -16,15 +16,17 @@ namespace Kull.GenericBackend.Common
         public OperationType HttpMethod { get; }
 
 
-        public Data.DBObjectName SP { get; }
+        public Data.DBObjectName DbObject { get; }
+
+        public Kull.DatabaseMetadata.DBObjectType DbObjectType { get; }
 
         public string? OperationId { get; }
-        
+
         public string? OperationName { get; }
 
         public string? ResultType { get; }
         public string? Tag { get; }
-        
+
         public int? CommandTimeout { get; }
 
         private IReadOnlyDictionary<string, object?> restParameters;
@@ -35,24 +37,25 @@ namespace Kull.GenericBackend.Common
         public IReadOnlyCollection<string> IgnoreFields { get; }
 
         public Method(OperationType httpMethod, string sp)
-            : this(httpMethod, sp, null, null, null)
+            : this(httpMethod, sp, DatabaseMetadata.DBObjectType.StoredProcedure, null, null, null)
         {
 
         }
 
-        private Method(OperationType httpMethod, string sp, 
+        private Method(OperationType httpMethod, string dbObjectName,
+              Kull.DatabaseMetadata.DBObjectType dBObjectType,
             string? operationId = null,
             string? operationName = null,
             string? resultType = null, string? tag = null,
             int? commandTimeout = null,
-            IReadOnlyDictionary<string, object?>? executeParameters=null,
+            IReadOnlyDictionary<string, object?>? executeParameters = null,
             IReadOnlyCollection<string>? ignoreParameters = null,
             IReadOnlyDictionary<string, object?>? restParameters = null,
             IReadOnlyCollection<string>? ignoreFields = null)
         {
-            if (sp == null) throw new ArgumentNullException("sp");
+            if (dbObjectName == null) throw new ArgumentNullException("dbObjectName");
             HttpMethod = httpMethod;
-            SP = sp;
+            DbObject = dbObjectName;
             OperationId = operationId;
             OperationName = operationName;
             ResultType = resultType;
@@ -82,7 +85,28 @@ namespace Kull.GenericBackend.Common
             if (value is string s)
                 return new Method(operationType, s);
             var childConfig = (IReadOnlyDictionary<string, object?>)value;
-            return new Method(operationType, childConfig.GetValue<string>("SP"),
+            string objectName;
+            Kull.DatabaseMetadata.DBObjectType dBObjectType;
+            if (childConfig.ContainsKey("View"))
+            {
+                objectName = childConfig.GetValue<string>("View");
+                dBObjectType = DatabaseMetadata.DBObjectType.TableOrView;
+            }
+            else if (childConfig.ContainsKey("SP"))
+            {
+                objectName = childConfig.GetValue<string>("SP");
+                dBObjectType = DatabaseMetadata.DBObjectType.StoredProcedure;
+            }
+            else if (childConfig.ContainsKey("Function"))
+            {
+                objectName = childConfig.GetValue<string>("Function");
+                dBObjectType = DatabaseMetadata.DBObjectType.TableValuedFunction;
+            }else
+            {
+                throw new InvalidOperationException("Must provide SP or View (or Function, which is in alpha)");
+            }
+            return new Method(operationType, objectName,
+                dBObjectType,
                 childConfig.GetValue<string?>("OperationId"),
                 childConfig.GetValue<string?>("OperationName"),
                 childConfig.GetValue<string?>("ResultType"),
@@ -101,7 +125,7 @@ namespace Kull.GenericBackend.Common
         /// <returns></returns>
         public override string ToString()
         {
-            return HttpMethod + " (" + SP + ")";
+            return HttpMethod + " (" + DbObject + ")";
         }
 
     }

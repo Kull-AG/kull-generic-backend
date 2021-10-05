@@ -33,6 +33,37 @@ namespace Kull.GenericBackend.Execution
             this.sPParametersProvider = sPParametersProvider;
         }
 
+        protected DbCommand CreateCommand(DbConnection con, DBObjectType type, DBObjectName name, IReadOnlyCollection<SPParameter>? parameters)
+        {
+            if (type == DBObjectType.StoredProcedure)
+            {
+                return con.CreateSPCommand(name);
+            }
+            else if (type == DBObjectType.TableOrView || type == DBObjectType.TableValuedFunction)
+            {
+                var cmd = con.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = "SELECT * FROM " + name.ToString(false, true) + "(" +
+                    string.Join(", ", parameters.Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => p.SqlName))
+                    + ")";
+                return cmd;
+            }
+            else if (type == DBObjectType.ScalarFunction)
+            {
+
+                var cmd = con.CreateCommand();
+                cmd.CommandType = CommandType.Text;
+                cmd.CommandText = "SELECT " + name.ToString(false, true) + "(" +
+                    string.Join(", ", parameters.Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => p.SqlName))
+                    + ")";
+                return cmd;
+            }
+            else
+            {
+                throw new InvalidOperationException("Not supported " + type.ToString());
+            }
+        }
+
         /// <summary>
         /// Gets the command with parameters
         /// </summary>
@@ -60,13 +91,19 @@ namespace Kull.GenericBackend.Execution
                     throw new ArgumentNullException(nameof(getRouteValue));
                 getRouteValue = (s) => context.GetRouteValue(s);
             }
-            var cmd = con.AssureOpen().CreateSPCommand(method.SP);
+            await con.AssureOpenAsync();
+            IReadOnlyCollection<SPParameter>? sPParameters = method.DbObjectType == DBObjectType.StoredProcedure ? null : Array.Empty<SPParameter>();
+            if (method.DbObjectType == DBObjectType.TableValuedFunction || method.DbObjectType == DBObjectType.ScalarFunction)
+            {
+                sPParameters = await sPParametersProvider.GetSPParameters(method.DbObject, con);//Always need that parameter
+            }
+            var cmd = CreateCommand(con, method.DbObjectType, method.DbObject, sPParameters);
             if (method.CommandTimeout != null)
             {
                 cmd.CommandTimeout = method.CommandTimeout.Value;
             }
             var (inputParameters, outputParameters) = await parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), method.IgnoreParameters, con);
-            IReadOnlyCollection<SPParameter>? sPParameters = null;
+
             foreach (var apiPrm in inputParameters)
             {
                 var prm = apiPrm.WebApiName == null ? parameterOfUser /* make it possible to use some logic */
@@ -114,7 +151,7 @@ namespace Kull.GenericBackend.Execution
                     }
                     else if (value as string == "")
                     {
-                        sPParameters = sPParameters ?? await sPParametersProvider.GetSPParameters(method.SP, con);
+                        sPParameters = sPParameters ?? await sPParametersProvider.GetSPParameters(method.DbObject, con);
                         var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
                         if (spPrm.DbType.NetType == typeof(System.DateTime)
                             || spPrm.DbType.NetType == typeof(System.DateTimeOffset)
@@ -137,7 +174,7 @@ namespace Kull.GenericBackend.Execution
                     }
                     else if (value == null)
                     {
-                        sPParameters = sPParameters ?? await sPParametersProvider.GetSPParameters(method.SP, con);
+                        sPParameters = sPParameters ?? await sPParametersProvider.GetSPParameters(method.DbObject, con);
                         var spPrm = sPParameters.First(f => f.SqlName == apiPrm.SqlName);
                         cmd.AddCommandParameter(apiPrm.SqlName, DBNull.Value, spPrm.DbType.NetType, configure: c =>
                         {

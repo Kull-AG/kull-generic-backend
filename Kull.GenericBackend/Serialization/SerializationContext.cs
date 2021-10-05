@@ -90,7 +90,7 @@ namespace Kull.GenericBackend.Serialization
         public abstract IEnumerable<DbParameter> GetParameters();
         public override string ToString()
         {
-            return Method.HttpMethod.ToString() + " " + Entity.ToString() + ": " + Method.SP;
+            return Method.HttpMethod.ToString() + " " + Entity.ToString() + ": " + Method.DbObject;
         }
 
 

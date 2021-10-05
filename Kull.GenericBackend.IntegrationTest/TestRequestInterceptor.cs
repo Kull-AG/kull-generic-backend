@@ -12,7 +12,7 @@ namespace Kull.GenericBackend.IntegrationTest
     {
         public (int statusCode, HttpContent responseContent)? OnBeforeRequest(HttpContext httpContext, RequestInterceptorContext context)
         {
-            if (context.Method.SP.Name.ToString() == "None")
+            if (context.Method.DbObject.Name.ToString() == "None")
             {
                 var cont = new StringContent("Hey, I am a teapot");
                 cont.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("text/plain");

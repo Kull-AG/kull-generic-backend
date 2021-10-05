@@ -88,7 +88,7 @@ namespace Kull.GenericBackend.Filter
             List<Parameters.WebApiParameter> toAdd = new List<Parameters.WebApiParameter>();
             foreach(var param in apiParams)
             {
-                if(param.SqlName != null && TryGetValueAccessor(parameterInterceptorContext.Method.SP, param.SqlName, out var valueAccessor))
+                if(param.SqlName != null && TryGetValueAccessor(parameterInterceptorContext.Method.DbObject, param.SqlName, out var valueAccessor))
                 {
                     toRemove.Add(param);
                     toAdd.Add(new Parameters.SystemParameter(param.SqlName,

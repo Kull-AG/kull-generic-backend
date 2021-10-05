@@ -70,9 +70,9 @@ namespace Kull.GenericBackend.SwaggerGeneration
         {
             var operationType = method.HttpMethod;
             return operationType == OperationType.Post &&
-                  (method.SP.Name.StartsWith("spAddUpdate") ||
-                   method.SP.Name.StartsWith("sp_AddUpdate") ||
-                   method.SP.Name.EndsWith("_AddUpdate")
+                  (method.DbObject.Name.StartsWith("spAddUpdate") ||
+                   method.DbObject.Name.StartsWith("sp_AddUpdate") ||
+                   method.DbObject.Name.EndsWith("_AddUpdate")
                   ) ? "AddUpdate" :
               operationType == OperationType.Post ? "Add" :
               operationType == OperationType.Put ? "Update" :
@@ -113,8 +113,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
             //[a-zA-Z0-9\.\-_]+
         }
 
-        public virtual string GetResultTypeName(Method method) => CleanName(method.SP.Name) + "Result";
-        public virtual string GetOutputObjectTypeName(Method method) => CleanName(method.SP.Name) + "Output";
+        public virtual string GetResultTypeName(Method method) => CleanName(method.DbObject.Name) + "Result";
+        public virtual string GetOutputObjectTypeName(Method method) => CleanName(method.DbObject.Name) + "Output";
 
 
         public virtual string GetUserDefinedSqlTypeWebApiName(DBObjectName userDefinedType)

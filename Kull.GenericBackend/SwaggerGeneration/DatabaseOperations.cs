@@ -130,7 +130,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     OpenApiSchema resultSchema = new OpenApiSchema();
                     try
                     {
-                        var dataToWrite = await sqlHelper.GetSPResultSet(dbConnection, method.SP, resultSetPath, method.ExecuteParameters!);
+                        var dataToWrite = await sqlHelper.GetResultSet(dbConnection, method.DbObject, method.DbObjectType, resultSetPath, method.ExecuteParameters!);
 
                         if(method.IgnoreFields != null)
                         {
@@ -143,7 +143,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
                     {
                         WriteJsonSchema(resultSchema, Array.Empty<SqlFieldDescription>(), namingMappingHandler, options.ResponseFieldsAreRequired,
                             options.UseSwagger2);
-                        logger.LogError($"Error getting result set for {method.SP}. \r\n{err.ToString()}");
+                        logger.LogError($"Error getting result set for {method.DbObject}. \r\n{err.ToString()}");
                     }
                     swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
                 }
@@ -332,7 +332,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
             {
                 if (operation.RequestBody == null) operation.RequestBody = new OpenApiRequestBody();
                 operation.RequestBody.Required = true;
-                operation.RequestBody.Description = "Parameters for " + method.SP.ToString();
+                operation.RequestBody.Description = "Parameters for " + method.DbObject.ToString();
                 bool requireFormData = inputParameters.Any(p => p.RequiresFormData);
                 operation.RequestBody.Content.Add(requireFormData ? "multipart/form-data" : "application /json", new OpenApiMediaType()
                 {
