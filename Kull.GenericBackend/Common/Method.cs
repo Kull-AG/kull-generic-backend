@@ -56,6 +56,7 @@ namespace Kull.GenericBackend.Common
             if (dbObjectName == null) throw new ArgumentNullException("dbObjectName");
             HttpMethod = httpMethod;
             DbObject = dbObjectName;
+            DbObjectType = dBObjectType;
             OperationId = operationId;
             OperationName = operationName;
             ResultType = resultType;
