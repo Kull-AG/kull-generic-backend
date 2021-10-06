@@ -11,7 +11,10 @@ namespace Kull.GenericBackend.GenericSP
         /// </summary>
         public Encoding Encoding { get; set; } = new UTF8Encoding(false);
 
-        public bool RequireAuthenticated { get; set; } = false;
+        /// <summary>
+        /// Requires user to be authenticated. True since 2.0
+        /// </summary>
+        public bool RequireAuthenticated { get; set; } = true;
 
 #if NEWTONSOFTJSON
         /// <summary>

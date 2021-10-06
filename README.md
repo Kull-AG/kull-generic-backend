@@ -31,6 +31,7 @@ public void ConfigureServices(IServiceCollection services)
             .ConfigureMiddleware(m =>
             { // Set your options
                 m.AlwaysWrapJson = true; // Recommended
+                m.RequireAuthenticated = true; // default since 2.0
             })
             .ConfigureOpenApiGeneration(o =>
             { // Set your options
