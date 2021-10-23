@@ -55,6 +55,16 @@ namespace Kull.GenericBackend.IntegrationTest
             string opId = postAsGetOp.Value<string>("operationId");
             Assert.Equal("GetBackend", opId);
 
+
+
+            var responseObjRef = (JObject)jObj["paths"]["/rest/Pet"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["properties"]["value"]["items"];
+            string refVl = responseObjRef.Value<string>("$ref");
+            Assert.StartsWith("#/components/schemas/", refVl);
+            string name = refVl.Substring("#/components/schemas/".Length);
+            var properties = (JObject)jObj["components"]["schemas"][name]["properties"];
+            Assert.NotNull(properties);
+            Assert.True(properties.Count > 3, "More then 3 props expected");
+
             /*
             var testResult = (JObject)jObj["paths"]["/api/Test"]["patch"];
             string opId = testResult.Value<string>("operationId");

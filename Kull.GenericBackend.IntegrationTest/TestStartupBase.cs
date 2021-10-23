@@ -37,12 +37,14 @@ namespace Kull.GenericBackend.IntegrationTest
                 .ConfigureMiddleware(m =>
                 {
                     m.Prefix = "/rest";
+                    m.RequireAuthenticated = false;
                     ConfigureMiddleware(m);
                 })
                 .ConfigureOpenApiGeneration(o =>
                 {
                     o.UseSwagger2 = this.UseSwaggerV2;
                     o.PersistResultSets = true;
+                   
                     ConfigureOpenApi(o);
                 })
                 .AddFileSupport()
