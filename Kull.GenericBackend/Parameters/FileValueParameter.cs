@@ -88,6 +88,21 @@ namespace Kull.GenericBackend.Parameters
         public override object? GetValue(HttpContext? http, object? valueProvided)
         {
             var allPrms = (Dictionary<string, object>)valueProvided!;
+            if(!allPrms.ContainsKey(this.fileFieldName))
+            {
+                return null;
+            }
+            if(allPrms[this.fileFieldName] is string s)
+            {
+                if (string.IsNullOrEmpty(s) || s == "null" || s == "undefined")
+                {
+                    return null;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Must provide a file");
+                }
+            }
 #if NETFX
             var file = (System.Web.HttpPostedFileBase)allPrms[this.fileFieldName];
 #else
