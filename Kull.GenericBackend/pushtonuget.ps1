@@ -1,3 +1,4 @@
+Remove-Item -Recurse -Force "$PSScriptRoot/bin/Release"
 dotnet build --configuration Release
 
 Get-ChildItem "$PSScriptRoot/bin/Release" *.nupkg | ForEach-Object {
