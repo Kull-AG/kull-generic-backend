@@ -19,7 +19,7 @@ namespace Kull.GenericBackend.IntegrationTest
         {
 
         }
-        protected virtual void ConfigureMiddleware(GenericSP.SPMiddlewareOptions options)
+        protected virtual void ConfigureMiddleware(Middleware.SPMiddlewareOptions options)
         {
 
         }

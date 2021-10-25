@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Middleware
 {
     public class SPMiddlewareOptions
     {

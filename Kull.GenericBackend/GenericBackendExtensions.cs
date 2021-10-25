@@ -53,7 +53,7 @@ namespace Kull.GenericBackend
             services.TryAddSingleton<SwaggerGeneration.CodeConvention>();
             services.TryAddSingleton<Config.ConfigProvider>();
             services.TryAddTransient<ParameterProvider>();
-            services.TryAddSingleton<GenericSP.MiddlewareRegistration>();
+            services.TryAddSingleton<Middleware.MiddlewareRegistration>();
             services.TryAddSingleton<Serialization.ResponseDescriptor>();
             services.TryAddTransient<Execution.CommandPreparation>();
 #if NETFX || NETSTD
@@ -63,14 +63,14 @@ namespace Kull.GenericBackend
 #endif
             services.AddTransient<IGenericSPSerializer, GenericSPNoneSerializer>();
             services.AddTransient<SerializerResolver, SerializerResolver>();
-            services.AddTransient<GenericSP.IGenericSPMiddleware, GenericSP.GenericSPMiddleware>();
+            services.AddTransient<Middleware.IGenericSPMiddleware, Middleware.GenericSPMiddleware>();
             services.AddTransient<Error.IResponseExceptionHandler, Error.SqlServerExceptionHandler>();
             services.AddTransient<Error.JsonErrorHandler, Error.JsonErrorHandler>();
-            GenericSP.SPMiddlewareOptions? options = null;
+            Middleware.SPMiddlewareOptions? options = null;
             SwaggerFromSPOptions? swaggerFromSPOptions = null;
             
             var opts = options ??
-                    new GenericSP.SPMiddlewareOptions();
+                    new Middleware.SPMiddlewareOptions();
             services.TryAddSingleton(opts);
             services.TryAddSingleton(swaggerFromSPOptions ?? new SwaggerGeneration.SwaggerFromSPOptions());
 #if NETFX
@@ -84,8 +84,8 @@ namespace Kull.GenericBackend
            )
         {
 
-            var service = (GenericSP.MiddlewareRegistration)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(GenericSP.MiddlewareRegistration));
-            var opts = (GenericSP.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(GenericSP.SPMiddlewareOptions));
+            var service = (Middleware.MiddlewareRegistration)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.MiddlewareRegistration));
+            var opts = (Middleware.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.SPMiddlewareOptions));
             service.RegisterMiddleware(opts, routeBuilder);
         }
 #else
@@ -95,8 +95,8 @@ namespace Kull.GenericBackend
             IRouteBuilder routeBuilder
             )
         {
-            var service = applicationBuilder.ApplicationServices.GetService<GenericSP.MiddlewareRegistration>()!;
-            var opts = applicationBuilder.ApplicationServices.GetService<GenericSP.SPMiddlewareOptions>()!;
+            var service = applicationBuilder.ApplicationServices.GetService<Middleware.MiddlewareRegistration>()!;
+            var opts = applicationBuilder.ApplicationServices.GetService<Middleware.SPMiddlewareOptions>()!;
             service.RegisterMiddleware(opts, routeBuilder);
         }
 #endif

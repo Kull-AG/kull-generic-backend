@@ -1,4 +1,4 @@
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using Kull.GenericBackend.SwaggerGeneration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;

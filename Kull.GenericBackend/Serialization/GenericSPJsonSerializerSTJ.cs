@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using Kull.GenericBackend.SwaggerGeneration;
 using System.IO;
 using System.Data.Common;

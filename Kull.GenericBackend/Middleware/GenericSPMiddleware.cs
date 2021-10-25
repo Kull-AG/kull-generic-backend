@@ -24,7 +24,7 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using Kull.GenericBackend.Execution;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Middleware
 {
 
     /// <summary>

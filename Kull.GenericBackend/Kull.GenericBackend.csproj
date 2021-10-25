@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>2.0.0-beta4</VersionPrefix>
+    <VersionPrefix>2.0.0-beta5</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

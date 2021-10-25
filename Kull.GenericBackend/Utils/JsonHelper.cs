@@ -1,4 +1,4 @@
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 #if NEWTONSOFTJSON
 using Newtonsoft.Json.Serialization;
 #endif

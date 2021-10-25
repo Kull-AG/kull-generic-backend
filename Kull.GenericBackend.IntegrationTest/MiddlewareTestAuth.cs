@@ -1,4 +1,4 @@
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Newtonsoft.Json.Linq;
 using System;

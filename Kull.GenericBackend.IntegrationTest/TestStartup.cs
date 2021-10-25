@@ -1,4 +1,4 @@
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 
 namespace Kull.GenericBackend.IntegrationTest
 {

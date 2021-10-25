@@ -1,5 +1,5 @@
 using Kull.GenericBackend.Common;
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using Kull.GenericBackend.SwaggerGeneration;
 #if NET48
 using Kull.MvcCompat;

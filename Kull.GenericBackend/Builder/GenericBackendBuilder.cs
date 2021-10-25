@@ -2,7 +2,7 @@ using Kull.GenericBackend.Serialization;
 using System;
 using Kull.GenericBackend.SwaggerGeneration;
 using System.Linq;
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 #if NETFX
 using IServiceCollection = Unity.IUnityContainer;
 using Unity;

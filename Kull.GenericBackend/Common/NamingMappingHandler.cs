@@ -1,4 +1,4 @@
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using System.Collections.Generic;
 
 namespace Kull.GenericBackend.Common

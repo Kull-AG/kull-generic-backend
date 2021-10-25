@@ -1,4 +1,4 @@
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using System.Linq;
@@ -134,7 +134,7 @@ namespace Kull.GenericBackend.SwaggerGeneration
 
                         if(method.IgnoreFields != null)
                         {
-                            dataToWrite = dataToWrite.Where(dw => method.IgnoreFields.Contains(dw.Name, StringComparer.OrdinalIgnoreCase)).ToArray();
+                            dataToWrite = dataToWrite.Where(dw => !method.IgnoreFields.Contains(dw.Name, StringComparer.OrdinalIgnoreCase)).ToArray();
                         }
                         WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler, options.ResponseFieldsAreRequired,
                             options.UseSwagger2);

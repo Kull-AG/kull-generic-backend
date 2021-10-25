@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Http;
 #endif
 using System.Threading.Tasks;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Middleware
 {
     public interface IGenericSPMiddleware
     {
