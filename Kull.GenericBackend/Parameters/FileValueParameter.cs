@@ -20,8 +20,8 @@ namespace Kull.GenericBackend.Parameters
 
         public override bool RequiresFormData => true;
 
-        public FileValueParameter(string fileFieldName, 
-                string sqlName): base(sqlName, null)
+        public FileValueParameter(string fileFieldName,
+                string sqlName) : base(sqlName, null)
         {
             this.fileFieldName = fileFieldName;
         }
@@ -87,12 +87,12 @@ namespace Kull.GenericBackend.Parameters
 
         public override object? GetValue(HttpContext? http, object? valueProvided)
         {
-            var allPrms = (Dictionary<string, object>)valueProvided!;
-            if(!allPrms.ContainsKey(this.fileFieldName))
+            var allPrms = (IReadOnlyDictionary<string, object>)valueProvided!;
+            if (!allPrms.ContainsKey(this.fileFieldName))
             {
                 return null;
             }
-            if(allPrms[this.fileFieldName] is string s)
+            if (allPrms[this.fileFieldName] is string s)
             {
                 if (string.IsNullOrEmpty(s) || s == "null" || s == "undefined")
                 {
