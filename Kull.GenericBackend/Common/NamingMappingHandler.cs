@@ -43,6 +43,7 @@ namespace Kull.GenericBackend.Common
                 while (setNames.Contains(name))
                 {
                     name = origName + "_" + i.ToString();
+                    i++;
                 }
                 setNames.Add(name);
                 yield return name;
