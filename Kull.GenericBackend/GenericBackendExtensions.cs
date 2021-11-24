@@ -83,8 +83,13 @@ namespace Kull.GenericBackend
         public static void UseGenericBackend(this System.Web.Routing.RouteCollection routeBuilder
            )
         {
+            var midm = System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.MiddlewareRegistration));
+            if (midm == null)
+            {
+                throw new System.InvalidOperationException("Must call AddGenericBackend on UnityContainer first");
+            }
 
-            var service = (Middleware.MiddlewareRegistration)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.MiddlewareRegistration));
+            var service = (Middleware.MiddlewareRegistration)midm;
             var opts = (Middleware.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.SPMiddlewareOptions));
             service.RegisterMiddleware(opts, routeBuilder);
         }
