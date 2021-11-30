@@ -1,5 +1,5 @@
 using Kull.GenericBackend.Common;
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using Kull.GenericBackend.SwaggerGeneration;
 #if NET48
 using Kull.MvcCompat;
@@ -59,18 +59,16 @@ namespace Kull.GenericBackend.Serialization
         /// <param name="method">The Http/SP mapping</param>
         /// <param name="ent">The Entity mapping</param>
         /// <returns></returns>
-        protected Task PrepareHeader(HttpContext context, Method method, Entity ent, int statusCode)
+        protected Task PrepareHeader(SerializationContext context, Method method, Entity ent, int statusCode)
         {
-            context.Response.StatusCode = statusCode;
+
             var isHtml = IsHtmlRequest(context);
             string contentType = "application/xml";
             if (isHtml)
             {
                 contentType = "application/xhtml+xml";
             }
-            context.Response.ContentType = $"{contentType}; charset={options.Encoding.BodyName}";
-            context.Response.Headers["Cache-Control"] = "no-store";
-            context.Response.Headers["Expires"] = "0";
+            context.SetHeaders($"{contentType}; charset={options.Encoding.BodyName}", statusCode, true);
             return Task.CompletedTask;
         }
 
@@ -84,28 +82,18 @@ namespace Kull.GenericBackend.Serialization
         /// <returns>A Task</returns>
         public async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
         {
-            var context = serializationContext.HttpContext;
             var method = serializationContext.Method;
             var ent = serializationContext.Entity;
-            bool html = IsHtmlRequest(context);
-#if !NETSTD2 && !NETFX
-            var syncIOFeature = context.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpBodyControlFeature>();
-            if (syncIOFeature != null)
-            {
-                syncIOFeature.AllowSynchronousIO = true;
-            }
-#endif
+            bool html = IsHtmlRequest(serializationContext);
+            serializationContext.RequireSyncIO();
             try
             {
                 using (var rdr = await serializationContext.ExecuteReaderAsync())
                 {
                     bool firstRead = rdr.Read();
-                    await PrepareHeader(context, method, ent, 200);
-#if NET48
-                    using (var xmlWriter = new System.Xml.XmlTextWriter(context.Response.OutputStream, options.Encoding))
-#else
-                    using (var xmlWriter = new System.Xml.XmlTextWriter(context.Response.Body, options.Encoding))
-#endif
+                    await PrepareHeader(serializationContext, method, ent, 200);
+
+                    using (var xmlWriter = new System.Xml.XmlTextWriter(serializationContext.OutputStream, options.Encoding))
                     {
                         string[] fieldNames = new string[rdr.FieldCount];
                         for (int i = 0; i < fieldNames.Length; i++)
@@ -139,8 +127,8 @@ namespace Kull.GenericBackend.Serialization
                                 for (int p = 0; p < fieldNames.Length; p++)
                                 {
                                     xmlWriter.WriteStartElement(html ? "td" : fieldNames[p]);
-                                    object vl = rdr.GetValue(p);
-                                    xmlWriter.WriteValue(vl == DBNull.Value ? null : vl);
+                                    object? vl = rdr.GetValue(p);
+                                    xmlWriter.WriteValue(vl == DBNull.Value || vl == null ? null : vl);
                                     xmlWriter.WriteEndElement();
                                 }
                                 xmlWriter.WriteEndElement();
@@ -176,14 +164,11 @@ namespace Kull.GenericBackend.Serialization
                     if (result != null)
                     {
                         (var status, var content) = result.Value;
-#if NET48
-                        if (!context.Response.HeadersWritten)
-#else 
-                        if (!context.Response.HasStarted)
-#endif
+
+                        if (!serializationContext.HasResponseStarted)
                         {
-                            await PrepareHeader(context, method, ent, status);
-                            await HttpHandlingUtils.HttpContentToResponse(content, context.Response).ConfigureAwait(false);
+                            await PrepareHeader(serializationContext, method, ent, status);
+                            await serializationContext.HttpContentToResponse(content).ConfigureAwait(false);
                         }
                         else
                         {
@@ -200,13 +185,9 @@ namespace Kull.GenericBackend.Serialization
             }
         }
 
-        private static bool IsHtmlRequest(HttpContext context)
+        private static bool IsHtmlRequest(SerializationContext context)
         {
-#if NET48 
-            return false;//Not a great featurea anyway :)
-#else
-            return context.Request.GetTypedHeaders().Accept.Any(contentType => contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml");
-#endif
+            return context.GetAcceptHeader()?.Any(contentType => contentType.MediaType == "text/html" || contentType.MediaType == "application/xhtml+xml") == true;
             }
 
         public bool SupportsResultType(string resultType) => resultType == "xml";

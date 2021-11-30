@@ -10,11 +10,11 @@ using Xunit;
 namespace Kull.GenericBackend.IntegrationTest
 {
     public class MiddlewareTest
-        : IClassFixture<TestWebApplicationFactory>
+        : IClassFixture<TestWebApplicationFactory<TestStartup>>
     {
-        private readonly TestWebApplicationFactory _factory;
+        private readonly TestWebApplicationFactory<TestStartup> _factory;
 
-        public MiddlewareTest(TestWebApplicationFactory factory)
+        public MiddlewareTest(TestWebApplicationFactory<TestStartup> factory)
         {
             _factory = factory;
         }
@@ -37,8 +37,8 @@ namespace Kull.GenericBackend.IntegrationTest
                 response.Content.Headers.ContentType.MediaType);
             var getContent = await response.Content.ReadAsStringAsync();
             var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
-            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts").ToDictionary(k => k, k => d[k])).ToArray();
-            Utils.JsonUtils.AssertJsonEquals(withoutTs, new[]
+            var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => d[k])).ToArray();
+            Utils.JsonUtils.AssertJsonEquals(new[]
             {
                 new
                 {
@@ -49,12 +49,77 @@ namespace Kull.GenericBackend.IntegrationTest
                 new
                 {
                     petId=2,
-                    petName= "Dog 2",
+                    petName= "Dog 2 with \" in name \r\nand a newline ä$¨^ `",
                     isNice =true
                 }
-            });
+            }, withoutTs);
         }
 
+
+
+
+        [Theory]
+        [InlineData("/rest/Reporting/Pet")]
+        public async Task GetPetsByView(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+            var getContent = await response.Content.ReadAsStringAsync();
+            var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
+                new
+                {
+                    petName="Dog",
+                    isNice=false
+                },
+                new
+                {
+                    petName= "Dog 2 with \" in name \r\nand a newline ä$¨^ `",
+                    isNice =true
+                }
+            }, asDictList);
+        }
+
+
+
+        [Theory]
+        [InlineData("/rest/NiceForPets?petName=Dog")]
+        public async Task GetPetsByFunction(string url)
+        {
+            // Arrange
+            var client = _factory.CreateClient();
+            client.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+
+            // Act
+            var response = await client.GetAsync(url);
+
+            // Assert
+            response.EnsureSuccessStatusCode(); // Status Code 200-299
+            Assert.Equal("application/json",
+                response.Content.Headers.ContentType.MediaType);
+            var getContent = await response.Content.ReadAsStringAsync();
+            var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
+                new
+                {
+                    petId=1,
+                    isNice=false
+                }
+            }, asDictList);
+        }
 
         [Theory]
         [InlineData("/rest/Pet/2")]
@@ -74,16 +139,15 @@ namespace Kull.GenericBackend.IntegrationTest
                 response.Content.Headers.ContentType.MediaType);
             var getContent = await response.Content.ReadAsStringAsync();
             var asDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(getContent);
-            var withoutTs = asDict.Keys.Where(k => k != "ts").ToDictionary(k => k, k => asDict[k]);
-            Utils.JsonUtils.AssertJsonEquals(withoutTs,
-
+            var withoutTs = asDict.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => asDict[k]);
+            Utils.JsonUtils.AssertJsonEquals(
                 new
                 {
                     petId = 2,
-                    petName = "Dog 2",
+                    petName = "Dog 2 with \" in name \r\nand a newline ä$¨^ `",
                     isNice = true
                 }
-            );
+            , withoutTs);
         }
 
         [Theory]
@@ -179,6 +243,7 @@ namespace Kull.GenericBackend.IntegrationTest
             var timeStamp = obj.Value<string>("ts");
             Assert.NotEqual("System.Byte[]", timeStamp);
             Assert.NotNull(timeStamp);
+
 
             var putParameter = Newtonsoft.Json.JsonConvert.SerializeObject(
                 new { petId, ts = timeStamp });

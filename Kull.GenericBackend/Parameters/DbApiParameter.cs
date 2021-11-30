@@ -1,13 +1,16 @@
 using Kull.Data;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Common;
+using Kull.GenericBackend.Utils;
 #if NET48
 using HttpContext = System.Web.HttpContextBase;
 #else
 using Microsoft.AspNetCore.Http;
 #endif
 using Microsoft.OpenApi.Models;
+#if NEWTONSOFTJSON
 using Newtonsoft.Json;
+#endif
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -119,7 +122,7 @@ namespace Kull.GenericBackend.Parameters
                 }
                 else
                 {
-                    return JsonConvert.SerializeObject(obj);
+                    return JsonHelper.SerializeObject(obj);
                 }
             }
             else if (valueProvided is IEnumerable<Dictionary<string, object>> objAr)
@@ -134,9 +137,10 @@ namespace Kull.GenericBackend.Parameters
                 }
                 else
                 {
-                    return JsonConvert.SerializeObject(objAr);
+                    return JsonHelper.SerializeObject(objAr);
                 }
             }
+#if NEWTONSOFTJSON
             else if (valueProvided is Newtonsoft.Json.Linq.JArray ar)
             {
                 if (this.UserDefinedType != null)
@@ -169,6 +173,7 @@ namespace Kull.GenericBackend.Parameters
                     return JsonConvert.SerializeObject(valueProvided);
                 }
             }
+#endif
             else if (this.DbType.NetType == typeof(System.Byte[]) && valueProvided is string str)
             {
                 return Convert.FromBase64String(str);

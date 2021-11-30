@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Common;
-using Kull.GenericBackend.GenericSP;
+using Kull.GenericBackend.Middleware;
 using Kull.GenericBackend.SwaggerGeneration;
 using System.IO;
 using System.Data.Common;
@@ -28,12 +28,12 @@ namespace Kull.GenericBackend.Serialization
                 ILogger<GenericSPJsonSerializerBase> logger,
                 CodeConvention convention,
                 ResponseDescriptor responseDescriptor,
-                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger, 
+                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger,
                     convention, responseDescriptor, jsonErrorHandler)
         { }
 
-        protected override  async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, 
-            string[] fieldNamesToUse, bool? firstReadResult, bool objectOfFirstOnly)
+        protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr,
+            string?[] fieldNamesToUse, bool? firstReadResult, bool objectOfFirstOnly)
         {
 
             if (options.Encoding.BodyName != "utf-8")
@@ -42,15 +42,15 @@ namespace Kull.GenericBackend.Serialization
             }
             Type[] types = GetTypesFromReader(rdr);
             var jsonWriter = new Utf8JsonWriter(outputStream);
-            
+
             if (firstReadResult == null)
                 firstReadResult = rdr.Read();
-            var jsFields = fieldNamesToUse.Select(s => JsonEncodedText.Encode(s)).ToArray();
+            var jsFields = fieldNamesToUse.Select(s => s == null ? null: (JsonEncodedText?) JsonEncodedText.Encode(s)).ToArray();
             if (objectOfFirstOnly)
             {
                 if (firstReadResult.Value)
                 {
-                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
+                    await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream);
                 }
                 else
                 {
@@ -61,13 +61,13 @@ namespace Kull.GenericBackend.Serialization
             }
 
             jsonWriter.WriteStartArray();
-            
+
 
             if (firstReadResult == true)
             {
                 do
                 {
-                    WriteSingleRow(rdr, jsFields, types, jsonWriter);
+                    await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream);
                 }
                 while (rdr.Read());
             }
@@ -89,81 +89,121 @@ namespace Kull.GenericBackend.Serialization
 
             return types;
         }
+#if NET6_0_OR_GREATER
+        static JsonEncodedText charStart = JsonEncodedText.Encode("\"");
 
-        private static void WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter)
+        char[] charBuffer;
+
+        private byte[] GetJsonEncodedText(char[] input, int from, int maxChars)  {
+            ReadOnlySpan<char> rsp = new ReadOnlySpan<char>(input, from, maxChars);
+            return JsonEncodedText.Encode(rsp).EncodedUtf8Bytes.ToArray();
+            }
+#endif
+
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously. Suppress because of targeting
+        private async Task WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText?[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter, Stream baseStream)
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             jsonWriter.WriteStartObject();
             for (int p = 0; p < fieldNamesToUse.Length; p++)
             {
+                var fieldName = fieldNamesToUse[p];
+                if (fieldName == null) continue;
+                var realFieldName = fieldName.Value;
                 if (rdr.IsDBNull(p))
                 {
-                    jsonWriter.WriteNull(fieldNamesToUse[p]);
+                    jsonWriter.WriteNull(realFieldName);
                 }
                 else if (types[p] == typeof(string))
                 {
+#if !NET6_0_OR_GREATER
+                    jsonWriter.WriteString(realFieldName, rdr.GetString(p));
+#else
+                    jsonWriter.WritePropertyName(realFieldName);
+                    byte[] charStart = new byte[] { ((byte)'"') };
+                    jsonWriter.WriteRawValue(charStart, true);// We need this one call to WriteRawValue to have correcct internal state
+                    await jsonWriter.FlushAsync();
+
+                    
+                    
+                    charBuffer ??= new char[100];
+                    long offset = 0;
+                    int bytesRead = 0;
+                    do
+                    {
+                        bytesRead = (int)rdr.GetChars(p, offset, charBuffer, 0, charBuffer.Length);
+                        offset += bytesRead;
+                        if (bytesRead > 0)
+                        {
+                            var j = GetJsonEncodedText(charBuffer, 0, bytesRead);                            
+                            await baseStream.WriteAsync(j);
+                        }
+                    }
+                    while (bytesRead > 0);
+                    await baseStream.WriteAsync(charStart);
+#endif
                     //rdr.GetChars()
-                    jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetString(p));
                 }
                 else if (types[p] == typeof(DateTime))
                 {
-                    jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetDateTime(p));
+                    jsonWriter.WriteString(realFieldName, rdr.GetDateTime(p));
                 }
                 else if (types[p] == typeof(DateTimeOffset))
                 {
-                    jsonWriter.WriteString(fieldNamesToUse[p], (DateTimeOffset)rdr.GetValue(p));
+                    jsonWriter.WriteString(realFieldName, (DateTimeOffset)rdr.GetValue(p));
                 }
                 else if (types[p] == typeof(bool))
                 {
-                    jsonWriter.WriteBoolean(fieldNamesToUse[p], rdr.GetBoolean(p));
+                    jsonWriter.WriteBoolean(realFieldName, rdr.GetBoolean(p));
                 }
                 else if (types[p] == typeof(Guid))
                 {
-                    jsonWriter.WriteString(fieldNamesToUse[p], rdr.GetGuid(p));
+                    jsonWriter.WriteString(realFieldName, rdr.GetGuid(p));
                 }
                 else if (types[p] == typeof(short))
                 {
-                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt16(p));
+                    jsonWriter.WriteNumber(realFieldName, rdr.GetInt16(p));
                 }
                 else if (types[p] == typeof(int))
                 {
-                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt32(p));
+                    jsonWriter.WriteNumber(realFieldName, rdr.GetInt32(p));
                 }
                 else if (types[p] == typeof(long))
                 {
-                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetInt64(p));
+                    jsonWriter.WriteNumber(realFieldName, rdr.GetInt64(p));
                 }
                 else if (types[p] == typeof(float))
                 {
-                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetFloat(p));
+                    jsonWriter.WriteNumber(realFieldName, rdr.GetFloat(p));
                 }
                 else if (types[p] == typeof(double))
                 {
-                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetDouble(p));
+                    jsonWriter.WriteNumber(realFieldName, rdr.GetDouble(p));
                 }
                 else if (types[p] == typeof(decimal))
                 {
-                    jsonWriter.WriteNumber(fieldNamesToUse[p], rdr.GetDecimal(p));
+                    jsonWriter.WriteNumber(realFieldName, rdr.GetDecimal(p));
                 }
                 else if (types[p] == typeof(byte[]))
                 {
-                    jsonWriter.WriteBase64String(fieldNamesToUse[p], (byte[])rdr.GetValue(p));
+                    jsonWriter.WriteBase64String(realFieldName, (byte[])rdr.GetValue(p));
                 }
                 else
                 {
                     string? vl = rdr.GetValue(p)?.ToString();
-                    jsonWriter.WriteString(fieldNamesToUse[p], vl);
+                    jsonWriter.WriteString(realFieldName, vl);
                 }
             }
             jsonWriter.WriteEndObject();
         }
 
-        protected override async Task WriteObject(Stream outputStream, IDataRecord objectData, string[] fieldNames)
+        protected override async Task WriteObject(Stream outputStream, IDataRecord objectData, string?[] fieldNames)
         {
 
             var jsonWriter = new Utf8JsonWriter(outputStream);
             var types = GetTypesFromReader(objectData);
-            var jsFields = fieldNames.Select(s => JsonEncodedText.Encode(s)).ToArray();
-            WriteSingleRow(objectData, jsFields, types, jsonWriter);
+            var jsFields = fieldNames.Select(s => s == null?null :(JsonEncodedText?) JsonEncodedText.Encode(s)).ToArray();
+            await WriteSingleRow(objectData, jsFields, types, jsonWriter, outputStream);
             await jsonWriter.FlushAsync();
         }
     }

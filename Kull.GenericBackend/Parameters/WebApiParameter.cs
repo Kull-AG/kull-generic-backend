@@ -31,6 +31,9 @@ namespace Kull.GenericBackend.Parameters
 
         public abstract object? GetValue(HttpContext? http, object? valueProvided);
 
+        /// <summary>
+        /// Set this to true if the value must be set by the user. if true and not set by the user, the db default will be used if true
+        /// </summary>
         public abstract bool RequiresUserProvidedValue { get; }
 
         public WebApiParameter(string? sqlName, string? webApiName)

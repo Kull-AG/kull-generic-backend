@@ -20,8 +20,8 @@ namespace Kull.GenericBackend.Parameters
 
         public override bool RequiresFormData => true;
 
-        public FileValueParameter(string fileFieldName, 
-                string sqlName): base(sqlName, null)
+        public FileValueParameter(string fileFieldName,
+                string sqlName) : base(sqlName, null)
         {
             this.fileFieldName = fileFieldName;
         }
@@ -87,7 +87,22 @@ namespace Kull.GenericBackend.Parameters
 
         public override object? GetValue(HttpContext? http, object? valueProvided)
         {
-            var allPrms = (Dictionary<string, object>)valueProvided!;
+            var allPrms = (IReadOnlyDictionary<string, object>)valueProvided!;
+            if (!allPrms.ContainsKey(this.fileFieldName))
+            {
+                return null;
+            }
+            if (allPrms[this.fileFieldName] is string s)
+            {
+                if (string.IsNullOrEmpty(s) || s == "null" || s == "undefined")
+                {
+                    return null;
+                }
+                else
+                {
+                    throw new InvalidOperationException("Must provide a file");
+                }
+            }
 #if NETFX
             var file = (System.Web.HttpPostedFileBase)allPrms[this.fileFieldName];
 #else
@@ -120,7 +135,7 @@ namespace Kull.GenericBackend.Parameters
 #if NETFX
                 return null;
 #else
-                return Newtonsoft.Json.JsonConvert.SerializeObject(file.Headers);
+                return Utils.JsonHelper.SerializeObject(file.Headers);
 #endif
             }
             throw new NotSupportedException("Not supported");

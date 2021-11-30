@@ -15,7 +15,7 @@ using Kull.GenericBackend.Config;
 using System.Web;
 using System.Threading.Tasks;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Middleware
 {
     class MiddlewareRegistration
     {

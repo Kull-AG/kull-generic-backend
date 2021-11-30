@@ -31,6 +31,7 @@ public void ConfigureServices(IServiceCollection services)
             .ConfigureMiddleware(m =>
             { // Set your options
                 m.AlwaysWrapJson = true; // Recommended
+                m.RequireAuthenticated = true; // default since 2.0. for local development, you might want to use false
             })
             .ConfigureOpenApiGeneration(o =>
             { // Set your options
@@ -48,7 +49,7 @@ public void ConfigureServices(IServiceCollection services)
         {
             var conf = s.GetRequiredService<IConfiguration>();
             var constr = conf["ConnectionStrings:DefaultConnection"];
-            return new System.Data.SqlClient.SqlConnection(constr);
+            return new Microsoft.Data.SqlClient.SqlConnection(constr);
         });
 		services.AddSwaggerGen(c=> {
 			c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
@@ -96,6 +97,16 @@ In a File called backendconfig.json, set the URI's:
                     "ParamterName": "Set this object for strange cases where SQL Server does not return meta",
                     "AnotherParamter": "Be sure not to edit any data."
                 }
+            }
+        },
+        "Sample": {
+            "GET": {
+                "View": "dbo.[use a view if you want]" //  (currently readonly, get only)
+            }
+        },
+        "SampleFunction": {
+            "GET": {
+                "Function": "dbo.[use a table valued function if you want]" //  (currently readonly, get only)
             }
         }
     }
@@ -158,7 +169,7 @@ If you would like to add something to this, or remove the default ones, you can 
         //Usually you will want to set global system parameters
         prms.AddSystemParameter("UserClaims", c => Newtonsoft.Json.JsonConvert.SerializeObject(c.User.Claims));
         //But if you want one for just one SP, you can do this by using the dot
-        prms.AddSystemParameter("ProcecureName.ParameterNameInThere", c => c.GetType().ToString());
+        prms.AddSystemParameter("SchemaName.ProcecureName.ParameterNameInThere", c => c.GetType().ToString());
     });
 ```
 

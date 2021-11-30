@@ -44,6 +44,7 @@ namespace Kull.GenericBackend.Serialization
         /// <returns>The exception object if there was one that was handled. used for logging only</returns>
         Task<Exception?> ReadResultToBody(SerializationContext context);
 
+
         /// <summary>
         /// Hook to allow modifing the open api schema
         /// </summary>

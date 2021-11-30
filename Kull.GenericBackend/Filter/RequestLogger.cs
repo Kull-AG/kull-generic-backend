@@ -23,5 +23,9 @@ namespace Kull.GenericBackend.Filter
         public record RequestEndInfo(DbCommand Command, DateTime StartedAtUtc, Exception? Error);
 
         public virtual void OnRequestEnd(HttpContext context, RequestEndInfo info) { }
+
+        public enum RequestValidationFailedReason { AuthenticationNotGiven=1 }
+        public record RequestValidationFailedInfo(RequestValidationFailedReason Reason);
+        public virtual void OnRequestValidationFailed(HttpContext context, RequestValidationFailedInfo info) { }
     }
 }

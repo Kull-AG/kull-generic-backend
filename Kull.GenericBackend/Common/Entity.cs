@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NEWTONSOFTJSON
 using Newtonsoft.Json.Serialization;
+#endif
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Config;
 
@@ -39,6 +41,7 @@ namespace Kull.GenericBackend.Common
         /// <returns></returns>
         private (string name, string? type) ParseTemplatePart(string input)
         {
+#if NEWTONSOFTJSON
             CamelCaseNamingStrategy strat = new CamelCaseNamingStrategy();
             if (input.Contains(":"))
             {
@@ -46,6 +49,16 @@ namespace Kull.GenericBackend.Common
                     input.Substring(input.IndexOf(":") + 1));
             }
             return (strat.GetPropertyName(input, false), null);
+#else
+            var strat = System.Text.Json.JsonNamingPolicy.CamelCase;
+            if (input.Contains(":"))
+            {
+                return (strat.ConvertName(input.Substring(0, input.IndexOf(":"))),
+                    input.Substring(input.IndexOf(":") + 1));
+            }
+            return (strat.ConvertName(input), null);
+#endif
+
         }
 
         /// <summary>

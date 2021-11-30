@@ -1,7 +1,6 @@
-using Newtonsoft.Json.Serialization;
 using System.Text;
 
-namespace Kull.GenericBackend.GenericSP
+namespace Kull.GenericBackend.Middleware
 {
     public class SPMiddlewareOptions
     {
@@ -12,12 +11,23 @@ namespace Kull.GenericBackend.GenericSP
         /// </summary>
         public Encoding Encoding { get; set; } = new UTF8Encoding(false);
 
-        public bool RequireAuthenticated { get; set; } = false;
+        /// <summary>
+        /// Requires user to be authenticated. True since 2.0
+        /// </summary>
+        public bool RequireAuthenticated { get; set; } = true;
+
+#if NEWTONSOFTJSON
+        /// <summary>
+        /// Naming strategy for properties etc
+        /// </summary>
+        public Newtonsoft.Json.Serialization.NamingStrategy NamingStrategy { get; set; } = new Newtonsoft.Json.Serialization.CamelCaseNamingStrategy();
+#else
 
         /// <summary>
         /// Naming strategy for properties etc
         /// </summary>
-        public NamingStrategy NamingStrategy { get; set; } = new CamelCaseNamingStrategy();
+        public System.Text.Json.JsonNamingPolicy NamingStrategy { get; set; } = System.Text.Json.JsonNamingPolicy.CamelCase;
+#endif
 
         /// <summary>
         /// Set this to true to always wrap your result in an object

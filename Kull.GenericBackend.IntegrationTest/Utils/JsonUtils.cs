@@ -7,10 +7,10 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
 {
     public static class JsonUtils
     {
-        public static void AssertJsonEquals(object json1, object json2)
+        public static void AssertJsonEquals(object expected, object actual)
         {
-            var obj1 = GetJToken(json1);
-            var obj2 = GetJToken(json2);
+            var obj1 = GetJToken(expected);
+            var obj2 = GetJToken(actual);
 
             if (JToken.DeepEquals(obj1, obj2))
             {

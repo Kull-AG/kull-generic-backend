@@ -67,6 +67,16 @@
     },
     "TestTableDataWithSchema": {
       "GET": "tester.spTestTableParam"
+    },
+    "Reporting/Pet": {
+      "GET": {
+        "View": "reporting.[Pet Names]"
+      }
+    },
+    "NiceForPets": {
+      "GET": {
+        "Function": "reporting.FT_GetIsNiceFor"
+      }
     }
   }
 }

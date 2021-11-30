@@ -1,5 +1,4 @@
-using Kull.GenericBackend.GenericSP;
-using Newtonsoft.Json.Serialization;
+using Kull.GenericBackend.Middleware;
 using System.Collections.Generic;
 
 namespace Kull.GenericBackend.Common
@@ -11,20 +10,30 @@ namespace Kull.GenericBackend.Common
     public class NamingMappingHandler
     {
         private readonly SPMiddlewareOptions options;
+        internal static readonly string IgnoreFieldPlaceHolder = "________ignore";
 
         public NamingMappingHandler(SPMiddlewareOptions options)
         {
             this.options = options;
         }
 
-        public IEnumerable<string> GetNames(IEnumerable<string> dt)
+        public IEnumerable<string> GetNames(IEnumerable<string?> dt)
         {
             var setNames = new List<string>();
             int nullCount = 0;
             foreach (var item in dt)
             {
-                string name = options.NamingStrategy.GetPropertyName(item, false);
-                if(name == null)
+#if NEWTONSOFTJSON
+                string? name = item == null ? null:options.NamingStrategy.GetPropertyName(item, false);
+#else
+                string? name = item == null ? null : options.NamingStrategy.ConvertName(item);
+#endif
+                if (name == IgnoreFieldPlaceHolder)
+                {
+                    yield return name;
+                    continue;
+                }
+                if (name == null)
                 {
                     name = "column" + (nullCount == 0 ? "" : nullCount.ToString());
                     nullCount++;
@@ -34,6 +43,7 @@ namespace Kull.GenericBackend.Common
                 while (setNames.Contains(name))
                 {
                     name = origName + "_" + i.ToString();
+                    i++;
                 }
                 setNames.Add(name);
                 yield return name;

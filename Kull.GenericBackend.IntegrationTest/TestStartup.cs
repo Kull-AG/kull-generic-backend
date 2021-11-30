@@ -1,88 +1,15 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Data.Common;
-using System.Linq;
-using System.Threading.Tasks;
+using Kull.GenericBackend.Middleware;
 
 namespace Kull.GenericBackend.IntegrationTest
 {
-    public class TestStartup
+    public class TestStartup : TestStartupBase
     {
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
-        public void ConfigureServices(IServiceCollection services)
+        protected override bool UseSwaggerV2 => true;
+
+        protected override void ConfigureMiddleware(SPMiddlewareOptions options)
         {
-            services.AddRouting();
-            services.AddMvc(config =>
-            {
-            });
-
-            services.AddGenericBackend()
-                .ConfigureMiddleware(m =>
-                {
-                    m.Prefix = "/rest";
-                })
-                .ConfigureOpenApiGeneration(o =>
-                {
-                    o.PersistResultSets = true;
-                    o.UseSwagger2 = true;
-                })
-                .AddFileSupport()
-                .AddXmlSupport()
-                .AddSystemParameters(cf=>
-                {
-                    cf.AddSystemParameter("[Procedure with - strange name].ImASpecialParameter", (c) => true);
-                });
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-                c.AddGenericBackend();
-            });
-            if (!DbProviderFactories.TryGetFactory("System.Data.SqlClient", out var _))
-                DbProviderFactories.RegisterFactory("System.Data.SqlClient", System.Data.SqlClient.SqlClientFactory.Instance);
-            services.AddTransient<Filter.IRequestInterceptor, TestRequestInterceptor>();
-            services.AddScoped(typeof(DbConnection), (s) =>
-            {
-                var conf = s.GetRequiredService<IConfiguration>();
-                var hostenv = s.GetRequiredService<IHostingEnvironment>();
-                var constr = conf["ConnectionStrings:DefaultConnection"];
-                constr = constr.Replace("{{workdir}}", hostenv.ContentRootPath);
-
-                return Kull.Data.DatabaseUtils.GetConnectionFromEFString(constr, true);
-            });
-        }
-
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app)
-        {
-            app.UseSwagger(o =>
-            {
-                // For compat with ng-swagger-gen on client. You can use ng-openapi-gen if set to false
-                o.SerializeAsV2 = true;
-            });
-
-#if NETSTD2
-            app.UseMvc(routeBuilder =>
-            {
-                app.UseGenericBackend(routeBuilder);
-            });
-#else
-            app.UseRouting();
-            app.UseEndpoints(endpoints =>
-            {
-                app.UseGenericBackend(endpoints);
-                endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-            });
-
-#endif
-            app.UseStaticFiles();
-            app.UseDefaultFiles();
-
+            base.ConfigureMiddleware(options);
+            options.AlwaysWrapJson = false;
         }
     }
 }

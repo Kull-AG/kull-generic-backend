@@ -11,10 +11,6 @@ namespace Kull.GenericBackend.Filter
 {
     public class SystemParameters: IParameterInterceptor
     {
-        /// <summary>
-        /// Set this if you want to use always the same user while debugging
-        /// </summary>
-        public static string DebugUsername = "KULL\\Ehrsam";
 
         static readonly Func<HttpContext, object?> noOpAccessor = (c) => null;
 
@@ -35,12 +31,6 @@ namespace Kull.GenericBackend.Filter
 
         private static string? GetUserName(HttpContext context)
         {
-#if DEBUG
-            if (System.Diagnostics.Debugger.IsAttached)
-            {
-                return DebugUsername;
-            }
-#endif
             return context.User?.Identity?.Name;
         }
 
@@ -98,7 +88,7 @@ namespace Kull.GenericBackend.Filter
             List<Parameters.WebApiParameter> toAdd = new List<Parameters.WebApiParameter>();
             foreach(var param in apiParams)
             {
-                if(param.SqlName != null && TryGetValueAccessor(parameterInterceptorContext.Method.SP, param.SqlName, out var valueAccessor))
+                if(param.SqlName != null && TryGetValueAccessor(parameterInterceptorContext.Method.DbObject, param.SqlName, out var valueAccessor))
                 {
                     toRemove.Add(param);
                     toAdd.Add(new Parameters.SystemParameter(param.SqlName,

@@ -36,7 +36,7 @@ namespace Kull.GenericBackend.Parameters
             DbConnection dbConnection)
         {
             var method = context.Method;
-            var spParamsRaw = await sPParametersProvider.GetSPParameters(method.SP, dbConnection);
+            var spParamsRaw = await sPParametersProvider.GetSPParameters(method.DbObject, dbConnection);
             var spParams = ignoreParameters.Count == 0 ? spParamsRaw : spParamsRaw.Where(p => !ignoreParameters.Contains(p.SqlName.StartsWith("@") ? p.SqlName.Substring(1) : p.SqlName,
                   StringComparer.OrdinalIgnoreCase));
             var spPrmsNoCount = spParams.Where(p => p.ParameterDirection != System.Data.ParameterDirection.Output);

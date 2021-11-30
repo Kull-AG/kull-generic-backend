@@ -1,0 +1,9 @@
+﻿{
+  "$schema": "https://raw.githubusercontent.com/Kull-AG/kull-generic-backend/master/backendconfig.schema.json",
+  "Entities": {
+    "KeyDataTrees": {
+      "POST": "dbo.spUpdateKeyDataTreeData",
+      "GET": "dbo.spGetKeyDataTrees2"
+    }
+  }
+}

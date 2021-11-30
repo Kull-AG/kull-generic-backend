@@ -3,20 +3,21 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using Microsoft.Data.SqlClient;
 using Kull.Data;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace Kull.GenericBackend.IntegrationTest
 {
-    public class TestWebApplicationFactory
-        : Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<TestStartup>
+    public class TestWebApplicationFactory<T>
+        : Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactory<T>
+        where T: class
     {
         protected override IWebHostBuilder CreateWebHostBuilder()
         {
             return Microsoft.AspNetCore.WebHost.CreateDefaultBuilder()
-                .UseStartup<TestStartup>();
+                .UseStartup<T>();
         }
 
         protected override void Dispose(bool disposing)
@@ -31,7 +32,7 @@ namespace Kull.GenericBackend.IntegrationTest
             builder.ConfigureServices(services =>
             {
 #if NETSTD2
-                var hostEnv = (IHostingEnvironment)services.FirstOrDefault(f => f.ServiceType == typeof(IHostingEnvironment)).ImplementationInstance;
+                var hostEnv = (Microsoft.AspNetCore.Hosting.IHostingEnvironment)services.FirstOrDefault(f => f.ServiceType == typeof(Microsoft.AspNetCore.Hosting.IHostingEnvironment)).ImplementationInstance;
 #else
                 var hostEnv = (IWebHostEnvironment)services.FirstOrDefault(f => f.ServiceType == typeof(IWebHostEnvironment)).ImplementationInstance;
 #endif

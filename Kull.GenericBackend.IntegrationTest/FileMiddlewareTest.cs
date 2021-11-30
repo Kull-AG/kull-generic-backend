@@ -12,11 +12,11 @@ using Xunit;
 namespace Kull.GenericBackend.IntegrationTest
 {
     public class FileMiddlewareTest
-        : IClassFixture<TestWebApplicationFactory>
+        : IClassFixture<TestWebApplicationFactory<TestStartup>>
     {
-        private readonly TestWebApplicationFactory _factory;
+        private readonly TestWebApplicationFactory<TestStartup> _factory;
 
-        public FileMiddlewareTest(TestWebApplicationFactory factory
+        public FileMiddlewareTest(TestWebApplicationFactory<TestStartup> factory
             )
         {
             _factory = factory;

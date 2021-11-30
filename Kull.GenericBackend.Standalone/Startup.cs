@@ -41,13 +41,13 @@ namespace Kull.GenericBackend.Standalone
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
                 c.AddGenericBackend();
             });
-            if (!DbProviderFactories.TryGetFactory("System.Data.SqlClient", out var _))
-                DbProviderFactories.RegisterFactory("System.Data.SqlClient", System.Data.SqlClient.SqlClientFactory.Instance);
+            if (!DbProviderFactories.TryGetFactory("Microsoft.Data.SqlClient", out var _))
+                DbProviderFactories.RegisterFactory("Microsoft.Data.SqlClient", Microsoft.Data.SqlClient.SqlClientFactory.Instance);
             services.AddScoped(typeof(DbConnection), (s) =>
             {
                 var conf = s.GetRequiredService<IConfiguration>();
                 var constr = conf["ConnectionStrings:DefaultConnection"];
-                return Kull.Data.DatabaseUtils.GetConnectionFromEFString(constr, true);
+                return Kull.Data.DatabaseUtils.GetConnectionFromEFString(constr, Microsoft.Data.SqlClient.SqlClientFactory.Instance);
             });
         }
 

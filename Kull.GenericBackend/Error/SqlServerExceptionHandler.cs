@@ -13,10 +13,22 @@ namespace Kull.GenericBackend.Error
 
         public (int statusCode, System.Net.Http.HttpContent dataToDisplay)? GetContent(Exception exp, Func<object, System.Net.Http.HttpContent> format)
         {
-
-            if (exp is System.Data.SqlClient.SqlException err)
+            if (exp.GetType().FullName.EndsWith(".Data.SqlClient.SqlException"))// Use of reflection to avoid referencing ms sqlclient dll
             {
-                var errors = err.Errors.Cast<System.Data.SqlClient.SqlError>();
+                var errorsProp = (System.Collections.ICollection) exp.GetType().GetProperty("Errors")!.GetValue(exp);
+                var propType = errorsProp.Count > 0 ? errorsProp.Cast<object>().First().GetType() : null;
+                var nrProp = propType?.GetProperty("Number");
+                var messageProp = propType?.GetProperty("Message");
+                var stateProp = propType?.GetProperty("State");
+                var errors = errorsProp.Cast<object>().Select(e =>
+                {
+                    return new
+                    {
+                        Number = (int)nrProp!.GetValue(e),
+                        Message = (string)messageProp!.GetValue(e),
+                        State = (byte)stateProp!.GetValue(e)
+                    };
+                });
                 if (!errors.All(e => e.Number >= SQLServerUserErrorLowerBound && e.Number <= SQLServerUserErrorUpperBound))
                 {
                     return (500, format(new object()));

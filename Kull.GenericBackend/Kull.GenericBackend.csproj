@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>1.5.3</VersionPrefix>
+    <VersionPrefix>2.0.0</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/Kull-AG/kull-generic-backend</RepositoryUrl>
-    <LangVersion>9.0</LangVersion>
+    <LangVersion>10.0</LangVersion>
     <Nullable>enable</Nullable>
     <Copyright>Kull AG</Copyright>
     <IncludeSymbols>true</IncludeSymbols>
@@ -24,7 +24,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;netstandard2.0;net5;net48</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.1;netstandard2.0;net5;net6.0;net48</TargetFrameworks>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
@@ -33,6 +33,9 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
     <DefineConstants>$(DefineConstants);NETFX</DefineConstants>
   </PropertyGroup>
+	<PropertyGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
+		<DefineConstants>$(DefineConstants);NEWTONSOFTJSON</DefineConstants>
+	</PropertyGroup>
   
   <ItemGroup>
     <None Remove="README.md" />
@@ -42,17 +45,16 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Kull.Data" Version="5.4.1" />
-    <PackageReference Include="Kull.DatabaseMetadata" Version="1.0.4" />
-    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.1">
+    <PackageReference Include="Kull.Data" Version="6.0.0" />
+    <PackageReference Include="Kull.DatabaseMetadata" Version="1.4.0-beta1" />
+    <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' != 'net48' ">
-    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.0.4" />
-    <PackageReference Include="System.Data.SqlClient" Version="4.8.2" />
+    <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.2.2" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='net48'">
     <PackageReference Include="Swashbuckle.Core" Version="5.6.0" />
