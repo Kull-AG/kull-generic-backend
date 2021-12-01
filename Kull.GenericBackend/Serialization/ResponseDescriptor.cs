@@ -14,17 +14,20 @@ namespace Kull.GenericBackend.Serialization
         {
             this.codeConvention = codeConvention;
         }
+
+
         public virtual OpenApiResponses GetDefaultResponse(
                 OperationResponseContext context,
-                bool firstOnly=false)
+                bool firstOnly,
+                bool wrapResult)
         {
 
             OpenApiSchema schema;
             var outputObjectName = context.OutputObjectTypeName;
             var resultTypeName = context.ResultTypeName;
-            if (outputObjectName != null || context.AlwaysWrapJson)
+            if (wrapResult)
             {
-                schema = GetWrappedSchema( resultTypeName, outputObjectName, firstOnly);
+                schema = GetWrappedSchema(resultTypeName, outputObjectName, firstOnly);
             }
             else
             {
@@ -41,6 +44,16 @@ namespace Kull.GenericBackend.Serialization
             });
             responses.Add("200", response);
             return responses;
+        }
+
+        [Obsolete]
+
+        public virtual OpenApiResponses GetDefaultResponse(
+                OperationResponseContext context,
+                bool firstOnly=false)
+        {
+
+            return GetDefaultResponse(context, firstOnly, context.OutputObjectTypeName != null || context.AlwaysWrapJson);
         }
         public virtual OpenApiSchema GetAdditionalItemsSchema() => new OpenApiSchema()
         {

@@ -325,7 +325,8 @@ namespace Kull.GenericBackend.SwaggerGeneration
                      codeConvention.GetResultTypeName(method),
                     outputParameters.Length > 0 ? codeConvention.GetOutputObjectTypeName(method) : null
                     );
-            operation.Responses =serializer?.GetResponseType(context) ?? responseDescriptor.GetDefaultResponse(context);
+            operation.Responses =serializer?.GetResponseType(context) ?? /* in case of no serializer, we have to assume something */ responseDescriptor.GetDefaultResponse(context, false, 
+                    context.OutputObjectTypeName !=null || sPMiddlewareOptions.AlwaysWrapJson);
 
 
             if (operationType != OperationType.Get && inputParameters.Any(p => p.WebApiName != null && !entity.ContainsPathParameter(p.WebApiName)))

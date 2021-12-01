@@ -129,6 +129,8 @@ namespace Kull.GenericBackend.Serialization
         /// <returns></returns>
         protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly);
 
+        protected virtual bool WrapJson(SPMiddlewareOptions options, bool hasOutParameters) => options.AlwaysWrapJson || hasOutParameters;
+
         /// <summary>
         /// Writes the result data to the body
         /// </summary>
@@ -145,7 +147,7 @@ namespace Kull.GenericBackend.Serialization
             var outParameters = serializationContext.GetParameters()
                 .Where(p => p.Direction == System.Data.ParameterDirection.Output || p.Direction == System.Data.ParameterDirection.InputOutput)
                 .ToArray();
-            bool wrap = options.AlwaysWrapJson || outParameters.Length > 0;
+            bool wrap = WrapJson(options, outParameters.Length > 0);
 
             try
             {
@@ -232,7 +234,8 @@ namespace Kull.GenericBackend.Serialization
         public virtual OpenApiResponses GetResponseType(OperationResponseContext operationResponseContext)
         {
             return responseDescriptor.GetDefaultResponse(operationResponseContext,
-                        operationResponseContext.Method.ResultType == FirstResultSetType);
+                        operationResponseContext.Method.ResultType == FirstResultSetType,
+                        WrapJson(options, operationResponseContext.OutputObjectTypeName != null));
         }
 
     }

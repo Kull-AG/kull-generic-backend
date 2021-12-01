@@ -74,7 +74,7 @@ namespace Kull.GenericBackend.Serialization
             await streamWriter.FlushAsync();
         }
 
-        private static void WriteSingleRow(System.Data.IDataRecord rdr, string?[] fieldNames, JsonTextWriter jsonWriter)
+        protected void WriteSingleRow(System.Data.IDataRecord rdr, string?[] fieldNames, JsonTextWriter jsonWriter)
         {
             jsonWriter.WriteStartObject();
             for (int p = 0; p < fieldNames.Length; p++)
