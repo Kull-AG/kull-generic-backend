@@ -101,7 +101,7 @@ namespace Kull.GenericBackend.Serialization
 #endif
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously. Suppress because of targeting
-        private async Task WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText?[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter, Stream baseStream)
+        protected async Task WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText?[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter, Stream baseStream)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         {
             jsonWriter.WriteStartObject();
