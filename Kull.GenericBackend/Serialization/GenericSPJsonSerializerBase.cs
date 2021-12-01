@@ -34,7 +34,7 @@ namespace Kull.GenericBackend.Serialization
     {
         public const string FirstResultSetType = "first";
 
-        public bool SupportsResultType(string resultType) => resultType == "json" || FirstResultSetType == resultType;
+        public virtual bool SupportsResultType(string resultType) => resultType == "json" || FirstResultSetType == resultType;
         public int? GetSerializerPriority(IEnumerable<MediaTypeHeaderValue> contentTypes,
             Entity entity,
             Method method)

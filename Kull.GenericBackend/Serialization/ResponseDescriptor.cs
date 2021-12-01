@@ -24,7 +24,7 @@ namespace Kull.GenericBackend.Serialization
             var resultTypeName = context.ResultTypeName;
             if (outputObjectName != null || context.AlwaysWrapJson)
             {
-                schema = GetWrappedSchema(resultTypeName, outputObjectName, firstOnly);
+                schema = GetWrappedSchema( resultTypeName, outputObjectName, firstOnly);
             }
             else
             {
@@ -57,9 +57,8 @@ namespace Kull.GenericBackend.Serialization
         };
 
         public virtual OpenApiSchema GetWrappedSchema(
-            string resultTypeName,
-            string? outputObjectName,
-                bool firstItemOnly)
+          OpenApiSchema firstResultSchema,
+          string? outputObjectName)
         {
 
             OpenApiSchema schema = new OpenApiSchema()
@@ -68,7 +67,7 @@ namespace Kull.GenericBackend.Serialization
                 Required = new HashSet<string>(new string[] { codeConvention.FirstResultKey }),
                 Properties = new Dictionary<string, OpenApiSchema>()
                    {
-                       {  codeConvention.FirstResultKey, firstItemOnly? GetResultReference(resultTypeName): GetArrayOfResult(resultTypeName) },
+                       {  codeConvention.FirstResultKey, firstResultSchema},
                         { codeConvention.OtherResultsKey,  GetAdditionalItemsSchema() }
                    }
             };
@@ -86,6 +85,15 @@ namespace Kull.GenericBackend.Serialization
             }
 
             return schema;
+        }
+
+        public virtual OpenApiSchema GetWrappedSchema(
+            string resultTypeName,
+            string? outputObjectName,
+                bool firstItemOnly)
+        {
+            return GetWrappedSchema(firstItemOnly ? GetResultReference(resultTypeName) : GetArrayOfResult(resultTypeName),
+                outputObjectName);
         }
 
         public virtual OpenApiSchema GetResultReference(string resultTypeName) => new OpenApiSchema()
