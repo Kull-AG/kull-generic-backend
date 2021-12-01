@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Kull.GenericBackend.Config
 {
-    internal static class DictionaryHelper
+    public static class DictionaryHelper
     {
         public static T GetValue<T>(this IReadOnlyDictionary<string, object?> dictionary, string key)
         {
@@ -61,7 +61,7 @@ namespace Kull.GenericBackend.Config
         }
 
 
-        internal static object? ConvertToDeepIDictionary(object? input, StringComparer stringComparer)
+        public static object? ConvertToDeepIDictionary(object? input, StringComparer stringComparer)
         {
             if (input == null) return null;
 #if NEWTONSOFTJSON
@@ -71,7 +71,7 @@ namespace Kull.GenericBackend.Config
             }
             if (input is JArray ar)
             {
-                return ar.Children().Select(c => ConvertToDeepIDictionary(c, stringComparer));
+                return ar.Children().Select(c => ConvertToDeepIDictionary(c, stringComparer)).ToArray();
             }
             if (input is JToken tk)
             {
@@ -104,7 +104,7 @@ namespace Kull.GenericBackend.Config
                     case System.Text.Json.JsonValueKind.Object:
                         return e.EnumerateObject().ToDictionary(p => p.Name, p => ConvertToDeepIDictionary(p.Value, stringComparer), stringComparer); 
                     case System.Text.Json.JsonValueKind.Array:
-                        return e.EnumerateArray().Select(p => ConvertToDeepIDictionary(p, stringComparer));
+                        return e.EnumerateArray().Select(p => ConvertToDeepIDictionary(p, stringComparer)).ToArray();
                     case System.Text.Json.JsonValueKind.String:
                         return e.GetString();
                     case System.Text.Json.JsonValueKind.Number:
