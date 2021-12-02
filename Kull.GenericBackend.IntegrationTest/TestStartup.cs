@@ -1,15 +1,14 @@
 using Kull.GenericBackend.Middleware;
 
-namespace Kull.GenericBackend.IntegrationTest
-{
-    public class TestStartup : TestStartupBase
-    {
-        protected override bool UseSwaggerV2 => true;
+namespace Kull.GenericBackend.IntegrationTest;
 
-        protected override void ConfigureMiddleware(SPMiddlewareOptions options)
-        {
-            base.ConfigureMiddleware(options);
-            options.AlwaysWrapJson = false;
-        }
+public class TestStartup : TestStartupBase
+{
+    protected override bool UseSwaggerV2 => true;
+
+    protected override void ConfigureMiddleware(SPMiddlewareOptions options)
+    {
+        base.ConfigureMiddleware(options);
+        options.AlwaysWrapJson = false;
     }
 }

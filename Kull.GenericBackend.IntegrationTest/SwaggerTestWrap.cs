@@ -8,99 +8,98 @@ using System.Linq;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 
-namespace Kull.GenericBackend.IntegrationTest
+namespace Kull.GenericBackend.IntegrationTest;
+
+public class SwaggerTestWrap
+    : IClassFixture<TestWebApplicationFactory<TestStartupWrap>>
 {
-    public class SwaggerTestWrap
-        : IClassFixture<TestWebApplicationFactory<TestStartupWrap>>
+    private readonly TestWebApplicationFactory<TestStartupWrap> _factory;
+
+    public SwaggerTestWrap(TestWebApplicationFactory<TestStartupWrap> factory)
     {
-        private readonly TestWebApplicationFactory<TestStartupWrap> _factory;
+        _factory = factory;
+    }
 
-        public SwaggerTestWrap(TestWebApplicationFactory<TestStartupWrap> factory)
-        {
-            _factory = factory;
-        }
+    [Theory]
+    [InlineData("/swagger/v1/swagger.json")]
+    public async Task Get_EndpointsReturnSuccessAndCorrectContentType(string url)
+    {
+        // Arrange
+        var client = _factory.CreateClient();
 
-        [Theory]
-        [InlineData("/swagger/v1/swagger.json")]
-        public async Task Get_EndpointsReturnSuccessAndCorrectContentType(string url)
-        {
-            // Arrange
-            var client = _factory.CreateClient();
+        // Act
+        var response = await client.GetAsync(url);
 
-            // Act
-            var response = await client.GetAsync(url);
-
-            // Assert
-            response.EnsureSuccessStatusCode(); // Status Code 200-299
-            Assert.Equal("application/json; charset=utf-8",
-                response.Content.Headers.ContentType.ToString());
-            var resp = await response.Content.ReadAsStringAsync();
-            System.IO.File.WriteAllText("testWrap.json", resp);
-            var jObj = JsonConvert.DeserializeObject<JObject>(resp);
-            var petParameter = (JArray)jObj["paths"]["/rest/Pet"]["get"]["parameters"];
-            Assert.Equal(2, petParameter.Count);
-            var onlyNiceParam =
-                petParameter.Children<JObject>()
-                .Single(p => p.Value<string>("name") == "onlyNice");
-            Assert.Equal("boolean", onlyNiceParam["schema"].Value<string>("type"));
+        // Assert
+        response.EnsureSuccessStatusCode(); // Status Code 200-299
+        Assert.Equal("application/json; charset=utf-8",
+            response.Content.Headers.ContentType.ToString());
+        var resp = await response.Content.ReadAsStringAsync();
+        System.IO.File.WriteAllText("testWrap.json", resp);
+        var jObj = JsonConvert.DeserializeObject<JObject>(resp);
+        var petParameter = (JArray)jObj["paths"]["/rest/Pet"]["get"]["parameters"];
+        Assert.Equal(2, petParameter.Count);
+        var onlyNiceParam =
+            petParameter.Children<JObject>()
+            .Single(p => p.Value<string>("name") == "onlyNice");
+        Assert.Equal("boolean", onlyNiceParam["schema"].Value<string>("type"));
 
 
-            var searchStringParam =
-                petParameter.Children<JObject>()
-                .Single(p => p.Value<string>("name") == "searchString");
-            Assert.Equal("string", searchStringParam["schema"].Value<string>("type"));
+        var searchStringParam =
+            petParameter.Children<JObject>()
+            .Single(p => p.Value<string>("name") == "searchString");
+        Assert.Equal("string", searchStringParam["schema"].Value<string>("type"));
 
 
-            var postAsGetOp = (JObject)jObj["paths"]["/rest/Test"]["post"];
-            string opId = postAsGetOp.Value<string>("operationId");
-            Assert.Equal("GetBackend", opId);
+        var postAsGetOp = (JObject)jObj["paths"]["/rest/Test"]["post"];
+        string opId = postAsGetOp.Value<string>("operationId");
+        Assert.Equal("GetBackend", opId);
 
 
 
-            var responseObjRef = (JObject)jObj["paths"]["/rest/Pet"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["properties"]["value"]["items"];
-            string refVl = responseObjRef.Value<string>("$ref");
-            Assert.StartsWith("#/components/schemas/", refVl);
-            string name = refVl.Substring("#/components/schemas/".Length);
-            var properties = (JObject)jObj["components"]["schemas"][name]["properties"];
-            Assert.NotNull(properties);
-            Assert.True(properties.Count > 3, "More then 3 props expected");
+        var responseObjRef = (JObject)jObj["paths"]["/rest/Pet"]["get"]["responses"]["200"]["content"]["application/json"]["schema"]["properties"]["value"]["items"];
+        string refVl = responseObjRef.Value<string>("$ref");
+        Assert.StartsWith("#/components/schemas/", refVl);
+        string name = refVl.Substring("#/components/schemas/".Length);
+        var properties = (JObject)jObj["components"]["schemas"][name]["properties"];
+        Assert.NotNull(properties);
+        Assert.True(properties.Count > 3, "More then 3 props expected");
 
-            /*
-            var testResult = (JObject)jObj["paths"]["/api/Test"]["patch"];
-            string opId = testResult.Value<string>("operationId");
-            Assert.Equal("GetBackend", opId);*/
-        }
+        /*
+        var testResult = (JObject)jObj["paths"]["/api/Test"]["patch"];
+        string opId = testResult.Value<string>("operationId");
+        Assert.Equal("GetBackend", opId);*/
+    }
 
 
 
-        [Theory]
-        [InlineData("/swagger/v1/swagger.json")]
-        public async Task Get_TestTempTable(string url)
-        {
-            // Arrange
-            var client = _factory.CreateClient();
+    [Theory]
+    [InlineData("/swagger/v1/swagger.json")]
+    public async Task Get_TestTempTable(string url)
+    {
+        // Arrange
+        var client = _factory.CreateClient();
 
-            // Act
-            var response = await client.GetAsync(url);
+        // Act
+        var response = await client.GetAsync(url);
 
-            // Assert
-            response.EnsureSuccessStatusCode(); // Status Code 200-299
-            Assert.Equal("application/json; charset=utf-8",
-                response.Content.Headers.ContentType.ToString());
-            var resp = await response.Content.ReadAsStringAsync();
-            System.IO.File.WriteAllText("testV3.json", resp);
-            var document = new Microsoft.OpenApi.Readers.OpenApiStringReader().Read(resp, out var apiDiagnostic);
-            Assert.Empty(apiDiagnostic.Errors);
-            Assert.Equal(OpenApiSpecVersion.OpenApi3_0, apiDiagnostic.SpecificationVersion);
-            var testTempPath = document.Paths["/rest/TestTemp"].Operations[OperationType.Get];
-            
-            Assert.Single(testTempPath.Parameters);
-            Assert.Equal("anAwesomeParam", testTempPath.Parameters.First().Name);
-            
-            /*
-            var testResult = (JObject)jObj["paths"]["/api/Test"]["patch"];
-            string opId = testResult.Value<string>("operationId");
-            Assert.Equal("GetBackend", opId);*/
-        }
+        // Assert
+        response.EnsureSuccessStatusCode(); // Status Code 200-299
+        Assert.Equal("application/json; charset=utf-8",
+            response.Content.Headers.ContentType.ToString());
+        var resp = await response.Content.ReadAsStringAsync();
+        System.IO.File.WriteAllText("testV3.json", resp);
+        var document = new Microsoft.OpenApi.Readers.OpenApiStringReader().Read(resp, out var apiDiagnostic);
+        Assert.Empty(apiDiagnostic.Errors);
+        Assert.Equal(OpenApiSpecVersion.OpenApi3_0, apiDiagnostic.SpecificationVersion);
+        var testTempPath = document.Paths["/rest/TestTemp"].Operations[OperationType.Get];
+
+        Assert.Single(testTempPath.Parameters);
+        Assert.Equal("anAwesomeParam", testTempPath.Parameters.First().Name);
+
+        /*
+        var testResult = (JObject)jObj["paths"]["/api/Test"]["patch"];
+        string opId = testResult.Value<string>("operationId");
+        Assert.Equal("GetBackend", opId);*/
     }
 }

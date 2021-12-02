@@ -22,84 +22,80 @@ using System.Data.Common;
 using Kull.GenericBackend.Error;
 using Newtonsoft.Json.Serialization;
 
-namespace Kull.GenericBackend.Serialization
+namespace Kull.GenericBackend.Serialization;
+
+/// <summary>
+/// Helper class for writing the result of a command to the body of the response
+/// </summary>
+public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGenericSPSerializer
 {
-    /// <summary>
-    /// Helper class for writing the result of a command to the body of the response
-    /// </summary>
-    public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGenericSPSerializer
+    public GenericSPJsonSerializerJsonNet(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
+            ILogger<GenericSPJsonSerializerBase> logger,
+            CodeConvention convention,
+            ResponseDescriptor responseDescriptor,
+             Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger, convention,
+                 responseDescriptor,
+                 jsonErrorHandler
+                )
+    { }
+
+    protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly)
     {
-        public GenericSPJsonSerializerJsonNet(Common.NamingMappingHandler namingMappingHandler, SPMiddlewareOptions options,
-                ILogger<GenericSPJsonSerializerBase> logger,
-                CodeConvention convention,
-                ResponseDescriptor responseDescriptor,
-                 Error.JsonErrorHandler jsonErrorHandler) : base(namingMappingHandler, options, logger, convention,
-                     responseDescriptor,
-                     jsonErrorHandler
-                    )
-        { }
+        var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
+        var jsonWriter = new JsonTextWriter(streamWriter);
 
-        protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly)
+        if (firstReadResult == null)
+            firstReadResult = rdr.Read();
+        if (objectOfFirstOnly)
         {
-            var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
-            var jsonWriter = new JsonTextWriter(streamWriter);
-           
-            if (firstReadResult == null)
-                firstReadResult = rdr.Read();
-            if (objectOfFirstOnly)
+            if (firstReadResult.Value)
             {
-                if (firstReadResult.Value)
-                {
-                    WriteSingleRow(rdr, fieldNames, jsonWriter);
-                }
-                else
-                {
-                    jsonWriter.WriteNull();
-                }
-                await jsonWriter.FlushAsync();
-                await streamWriter.FlushAsync();
-                return;
+                WriteSingleRow(rdr, fieldNames, jsonWriter);
             }
-            jsonWriter.WriteStartArray();
-            if (firstReadResult == true)
+            else
             {
-                do
-                {
-                    WriteSingleRow(rdr, fieldNames, jsonWriter);
-                }
-                while (rdr.Read());
+                jsonWriter.WriteNull();
             }
-            jsonWriter.WriteEndArray();
             await jsonWriter.FlushAsync();
             await streamWriter.FlushAsync();
+            return;
         }
-
-        protected void WriteSingleRow(System.Data.IDataRecord rdr, string?[] fieldNames, JsonTextWriter jsonWriter)
+        jsonWriter.WriteStartArray();
+        if (firstReadResult == true)
         {
-            jsonWriter.WriteStartObject();
-            for (int p = 0; p < fieldNames.Length; p++)
+            do
             {
-                if (fieldNames[p] != null)
-                {
-                    jsonWriter.WritePropertyName(fieldNames[p]);
-                    var vl = rdr.GetValue(p);
-                    jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
-                }
+                WriteSingleRow(rdr, fieldNames, jsonWriter);
             }
-            jsonWriter.WriteEndObject();
+            while (rdr.Read());
         }
-
-        protected override async Task WriteObject(Stream outputStream, System.Data.IDataRecord objectData, string?[] fieldNames)
-        {
-            var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
-            var jsonWriter = new JsonTextWriter(streamWriter);
-            WriteSingleRow(objectData, fieldNames, jsonWriter);
-            await jsonWriter.FlushAsync();
-            await streamWriter.FlushAsync();
-        }
+        jsonWriter.WriteEndArray();
+        await jsonWriter.FlushAsync();
+        await streamWriter.FlushAsync();
     }
 
+    protected void WriteSingleRow(System.Data.IDataRecord rdr, string?[] fieldNames, JsonTextWriter jsonWriter)
+    {
+        jsonWriter.WriteStartObject();
+        for (int p = 0; p < fieldNames.Length; p++)
+        {
+            if (fieldNames[p] != null)
+            {
+                jsonWriter.WritePropertyName(fieldNames[p]);
+                var vl = rdr.GetValue(p);
+                jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
+            }
+        }
+        jsonWriter.WriteEndObject();
+    }
 
-
+    protected override async Task WriteObject(Stream outputStream, System.Data.IDataRecord objectData, string?[] fieldNames)
+    {
+        var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
+        var jsonWriter = new JsonTextWriter(streamWriter);
+        WriteSingleRow(objectData, fieldNames, jsonWriter);
+        await jsonWriter.FlushAsync();
+        await streamWriter.FlushAsync();
+    }
 }
 #endif

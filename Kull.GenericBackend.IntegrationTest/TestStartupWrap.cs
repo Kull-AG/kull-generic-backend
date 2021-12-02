@@ -11,24 +11,22 @@ using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Kull.GenericBackend.IntegrationTest
+namespace Kull.GenericBackend.IntegrationTest;
+
+public class TestStartupWrap : TestStartupBase
 {
-    public class TestStartupWrap : TestStartupBase
+    protected override bool UseSwaggerV2 => false;
+
+    protected override void ConfigureMiddleware(SPMiddlewareOptions options)
     {
-        protected override bool UseSwaggerV2 => false;
-
-        protected override void ConfigureMiddleware(SPMiddlewareOptions options)
-        {
-            base.ConfigureMiddleware(options);
-            options.AlwaysWrapJson = true;
-        }
-
-        protected override void ConfigureOpenApi(SwaggerFromSPOptions options)
-        {
-            base.ConfigureOpenApi(options);
-            options.ParameterFieldsAreRequired = true;
-            options.ResponseFieldsAreRequired = true;
-        }
+        base.ConfigureMiddleware(options);
+        options.AlwaysWrapJson = true;
     }
 
+    protected override void ConfigureOpenApi(SwaggerFromSPOptions options)
+    {
+        base.ConfigureOpenApi(options);
+        options.ParameterFieldsAreRequired = true;
+        options.ResponseFieldsAreRequired = true;
+    }
 }

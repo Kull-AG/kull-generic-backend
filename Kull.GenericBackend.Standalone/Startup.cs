@@ -64,7 +64,7 @@ namespace Kull.GenericBackend.Standalone
                 // For compat with ng-swagger-gen on client. You can use ng-openapi-gen if set to false
                 o.SerializeAsV2 = false;
             });
-            
+
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {

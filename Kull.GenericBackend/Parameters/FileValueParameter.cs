@@ -9,136 +9,135 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 
-namespace Kull.GenericBackend.Parameters
+namespace Kull.GenericBackend.Parameters;
+
+public class FileValueParameter : WebApiParameter
 {
-    public class FileValueParameter : WebApiParameter
+
+    public override bool RequiresUserProvidedValue => false;
+
+    private readonly string fileFieldName;
+
+    public override bool RequiresFormData => true;
+
+    public FileValueParameter(string fileFieldName,
+            string sqlName) : base(sqlName, null)
     {
+        this.fileFieldName = fileFieldName;
+    }
 
-        public override bool RequiresUserProvidedValue => false;
+    public override OpenApiSchema GetSchema()
+    {
+        return null!;
+    }
 
-        private readonly string fileFieldName;
+    private byte[] GetByteFromStream(System.IO.Stream stream)
+    {
+        // Thanks,  https://stackoverflow.com/questions/1080442/how-to-convert-an-stream-into-a-byte-in-c
+        long originalPosition = 0;
 
-        public override bool RequiresFormData => true;
-
-        public FileValueParameter(string fileFieldName,
-                string sqlName) : base(sqlName, null)
+        if (stream.CanSeek)
         {
-            this.fileFieldName = fileFieldName;
+            originalPosition = stream.Position;
+            stream.Position = 0;
         }
 
-        public override OpenApiSchema GetSchema()
+        try
         {
-            return null!;
-        }
+            byte[] readBuffer = new byte[4096];
 
-        private byte[] GetByteFromStream(System.IO.Stream stream)
-        {
-            // Thanks,  https://stackoverflow.com/questions/1080442/how-to-convert-an-stream-into-a-byte-in-c
-            long originalPosition = 0;
+            int totalBytesRead = 0;
+            int bytesRead;
 
-            if (stream.CanSeek)
+            while ((bytesRead = stream.Read(readBuffer, totalBytesRead, readBuffer.Length - totalBytesRead)) > 0)
             {
-                originalPosition = stream.Position;
-                stream.Position = 0;
-            }
+                totalBytesRead += bytesRead;
 
-            try
-            {
-                byte[] readBuffer = new byte[4096];
-
-                int totalBytesRead = 0;
-                int bytesRead;
-
-                while ((bytesRead = stream.Read(readBuffer, totalBytesRead, readBuffer.Length - totalBytesRead)) > 0)
+                if (totalBytesRead == readBuffer.Length)
                 {
-                    totalBytesRead += bytesRead;
-
-                    if (totalBytesRead == readBuffer.Length)
+                    int nextByte = stream.ReadByte();
+                    if (nextByte != -1)
                     {
-                        int nextByte = stream.ReadByte();
-                        if (nextByte != -1)
-                        {
-                            byte[] temp = new byte[readBuffer.Length * 2];
-                            Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
-                            Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
-                            readBuffer = temp;
-                            totalBytesRead++;
-                        }
+                        byte[] temp = new byte[readBuffer.Length * 2];
+                        Buffer.BlockCopy(readBuffer, 0, temp, 0, readBuffer.Length);
+                        Buffer.SetByte(temp, totalBytesRead, (byte)nextByte);
+                        readBuffer = temp;
+                        totalBytesRead++;
                     }
                 }
-
-                byte[] buffer = readBuffer;
-                if (readBuffer.Length != totalBytesRead)
-                {
-                    buffer = new byte[totalBytesRead];
-                    Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
-                }
-                return buffer;
             }
-            finally
+
+            byte[] buffer = readBuffer;
+            if (readBuffer.Length != totalBytesRead)
             {
-                if (stream.CanSeek)
-                {
-                    stream.Position = originalPosition;
-                }
+                buffer = new byte[totalBytesRead];
+                Buffer.BlockCopy(readBuffer, 0, buffer, 0, totalBytesRead);
             }
-
+            return buffer;
         }
-
-        public override object? GetValue(HttpContext? http, object? valueProvided)
+        finally
         {
-            var allPrms = (IReadOnlyDictionary<string, object>)valueProvided!;
-            if (!allPrms.ContainsKey(this.fileFieldName))
+            if (stream.CanSeek)
             {
-                return null;
+                stream.Position = originalPosition;
             }
-            if (allPrms[this.fileFieldName] is string s)
-            {
-                if (string.IsNullOrEmpty(s) || s == "null" || s == "undefined")
-                {
-                    return null;
-                }
-                else
-                {
-                    throw new InvalidOperationException("Must provide a file");
-                }
-            }
-#if NETFX
-            var file = (System.Web.HttpPostedFileBase)allPrms[this.fileFieldName];
-#else
-            var file = (IFormFile)allPrms[this.fileFieldName];
-#endif
-            if (this.SqlName!.EndsWith("_Content", StringComparison.CurrentCultureIgnoreCase))
-            {
-                using var str = file.OpenReadStream();
-                return GetByteFromStream(str);
-            }
-            if (this.SqlName!.EndsWith("_ContentType", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return file.ContentType;
-            }
-            if (this.SqlName!.EndsWith("_Length", StringComparison.CurrentCultureIgnoreCase))
-            {
-#if NETFX
-                return file.ContentLength;
-#else
-                return file.Length;
-#endif
-            }
-            if (this.SqlName!.EndsWith("_FileName", StringComparison.CurrentCultureIgnoreCase))
-            {
-                return file.FileName;
-            }
-            if (this.SqlName!.EndsWith("_Headers", StringComparison.CurrentCultureIgnoreCase))
-            {
-                // Untested
-#if NETFX
-                return null;
-#else
-                return Utils.JsonHelper.SerializeObject(file.Headers);
-#endif
-            }
-            throw new NotSupportedException("Not supported");
         }
+
+    }
+
+    public override object? GetValue(HttpContext? http, object? valueProvided)
+    {
+        var allPrms = (IReadOnlyDictionary<string, object>)valueProvided!;
+        if (!allPrms.ContainsKey(this.fileFieldName))
+        {
+            return null;
+        }
+        if (allPrms[this.fileFieldName] is string s)
+        {
+            if (string.IsNullOrEmpty(s) || s == "null" || s == "undefined")
+            {
+                return null;
+            }
+            else
+            {
+                throw new InvalidOperationException("Must provide a file");
+            }
+        }
+#if NETFX
+        var file = (System.Web.HttpPostedFileBase)allPrms[this.fileFieldName];
+#else
+        var file = (IFormFile)allPrms[this.fileFieldName];
+#endif
+        if (this.SqlName!.EndsWith("_Content", StringComparison.CurrentCultureIgnoreCase))
+        {
+            using var str = file.OpenReadStream();
+            return GetByteFromStream(str);
+        }
+        if (this.SqlName!.EndsWith("_ContentType", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return file.ContentType;
+        }
+        if (this.SqlName!.EndsWith("_Length", StringComparison.CurrentCultureIgnoreCase))
+        {
+#if NETFX
+            return file.ContentLength;
+#else
+            return file.Length;
+#endif
+        }
+        if (this.SqlName!.EndsWith("_FileName", StringComparison.CurrentCultureIgnoreCase))
+        {
+            return file.FileName;
+        }
+        if (this.SqlName!.EndsWith("_Headers", StringComparison.CurrentCultureIgnoreCase))
+        {
+            // Untested
+#if NETFX
+            return null;
+#else
+            return Utils.JsonHelper.SerializeObject(file.Headers);
+#endif
+        }
+        throw new NotSupportedException("Not supported");
     }
 }
