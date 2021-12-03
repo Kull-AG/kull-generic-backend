@@ -118,6 +118,13 @@ public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericS
             {
                 jsonWriter.WriteNull(realFieldName);
             }
+#if NET6_0_OR_GREATER
+            else if (jsonFields.Contains(p))
+            {
+                jsonWriter.WritePropertyName(realFieldName);
+                jsonWriter.WriteRawValue(rdr.GetString(p));
+            }
+#endif
             else if (types[p] == typeof(string))
             {
 #if !NET6_0_OR_GREATER

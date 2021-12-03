@@ -85,7 +85,7 @@ public class FileValueParameter : WebApiParameter
 
     }
 
-    public override object? GetValue(HttpContext? http, object? valueProvided)
+    public override object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? parameterContext)
     {
         var allPrms = (IReadOnlyDictionary<string, object>)valueProvided!;
         if (!allPrms.ContainsKey(this.fileFieldName))

@@ -4,6 +4,7 @@ using HttpContext = System.Web.HttpContextBase;
 using Microsoft.AspNetCore.Http;
 #endif
 using Microsoft.OpenApi.Models;
+using System;
 using System.Collections.Generic;
 
 namespace Kull.GenericBackend.Parameters;
@@ -29,7 +30,27 @@ public abstract class WebApiParameter
     /// </summary>
     public virtual bool RequiresFormData { get; } = false;
 
-    public abstract object? GetValue(HttpContext? http, object? valueProvided);
+    private bool? hasOverWrittenGetValue1 = null;
+    private bool? hasOverWrittenGetValue2 = null;
+
+    // TODO for v3: Remove this and make GetValue with context abstract
+    [Obsolete("Use overload with context")]
+    public virtual object? GetValue(HttpContext? http, object? valueProvided)
+    {
+        hasOverWrittenGetValue1 = false;
+        if(hasOverWrittenGetValue1==false && hasOverWrittenGetValue2 == false) { throw new InvalidOperationException("Must override GetValue"); }
+        return GetValue(http, valueProvided, null);
+    }
+
+    public virtual object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? parameterContext)
+    {
+        hasOverWrittenGetValue2 = false;
+        if (hasOverWrittenGetValue1 == false && hasOverWrittenGetValue2 == false) { throw new InvalidOperationException("Must override GetValue"); }
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        return GetValue(http, valueProvided);
+#pragma warning restore CS0618 // Type or member is obsolete
+    }
 
     /// <summary>
     /// Set this to true if the value must be set by the user. if true and not set by the user, the db default will be used if true

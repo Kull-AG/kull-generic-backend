@@ -28,7 +28,7 @@ public class FileDescriptionParameter : WebApiParameter
         };
     }
 
-    public override object? GetValue(HttpContext? http, object? valueProvided)
+    public override object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? parameterContext)
     {
         return null;
     }

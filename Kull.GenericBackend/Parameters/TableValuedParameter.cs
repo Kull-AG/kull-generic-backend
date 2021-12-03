@@ -57,7 +57,7 @@ public class TableValuedParameter : WebApiParameter
         return schema;
     }
 
-    public override object? GetValue(HttpContext? http, object? valueProvided)
+    public override object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? parameterContext)
     {
 
         System.Data.DataTable dt;

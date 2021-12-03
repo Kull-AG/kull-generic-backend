@@ -108,7 +108,7 @@ public class DbApiParameter : WebApiParameter
 
 
 
-    public override object? GetValue(HttpContext? http, object? valueProvided)
+    public override object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? apiParameterContext)
     {
         if (valueProvided is IDictionary<string, object> obj)
         {
@@ -118,7 +118,7 @@ public class DbApiParameter : WebApiParameter
             }
             else if (this.UserDefinedType != null)
             {
-                return this.TableParameter!.GetValue(http, new IDictionary<string, object>[] { obj });
+                return this.TableParameter!.GetValue(http, new IDictionary<string, object>[] { obj }, apiParameterContext);
             }
             else
             {
@@ -133,7 +133,7 @@ public class DbApiParameter : WebApiParameter
             }
             else if (this.UserDefinedType != null)
             {
-                return TableParameter!.GetValue(http, objAr);
+                return TableParameter!.GetValue(http, objAr, apiParameterContext);
             }
             else
             {
@@ -149,7 +149,7 @@ public class DbApiParameter : WebApiParameter
                     .Select(oo => oo.Properties()
                         .ToDictionary(p => p.Name, p => p.Value.ToObject<object>())
                         ).ToArray();
-                return TableParameter!.GetValue(http, jobjAr);
+                return TableParameter!.GetValue(http, jobjAr, apiParameterContext);
             }
             else
             {
@@ -166,7 +166,7 @@ public class DbApiParameter : WebApiParameter
                                 .ToDictionary(p => p.Name, p => p.Value.ToObject<object?>())
 
                 };
-                return TableParameter!.GetValue(http, jar_ob);
+                return TableParameter!.GetValue(http, jar_ob, apiParameterContext);
             }
             else
             {

@@ -84,7 +84,7 @@ public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGene
         {
             if (fieldNames[p] != null)
             {
-                jsonWriter.WritePropertyName(fieldNames[p]);
+                jsonWriter.WritePropertyName(fieldNames[p]!);
                 if (rdr.IsDBNull(p))
                 {
                     jsonWriter.WriteNull();
