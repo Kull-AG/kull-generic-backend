@@ -119,7 +119,7 @@ public class DatabaseOperations : IDocumentFilter
         var resultSetPath = options.PersistResultSets ? (options.PersistedResultSetPath ?? System.IO.Path.Combine(hostingEnvironment.ContentRootPath, "ResultSets")) : null;
         foreach (var method in allMethods)
         {
-            string typeName = codeConvention.GetResultTypeName(method);
+            string typeName = method.ResultSchemaName ?? codeConvention.GetResultTypeName(method);
             if (swaggerDoc.Components.Schemas.ContainsKey(typeName))
             {
                 logger.LogWarning($"Type {typeName} already exists in Components. Assuming it's the same");
@@ -172,7 +172,7 @@ public class DatabaseOperations : IDocumentFilter
                     OpenApiSchema parameterSchema = new OpenApiSchema();
                     WriteJsonSchema(parameterSchema, parameters, options.ParameterFieldsAreRequired,
                             options.UseSwagger2);
-                    swaggerDoc.Components.Schemas.Add(codeConvention.GetParameterObjectName(ent, method.Value),
+                    swaggerDoc.Components.Schemas.Add(method.Value.ParameterSchemaName ?? codeConvention.GetParameterObjectName(ent, method.Value),
                         parameterSchema);
                 }
                 if (allParameters.outputParameters.Any())
@@ -321,7 +321,7 @@ public class DatabaseOperations : IDocumentFilter
 
         var context = new OperationResponseContext(entity, method, sPMiddlewareOptions.AlwaysWrapJson,
                 outputParameters,
-                 codeConvention.GetResultTypeName(method),
+                 method.ResultSchemaName ?? codeConvention.GetResultTypeName(method),
                 outputParameters.Length > 0 ? codeConvention.GetOutputObjectTypeName(method) : null
                 );
         operation.Responses = serializer?.GetResponseType(context) ?? /* in case of no serializer, we have to assume something */ responseDescriptor.GetDefaultResponse(context, false,
@@ -341,7 +341,7 @@ public class DatabaseOperations : IDocumentFilter
                     Reference = new OpenApiReference()
                     {
                         Type = ReferenceType.Schema,
-                        Id = codeConvention.GetParameterObjectName(entity, method)
+                        Id = method.ParameterSchemaName ?? codeConvention.GetParameterObjectName(entity, method)
                     }
                 }
             });

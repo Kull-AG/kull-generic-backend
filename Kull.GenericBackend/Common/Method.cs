@@ -8,33 +8,36 @@ namespace Kull.GenericBackend.Common;
 /// <summary>
 /// Represents an HTTP Method that is mapped to a Stored Procedure
 /// </summary>
-public class Method
+public record Method
 {
     /// <summary>
     /// The Http Method
     /// </summary>
-    public OperationType HttpMethod { get; }
+    public OperationType HttpMethod { get; init; }
 
 
-    public Data.DBObjectName DbObject { get; }
+    public Data.DBObjectName DbObject { get; init; }
 
-    public Kull.DatabaseMetadata.DBObjectType DbObjectType { get; }
+    public Kull.DatabaseMetadata.DBObjectType DbObjectType { get; init; }
 
-    public string? OperationId { get; }
+    public string? OperationId { get; init; }
 
-    public string? OperationName { get; }
+    public string? OperationName { get; init; }
+    public string? ParameterSchemaName { get; init; }
 
-    public string? ResultType { get; }
-    public string? Tag { get; }
+    public string? ResultSchemaName { get; init; }
 
-    public int? CommandTimeout { get; }
+    public string? ResultType { get; init; }
+    public string? Tag { get; init; }
+
+    public int? CommandTimeout { get; init; }
 
     private IReadOnlyDictionary<string, object?> restParameters;
 
-    public IReadOnlyDictionary<string, object?>? ExecuteParameters { get; }
+    public IReadOnlyDictionary<string, object?>? ExecuteParameters { get; init; }
 
-    public IReadOnlyCollection<string> IgnoreParameters { get; }
-    public IReadOnlyCollection<string> IgnoreFields { get; }
+    public IReadOnlyCollection<string> IgnoreParameters { get; init; }
+    public IReadOnlyCollection<string> IgnoreFields { get; init; }
 
     public Method(OperationType httpMethod, string sp)
         : this(httpMethod, sp, DatabaseMetadata.DBObjectType.StoredProcedure, null, null, null)
@@ -121,7 +124,11 @@ public class Method
             executeParameters: childConfig.GetValue<IReadOnlyDictionary<string, object?>?>("ExecuteParameters"),
             ignoreParameters: childConfig.GetValue<IReadOnlyCollection<string>?>("IgnoreParameters"),
             ignoreFields: childConfig.GetValue<IReadOnlyCollection<string>?>("IgnoreFields"),
-            restParameters: childConfig);
+            restParameters: childConfig)
+        {
+            ParameterSchemaName = childConfig.GetValue<string?>(nameof(ParameterSchemaName)),
+            ResultSchemaName = childConfig.GetValue<string?>(nameof(ResultSchemaName))
+        };
 
     }
 
