@@ -6,30 +6,29 @@ using Microsoft.AspNetCore.Http;
 #endif
 using Microsoft.OpenApi.Models;
 
-namespace Kull.GenericBackend.Parameters
+namespace Kull.GenericBackend.Parameters;
+
+public class SystemParameter : WebApiParameter
 {
-    public class SystemParameter : WebApiParameter
+    public override bool RequiresUserProvidedValue => false;
+
+    private readonly Func<HttpContext, object?> getParameterValue;
+
+    public SystemParameter(string sqlName,
+          Func<HttpContext, object?> getParameterValue)
+        : base(sqlName, null)
     {
-        public override bool RequiresUserProvidedValue => false;
+        this.getParameterValue = getParameterValue ?? throw new ArgumentNullException(nameof(getParameterValue));
+    }
+    public override OpenApiSchema GetSchema()
+    {
+        return null!;
+    }
 
-        private readonly Func<HttpContext, object?> getParameterValue;
-
-        public SystemParameter(string sqlName,
-              Func<HttpContext, object?> getParameterValue)
-            : base(sqlName, null)
-        {
-            this.getParameterValue = getParameterValue ?? throw new ArgumentNullException(nameof(getParameterValue));
-        }
-        public override OpenApiSchema GetSchema()
-        {
-            return null!;
-        }
-
-        public override object? GetValue(HttpContext? http, object? valueProvided)
-        {
-            if (http == null) return null;
-            var vl = getParameterValue(http);
-            return vl;
-        }
+    public override object? GetValue(HttpContext? http, object? valueProvided)
+    {
+        if (http == null) return null;
+        var vl = getParameterValue(http);
+        return vl;
     }
 }

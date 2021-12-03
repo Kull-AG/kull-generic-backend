@@ -41,8 +41,8 @@ public void ConfigureServices(IServiceCollection services)
             .AddSystemParameters();
 	
 	// You might have to register your Provider Factory
-	if (!DbProviderFactories.TryGetFactory("System.Data.SqlClient", out var _))
-             DbProviderFactories.RegisterFactory("System.Data.SqlClient", System.Data.SqlClient.SqlClientFactory.Instance);
+	if (!DbProviderFactories.TryGetFactory("Microsoft.Data.SqlClient", out var _))
+             DbProviderFactories.RegisterFactory("Microsoft.Data.SqlClient", Microsoft.Data.SqlClient.SqlClientFactory.Instance);
 	
 		// IMPORTANT: You have to inject a DbConnection somehow
         services.AddTransient(typeof(DbConnection), (s) =>

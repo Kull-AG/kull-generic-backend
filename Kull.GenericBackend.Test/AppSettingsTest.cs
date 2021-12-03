@@ -20,7 +20,7 @@ namespace Kull.GenericBackend.Test
             var provider = new Kull.GenericBackend.Config.ConfigProvider(null, config);
             Assert.AreEqual(8, provider.Entities.Count);
             var petSearch = provider.Entities.First(e => e.ToString().StartsWith("/Pet/search", StringComparison.CurrentCultureIgnoreCase));
-            Assert.AreEqual(1,petSearch.Methods.Count) ;
+            Assert.AreEqual(1, petSearch.Methods.Count);
             Assert.AreEqual("spSearchPets", petSearch.Methods[Microsoft.OpenApi.Models.OperationType.Get].DbObject);
             Assert.AreEqual(360, petSearch.Methods[Microsoft.OpenApi.Models.OperationType.Get].CommandTimeout);
         }

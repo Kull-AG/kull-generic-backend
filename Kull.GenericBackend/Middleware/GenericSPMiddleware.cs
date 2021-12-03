@@ -24,217 +24,215 @@ using System.Net.Http.Headers;
 using System.Net.Mime;
 using Kull.GenericBackend.Execution;
 
-namespace Kull.GenericBackend.Middleware
+namespace Kull.GenericBackend.Middleware;
+
+/// <summary>
+/// The middleware doing the actual execution
+/// </summary>
+public class GenericSPMiddleware : IGenericSPMiddleware
 {
+    private readonly ILogger<GenericSPMiddleware> logger;
+    private readonly SerializerResolver serializerResolver;
+    private readonly SPMiddlewareOptions sPMiddlewareOptions;
+    private readonly DbConnection dbConnection;
+    private readonly IEnumerable<IRequestInterceptor> requestInterceptors;
+    private readonly CommandPreparation commandPreparation;
+    private readonly IEnumerable<Filter.RequestLogger> requestLoggers;
 
-    /// <summary>
-    /// The middleware doing the actual execution
-    /// </summary>
-    public class GenericSPMiddleware : IGenericSPMiddleware
+    public GenericSPMiddleware(
+        ILogger<GenericSPMiddleware> logger,
+        SerializerResolver serializerResolver,
+        SPMiddlewareOptions sPMiddlewareOptions,
+        DbConnection dbConnection,
+        IEnumerable<Filter.IRequestInterceptor> requestInterceptors,
+        IEnumerable<Filter.RequestLogger> requestLoggers,
+        CommandPreparation commandPreparation)
     {
-        private readonly ILogger<GenericSPMiddleware> logger;
-        private readonly SerializerResolver serializerResolver;
-        private readonly SPMiddlewareOptions sPMiddlewareOptions;
-        private readonly DbConnection dbConnection;
-        private readonly IEnumerable<IRequestInterceptor> requestInterceptors;
-        private readonly CommandPreparation commandPreparation;
-        private readonly IEnumerable<Filter.RequestLogger> requestLoggers;
+        this.logger = logger;
+        this.serializerResolver = serializerResolver;
+        this.sPMiddlewareOptions = sPMiddlewareOptions;
+        this.dbConnection = dbConnection;
+        this.requestInterceptors = requestInterceptors;
+        this.commandPreparation = commandPreparation;
+        this.requestLoggers = requestLoggers;
+    }
 
-        public GenericSPMiddleware(
-            ILogger<GenericSPMiddleware> logger,
-            SerializerResolver serializerResolver,
-            SPMiddlewareOptions sPMiddlewareOptions,
-            DbConnection dbConnection,
-            IEnumerable<Filter.IRequestInterceptor> requestInterceptors,
-            IEnumerable<Filter.RequestLogger> requestLoggers,
-            CommandPreparation commandPreparation)
-        {
-            this.logger = logger;
-            this.serializerResolver = serializerResolver;
-            this.sPMiddlewareOptions = sPMiddlewareOptions;
-            this.dbConnection = dbConnection;
-            this.requestInterceptors = requestInterceptors;
-            this.commandPreparation = commandPreparation;
-            this.requestLoggers = requestLoggers;
-        }
-
-        public Task HandleRequest(HttpContext context, Entity ent)
-        {
+    public Task HandleRequest(HttpContext context, Entity ent)
+    {
 #if NET48
-            var method = ent.GetMethod(context.Request.HttpMethod);
+        var method = ent.GetMethod(context.Request.HttpMethod);
 #else
-            var method = ent.GetMethod(context.Request.Method);
+        var method = ent.GetMethod(context.Request.Method);
 #endif
-            foreach (var interceptor in this.requestInterceptors)
+        foreach (var interceptor in this.requestInterceptors)
+        {
+            var shouldIntercept = interceptor.OnBeforeRequest(context, new RequestInterceptorContext(
+                ent, method, this.dbConnection));
+            if (shouldIntercept != null)
             {
-                var shouldIntercept = interceptor.OnBeforeRequest(context, new RequestInterceptorContext(
-                    ent, method, this.dbConnection));
-                if (shouldIntercept != null)
-                {
-                    context.Response.StatusCode = shouldIntercept.Value.statusCode;
-                    return HttpHandlingUtils.HttpContentToResponse(shouldIntercept.Value.responseContent, context.Response);
-                }
+                context.Response.StatusCode = shouldIntercept.Value.statusCode;
+                return HttpHandlingUtils.HttpContentToResponse(shouldIntercept.Value.responseContent, context.Response);
             }
-#if NET48 
-            var accept = (context.Request.Headers["Accept"] ?? "").Split(',').Select(ac => MediaTypeHeaderValue.Parse(ac)).ToList();
-#else
-            var accept = context.Request.GetTypedHeaders().Accept;
-#endif
-            IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(accept,
-                ent, method);
-            if (serializer == null)
-            {
-                context.Response.StatusCode = 415;
-                return Task.CompletedTask;
-            }
-            if (this.sPMiddlewareOptions.RequireAuthenticated && context.User?.Identity?.IsAuthenticated != true)
-            {
-                context.Response.StatusCode = 401;
-                return Handle401(context, ent, method, serializer);
-            }
-#if NET48
-            if (context.Request.HttpMethod.ToUpper() == "GET")
-#else
-            if (context.Request.Method.ToUpper() == "GET")
-#endif
-            {
-                return HandleGetRequest(context, ent, serializer);
-            }
-            return HandleBodyRequest(context, method, ent, serializer);
         }
-
-        protected async Task Handle401(HttpContext context, Entity ent, Method method, IGenericSPSerializer serializer)
+#if NET48
+        var accept = (context.Request.Headers["Accept"] ?? "").Split(',').Select(ac => MediaTypeHeaderValue.Parse(ac)).ToList();
+#else
+        var accept = context.Request.GetTypedHeaders().Accept;
+#endif
+        IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(accept,
+            ent, method);
+        if (serializer == null)
+        {
+            context.Response.StatusCode = 415;
+            return Task.CompletedTask;
+        }
+        if (this.sPMiddlewareOptions.RequireAuthenticated && context.User?.Identity?.IsAuthenticated != true)
         {
             context.Response.StatusCode = 401;
-            foreach (var log in requestLoggers)
-            {
-                log.OnRequestValidationFailed(context, new RequestLogger.RequestValidationFailedInfo(RequestLogger.RequestValidationFailedReason.AuthenticationNotGiven));
-            }
-            var objReader = new Kull.Data.DataReader.ObjectDataReader(new IReadOnlyDictionary<string, object?>[]{ new Dictionary<string, object?>()
+            return Handle401(context, ent, method, serializer);
+        }
+#if NET48
+        if (context.Request.HttpMethod.ToUpper() == "GET")
+#else
+        if (context.Request.Method.ToUpper() == "GET")
+#endif
+        {
+            return HandleGetRequest(context, ent, serializer);
+        }
+        return HandleBodyRequest(context, method, ent, serializer);
+    }
+
+    protected async Task Handle401(HttpContext context, Entity ent, Method method, IGenericSPSerializer serializer)
+    {
+        context.Response.StatusCode = 401;
+        foreach (var log in requestLoggers)
+        {
+            log.OnRequestValidationFailed(context, new RequestLogger.RequestValidationFailedInfo(RequestLogger.RequestValidationFailedReason.AuthenticationNotGiven));
+        }
+        var objReader = new Kull.Data.DataReader.ObjectDataReader(new IReadOnlyDictionary<string, object?>[]{ new Dictionary<string, object?>()
                 {
                     {"Error", "You are Unauthenticated" }
                 } });
-            var sercontext = new SerializationContextResult(objReader, context, method, ent, 401);
-            await serializer.ReadResultToBody(sercontext);
-           
-        }
-
-        protected async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
-        {
-            var method = ent.Methods[OperationType.Get];
-            var request = context.Request;
-
-            Dictionary<string, object> queryParameters;
-#if NET48
-            queryParameters = request.QueryString.AllKeys.ToDictionary(k => k,
-                k => (object)request.QueryString.Get(k), StringComparer.CurrentCultureIgnoreCase);
-#else
-            if (request.QueryString.HasValue && request.QueryString.Value != null)
-            {
-                var queryDictionary = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value);
-                queryParameters = queryDictionary
-                        .ToDictionary(kv => kv.Key,
-                            kv => string.Join(",", kv.Value) as object,
-                            StringComparer.CurrentCultureIgnoreCase);
-
-            }
-            else
-            {
-                queryParameters = new Dictionary<string, object>();
-            }
-#endif
-            var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
-            var start = DateTime.UtcNow;
-            foreach(var log in requestLoggers)
-            {
-                log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
-            }
-            var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
-            foreach (var log in requestLoggers)
-            {
-                log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
-            }
-        }
-
-
-
-        private bool HasApplicationFormContentType(MediaTypeHeaderValue contentType)
-        {
-            // Content-Type: application/x-www-form-urlencoded; charset=utf-8
-            return contentType != null && contentType.MediaType != null && contentType.MediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
-        }
-
-        private bool HasMultipartFormContentType(MediaTypeHeaderValue contentType)
-        {
-            // Content-Type: multipart/form-data; boundary=----WebKitFormBoundarymx2fSWqWSd0OxQqq
-            return contentType != null && contentType.MediaType != null && contentType.MediaType.Equals("multipart/form-data", StringComparison.OrdinalIgnoreCase);
-        }
-
-
-        protected async Task HandleBodyRequest(HttpContext context, Method method, Entity ent, IGenericSPSerializer serializer)
-        {
-            var request = context.Request;
-            Dictionary<string, object> parameterObject;
-#if NET48
-            var cntType = MediaTypeHeaderValue.Parse(request.ContentType);
-            bool hasFormContentType = HasMultipartFormContentType(cntType) || HasApplicationFormContentType(cntType);
-#else
-            bool hasFormContentType = request.HasFormContentType;
-#endif
-            if (hasFormContentType)
-            {
-                parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
-#if NETFX
-                foreach (var key in request.Form.AllKeys)
-                {
-                    parameterObject.Add(key, request.Form[key]);
-                }
-                foreach (var key in request.Files.AllKeys)
-                {
-                    parameterObject.Add(key, request.Files[key]);
-                }
-#else
-                foreach (var item in request.Form)
-                {
-                    parameterObject.Add(item.Key, string.Join(",", item.Value));
-                }
-                foreach (var file in request.Form.Files)
-                {
-                    parameterObject.Add(file.Name, file);
-                }
-#endif
-            }
-            else
-            {
-#if NETFX
-                var streamReader = new System.IO.StreamReader(request.InputStream);
-#else
-                var streamReader = new System.IO.StreamReader(request.Body);
-#endif
-                string json = await streamReader.ReadToEndAsync();
-#if NEWTONSOFTJSON
-                parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
-                Newtonsoft.Json.JsonConvert.PopulateObject(json, parameterObject);
-#else
-                var retValue = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-                parameterObject = retValue!.ToDictionary(k=>k.Key, v=> Config.DictionaryHelper.ConvertToDeepIDictionary(v.Value, StringComparer.CurrentCultureIgnoreCase), StringComparer.CurrentCultureIgnoreCase)!;
-#endif
-            }
-            var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
-            var start = DateTime.UtcNow;
-            foreach (var log in requestLoggers)
-            {
-                log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
-            }
-            var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
-            foreach (var log in requestLoggers)
-            {
-                log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
-            }
-        }
-
-
-
+        var sercontext = new SerializationContextResult(objReader, context, method, ent, 401);
+        await serializer.ReadResultToBody(sercontext);
 
     }
+
+    protected async Task HandleGetRequest(HttpContext context, Entity ent, IGenericSPSerializer serializer)
+    {
+        var method = ent.Methods[OperationType.Get];
+        var request = context.Request;
+
+        Dictionary<string, object> queryParameters;
+#if NET48
+        queryParameters = request.QueryString.AllKeys.ToDictionary(k => k,
+            k => (object)request.QueryString.Get(k), StringComparer.CurrentCultureIgnoreCase);
+#else
+        if (request.QueryString.HasValue && request.QueryString.Value != null)
+        {
+            var queryDictionary = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(request.QueryString.Value);
+            queryParameters = queryDictionary
+                    .ToDictionary(kv => kv.Key,
+                        kv => string.Join(",", kv.Value) as object,
+                        StringComparer.CurrentCultureIgnoreCase);
+
+        }
+        else
+        {
+            queryParameters = new Dictionary<string, object>();
+        }
+#endif
+        var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
+        var start = DateTime.UtcNow;
+        foreach (var log in requestLoggers)
+        {
+            log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
+        }
+        var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
+        foreach (var log in requestLoggers)
+        {
+            log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
+        }
+    }
+
+
+
+    private bool HasApplicationFormContentType(MediaTypeHeaderValue contentType)
+    {
+        // Content-Type: application/x-www-form-urlencoded; charset=utf-8
+        return contentType != null && contentType.MediaType != null && contentType.MediaType.Equals("application/x-www-form-urlencoded", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool HasMultipartFormContentType(MediaTypeHeaderValue contentType)
+    {
+        // Content-Type: multipart/form-data; boundary=----WebKitFormBoundarymx2fSWqWSd0OxQqq
+        return contentType != null && contentType.MediaType != null && contentType.MediaType.Equals("multipart/form-data", StringComparison.OrdinalIgnoreCase);
+    }
+
+
+    protected async Task HandleBodyRequest(HttpContext context, Method method, Entity ent, IGenericSPSerializer serializer)
+    {
+        var request = context.Request;
+        Dictionary<string, object> parameterObject;
+#if NET48
+        var cntType = MediaTypeHeaderValue.Parse(request.ContentType);
+        bool hasFormContentType = HasMultipartFormContentType(cntType) || HasApplicationFormContentType(cntType);
+#else
+        bool hasFormContentType = request.HasFormContentType;
+#endif
+        if (hasFormContentType)
+        {
+            parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
+#if NETFX
+            foreach (var key in request.Form.AllKeys)
+            {
+                parameterObject.Add(key, request.Form[key]);
+            }
+            foreach (var key in request.Files.AllKeys)
+            {
+                parameterObject.Add(key, request.Files[key]);
+            }
+#else
+            foreach (var item in request.Form)
+            {
+                parameterObject.Add(item.Key, string.Join(",", item.Value));
+            }
+            foreach (var file in request.Form.Files)
+            {
+                parameterObject.Add(file.Name, file);
+            }
+#endif
+        }
+        else
+        {
+#if NETFX
+            var streamReader = new System.IO.StreamReader(request.InputStream);
+#else
+            var streamReader = new System.IO.StreamReader(request.Body);
+#endif
+            string json = await streamReader.ReadToEndAsync();
+#if NEWTONSOFTJSON
+            parameterObject = new Dictionary<string, object>(StringComparer.CurrentCultureIgnoreCase);
+            Newtonsoft.Json.JsonConvert.PopulateObject(json, parameterObject);
+#else
+            var retValue = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            parameterObject = retValue!.ToDictionary(k => k.Key, v => Config.DictionaryHelper.ConvertToDeepIDictionary(v.Value, StringComparer.CurrentCultureIgnoreCase), StringComparer.CurrentCultureIgnoreCase)!;
+#endif
+        }
+        var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
+        var start = DateTime.UtcNow;
+        foreach (var log in requestLoggers)
+        {
+            log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
+        }
+        var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
+        foreach (var log in requestLoggers)
+        {
+            log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
+        }
+    }
+
+
+
+
 }

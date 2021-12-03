@@ -2,58 +2,57 @@ using Microsoft.Data.SqlClient;
 using System.Linq;
 using System;
 
-namespace Kull.GenericBackend.IntegrationTest.Utils
+namespace Kull.GenericBackend.IntegrationTest.Utils;
+
+public static class DatabaseUtils
 {
+    const int expectedVersion = 26;
 
-    public static class DatabaseUtils
+    static object setupObj = new object();
+    public static void SetupDb(string dataPath, string constr)
     {
-        const int expectedVersion = 24;
-
-        static object setupObj = new object();
-        public static void SetupDb(string dataPath, string constr)
+        lock (setupObj)
         {
-            lock (setupObj)
+            if (System.IO.File.Exists(System.IO.Path.Combine(dataPath, "GenericBackendTest.mdf")))
             {
-                if (System.IO.File.Exists(System.IO.Path.Combine(dataPath, "GenericBackendTest.mdf")))
+                string testCommand = "SELECT VersionNr FrOM  dbo.TestDbVersion";
+                int version;
+                using (SqlConnection connection = new SqlConnection(constr))
                 {
-                    string testCommand = "SELECT VersionNr FrOM  dbo.TestDbVersion";
-                    int version;
-                    using (SqlConnection connection = new SqlConnection(constr))
+                    connection.Open();
+                    var cmd = connection.CreateCommand();
+                    cmd.CommandType = System.Data.CommandType.Text;
+                    cmd.CommandText = testCommand;
+                    using (var rdr = cmd.ExecuteReader())
                     {
-                        connection.Open();
-                        var cmd = connection.CreateCommand();
-                        cmd.CommandType = System.Data.CommandType.Text;
-                        cmd.CommandText = testCommand;
-                        using (var rdr = cmd.ExecuteReader())
-                        {
-                            rdr.Read();
-                            version = rdr.GetInt32(0);
-                        }
-                    }
-
-                    if (version < expectedVersion)
-                    {
-                        using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
-                        {
-                            connection.Open();
-                            var cmdDropCon = new SqlCommand("ALTER DATABASE [GenericBackendTest] SET SINGLE_USER WITH ROLLBACK IMMEDIATE", connection);
-                            cmdDropCon.ExecuteNonQuery();
-                            SqlCommand command = new SqlCommand("DROP DATABASE GenericBackendTest", connection);
-                            command.ExecuteNonQuery();
-                        }
-                    }
-                    else
-                    {
-                        return; // Everything ok
+                        rdr.Read();
+                        version = rdr.GetInt32(0);
                     }
                 }
 
-
-                using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
+                if (version < expectedVersion)
                 {
-                    connection.Open();
+                    using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
+                    {
+                        connection.Open();
+                        var cmdDropCon = new SqlCommand("ALTER DATABASE [GenericBackendTest] SET SINGLE_USER WITH ROLLBACK IMMEDIATE", connection);
+                        cmdDropCon.ExecuteNonQuery();
+                        SqlCommand command = new SqlCommand("DROP DATABASE GenericBackendTest", connection);
+                        command.ExecuteNonQuery();
+                    }
+                }
+                else
+                {
+                    return; // Everything ok
+                }
+            }
 
-                    string sql = string.Format(@"
+
+            using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
+            {
+                connection.Open();
+
+                string sql = string.Format(@"
         CREATE DATABASE
             [GenericBackendTest]
         ON PRIMARY (
@@ -64,38 +63,37 @@ namespace Kull.GenericBackend.IntegrationTest.Utils
             NAME = GenericBackendTest_log,
             FILENAME = '{0}\GenericBackendTest.ldf'
         )",
-                        dataPath
-                    );
+                    dataPath
+                );
 
-                    SqlCommand command = new SqlCommand(sql, connection);
-                    command.ExecuteNonQuery();
+                SqlCommand command = new SqlCommand(sql, connection);
+                command.ExecuteNonQuery();
 
 
 
-                }
-                var largeText = System.IO.File.ReadAllText(System.IO.Path.Combine(dataPath, "somelargetext.txt"));
-                var sqls = System.IO.File.ReadAllText(System.IO.Path.Combine(dataPath, "sqlscript.sql"))
-                    .Replace("{{DbVersion}}", expectedVersion.ToString())
-                    .Replace("{{largetxt}}", largeText.Replace("'", "''"))
-                    .Replace("\r\n", "\n")
-                    .Replace("\r", "\n")
-                    .Split("\nGO\n")
-                    .Select(s => s.Replace("\n", Environment.NewLine));
-                using (SqlConnection connection = new SqlConnection(constr))
+            }
+            var largeText = System.IO.File.ReadAllText(System.IO.Path.Combine(dataPath, "somelargetext.txt"));
+            var sqls = System.IO.File.ReadAllText(System.IO.Path.Combine(dataPath, "sqlscript.sql"))
+                .Replace("{{DbVersion}}", expectedVersion.ToString())
+                .Replace("{{largetxt}}", largeText.Replace("'", "''"))
+                .Replace("\r\n", "\n")
+                .Replace("\r", "\n")
+                .Split("\nGO\n")
+                .Select(s => s.Replace("\n", Environment.NewLine));
+            using (SqlConnection connection = new SqlConnection(constr))
+            {
+                connection.Open();
+                foreach (var sql in sqls)
                 {
-                    connection.Open();
-                    foreach (var sql in sqls)
+                    if (sql.Trim().Length > 0)
                     {
-                        if (sql.Trim().Length > 0)
-                        {
-                            SqlCommand datacommand = new SqlCommand(sql, connection);
-                            datacommand.ExecuteNonQuery();
-                        }
+                        SqlCommand datacommand = new SqlCommand(sql, connection);
+                        datacommand.ExecuteNonQuery();
                     }
                 }
             }
         }
-
-
     }
+
+
 }
