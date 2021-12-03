@@ -90,7 +90,7 @@ public sealed class GenericBackendBuilder
             SPMiddlewareOptions opts = (SPMiddlewareOptions)services.Resolve(typeof(SPMiddlewareOptions));
             configure(opts);
 #else
-        SPMiddlewareOptions opts = (SPMiddlewareOptions)services.First(s => s.ServiceType == typeof(SPMiddlewareOptions)).ImplementationInstance;
+        SPMiddlewareOptions opts = (SPMiddlewareOptions)services.First(s => s.ServiceType == typeof(SPMiddlewareOptions)).ImplementationInstance!;
         configure(opts);
 #endif
         return this;
@@ -104,10 +104,10 @@ public sealed class GenericBackendBuilder
     public GenericBackendBuilder ConfigureOpenApiGeneration(Action<SwaggerFromSPOptions> configure)
     {
 #if NETFX
-            SwaggerFromSPOptions opts = (SwaggerFromSPOptions)services.Resolve(typeof(SwaggerFromSPOptions));
-            configure(opts);
+        SwaggerFromSPOptions opts = (SwaggerFromSPOptions)services.Resolve(typeof(SwaggerFromSPOptions));
+        configure(opts);
 #else
-        SwaggerFromSPOptions opts = (SwaggerFromSPOptions)services.First(s => s.ServiceType == typeof(SwaggerFromSPOptions)).ImplementationInstance;
+        SwaggerFromSPOptions opts = (SwaggerFromSPOptions)services.First(s => s.ServiceType == typeof(SwaggerFromSPOptions)).ImplementationInstance!;
         configure(opts);
 #endif
         return this;

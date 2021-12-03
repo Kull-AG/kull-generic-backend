@@ -39,7 +39,7 @@ public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGene
                 )
     { }
 
-    protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly)
+    protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly, IReadOnlyCollection<int> jsonFields)
     {
         var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
         var jsonWriter = new JsonTextWriter(streamWriter);
@@ -50,7 +50,7 @@ public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGene
         {
             if (firstReadResult.Value)
             {
-                WriteSingleRow(rdr, fieldNames, jsonWriter);
+                WriteSingleRow(rdr, fieldNames, jsonWriter, jsonFields);
             }
             else
             {
@@ -65,7 +65,7 @@ public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGene
         {
             do
             {
-                WriteSingleRow(rdr, fieldNames, jsonWriter);
+                WriteSingleRow(rdr, fieldNames, jsonWriter, jsonFields);
             }
             while (rdr.Read());
         }
@@ -74,7 +74,10 @@ public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGene
         await streamWriter.FlushAsync();
     }
 
-    protected void WriteSingleRow(System.Data.IDataRecord rdr, string?[] fieldNames, JsonTextWriter jsonWriter)
+    [Obsolete("Use overload with jsonFields")]
+    protected void WriteSingleRow(System.Data.IDataRecord rdr, string?[] fieldNames, JsonTextWriter jsonWriter) =>
+        WriteSingleRow(rdr, fieldNames, jsonWriter, Array.Empty<int>());
+    protected void WriteSingleRow(System.Data.IDataRecord rdr, string?[] fieldNames, JsonTextWriter jsonWriter, IReadOnlyCollection<int> jsonFields)
     {
         jsonWriter.WriteStartObject();
         for (int p = 0; p < fieldNames.Length; p++)
@@ -82,8 +85,22 @@ public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGene
             if (fieldNames[p] != null)
             {
                 jsonWriter.WritePropertyName(fieldNames[p]);
-                var vl = rdr.GetValue(p);
-                jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
+                if (rdr.IsDBNull(p))
+                {
+                    jsonWriter.WriteNull();
+                }
+                else
+                {
+                    if (jsonFields.Contains(p))
+                    {
+                        jsonWriter.WriteRawValue(rdr.GetString(p));
+                    }
+                    else
+                    {
+                        var vl = rdr.GetValue(p);
+                        jsonWriter.WriteValue(vl == DBNull.Value ? null : vl);
+                    }
+                }
             }
         }
         jsonWriter.WriteEndObject();
@@ -93,7 +110,7 @@ public class GenericSPJsonSerializerJsonNet : GenericSPJsonSerializerBase, IGene
     {
         var streamWriter = new StreamWriter(outputStream, options.Encoding, 1024 * 8, leaveOpen: true);
         var jsonWriter = new JsonTextWriter(streamWriter);
-        WriteSingleRow(objectData, fieldNames, jsonWriter);
+        WriteSingleRow(objectData, fieldNames, jsonWriter, Array.Empty<int>());
         await jsonWriter.FlushAsync();
         await streamWriter.FlushAsync();
     }

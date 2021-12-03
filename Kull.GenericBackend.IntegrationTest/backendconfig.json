@@ -6,7 +6,13 @@
       "PUT": "spUpdatePet"
     },
     "Dog/{DogIg}": {
-      "PUT": "spUpdateDog"
+        "PUT": "spUpdateDog"
+    },
+    "Pets/Json": {
+        "GET": {
+            "SP": "spGetPetsJson",
+            "JsonFields": [ "js" ]
+        }
     },
     "Pet/{petid}": {
       "GET": { "SP": "spGetPet", "ResultType": "first" },

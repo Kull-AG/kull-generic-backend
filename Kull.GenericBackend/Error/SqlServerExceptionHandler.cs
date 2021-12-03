@@ -13,9 +13,9 @@ public class SqlServerExceptionHandler : IResponseExceptionHandler
 
     public (int statusCode, System.Net.Http.HttpContent dataToDisplay)? GetContent(Exception exp, Func<object, System.Net.Http.HttpContent> format)
     {
-        if (exp.GetType().FullName.EndsWith(".Data.SqlClient.SqlException"))// Use of reflection to avoid referencing ms sqlclient dll
+        if (exp.GetType().FullName!.EndsWith(".Data.SqlClient.SqlException"))// Use of reflection to avoid referencing ms sqlclient dll
         {
-            var errorsProp = (System.Collections.ICollection)exp.GetType().GetProperty("Errors")!.GetValue(exp);
+            var errorsProp = (System.Collections.ICollection)exp.GetType().GetProperty("Errors")!.GetValue(exp)!;
             var propType = errorsProp.Count > 0 ? errorsProp.Cast<object>().First().GetType() : null;
             var nrProp = propType?.GetProperty("Number");
             var messageProp = propType?.GetProperty("Message");
@@ -24,9 +24,9 @@ public class SqlServerExceptionHandler : IResponseExceptionHandler
             {
                 return new
                 {
-                    Number = (int)nrProp!.GetValue(e),
-                    Message = (string)messageProp!.GetValue(e),
-                    State = (byte)stateProp!.GetValue(e)
+                    Number = (int)nrProp!.GetValue(e)!,
+                    Message = (string)messageProp!.GetValue(e)!,
+                    State = (byte)stateProp!.GetValue(e)!
                 };
             });
             if (!errors.All(e => e.Number >= SQLServerUserErrorLowerBound && e.Number <= SQLServerUserErrorUpperBound))

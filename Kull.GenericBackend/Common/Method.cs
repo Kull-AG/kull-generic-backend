@@ -38,6 +38,7 @@ public record Method
 
     public IReadOnlyCollection<string> IgnoreParameters { get; init; }
     public IReadOnlyCollection<string> IgnoreFields { get; init; }
+    public IReadOnlyCollection<string> JsonFields { get; init; } = Array.Empty<string>();
 
     public Method(OperationType httpMethod, string sp)
         : this(httpMethod, sp, DatabaseMetadata.DBObjectType.StoredProcedure, null, null, null)
@@ -127,7 +128,8 @@ public record Method
             restParameters: childConfig)
         {
             ParameterSchemaName = childConfig.GetValue<string?>(nameof(ParameterSchemaName)),
-            ResultSchemaName = childConfig.GetValue<string?>(nameof(ResultSchemaName))
+            ResultSchemaName = childConfig.GetValue<string?>(nameof(ResultSchemaName)),
+            JsonFields = childConfig.GetValue<IReadOnlyCollection<string>?>(nameof(JsonFields)) ?? Array.Empty<string>()
         };
 
     }

@@ -127,9 +127,21 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
     /// <param name="fieldNames"></param>
     /// <param name="firstReadResult"></param>
     /// <returns></returns>
-    protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly);
+    protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly, IReadOnlyCollection<int> jsonFieldIndexes);
 
     protected virtual bool WrapJson(SPMiddlewareOptions options, bool hasOutParameters) => options.AlwaysWrapJson || hasOutParameters;
+
+    private int IndexOf(IEnumerable<string> input, string elem)
+    {
+        int index = -1;
+        foreach (var item in input)
+        {
+            index++;
+            if (item.Equals(elem, StringComparison.OrdinalIgnoreCase))
+                return index;
+        }
+        return -1;
+    }
 
     /// <summary>
     /// Writes the result data to the body
@@ -158,16 +170,18 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
                 await PrepareHeader(serializationContext, method, ent, 200);
 
 
-                string?[] fieldNames = new string[rdr.FieldCount];
+                string[] fieldNamesRaw = new string[rdr.FieldCount];
 
                 // Will store the types of the fields. Nullable datatypes will map to normal types
-                for (int i = 0; i < fieldNames.Length; i++)
+                for (int i = 0; i < fieldNamesRaw.Length; i++)
                 {
-                    fieldNames[i] = rdr.GetName(i);
+                    fieldNamesRaw[i] = rdr.GetName(i);
                 }
+                var jsonIndexes = method.JsonFields.Select(j => this.IndexOf(fieldNamesRaw, j)).ToArray();
+                string?[] fieldNames;
                 if (method.IgnoreFields.Count > 0)
                 {
-                    fieldNames = fieldNames.Select(f => !method.IgnoreFields.Contains(f, StringComparer.OrdinalIgnoreCase) ?
+                    fieldNames = fieldNamesRaw.Select(f => !method.IgnoreFields.Contains(f, StringComparer.OrdinalIgnoreCase) ?
                          f : NamingMappingHandler.IgnoreFieldPlaceHolder).ToArray();
                     fieldNames = namingMappingHandler.GetNames(fieldNames)
                         .Select(s => s == NamingMappingHandler.IgnoreFieldPlaceHolder ? null : s)
@@ -175,14 +189,14 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
                 }
                 else
                 {
-                    fieldNames = namingMappingHandler.GetNames(fieldNames).ToArray();
+                    fieldNames = namingMappingHandler.GetNames(fieldNamesRaw).ToArray();
                 }
                 var stream = serializationContext.OutputStream;
                 if (wrap)
                 {
                     await WriteRaw(stream, $"{{ \"{codeConvention.FirstResultKey}\": \r\n");
 
-                    await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult, resultType == FirstResultSetType);
+                    await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult, resultType == FirstResultSetType, jsonIndexes);
 
                     bool first = true;
                     bool hasAnyResults = false;
@@ -198,7 +212,7 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
                         {
                             await WriteRaw(stream, ",");
                         }
-                        await WriteCurrentResultSet(stream, rdr, fieldNames, false, resultType == FirstResultSetType);
+                        await WriteCurrentResultSet(stream, rdr, fieldNames, false, resultType == FirstResultSetType, Array.Empty<int>());
                     }
                     if (hasAnyResults)
                     {
@@ -213,7 +227,7 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
                 }
                 else
                 {
-                    await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult, resultType == FirstResultSetType);
+                    await WriteCurrentResultSet(stream, rdr, fieldNames, firstReadResult, resultType == FirstResultSetType, jsonIndexes);
                 }
                 await serializationContext.FlushResponseAsync();
             }

@@ -6,7 +6,7 @@ namespace Kull.GenericBackend.IntegrationTest.Utils;
 
 public static class DatabaseUtils
 {
-    const int expectedVersion = 24;
+    const int expectedVersion = 26;
 
     static object setupObj = new object();
     public static void SetupDb(string dataPath, string constr)

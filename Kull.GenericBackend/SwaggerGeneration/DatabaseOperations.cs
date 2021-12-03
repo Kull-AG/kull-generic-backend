@@ -136,12 +136,12 @@ public class DatabaseOperations : IDocumentFilter
                         dataToWrite = dataToWrite.Where(dw => !method.IgnoreFields.Contains(dw.Name, StringComparer.OrdinalIgnoreCase)).ToArray();
                     }
                     WriteJsonSchema(resultSchema, dataToWrite, namingMappingHandler, options.ResponseFieldsAreRequired,
-                        options.UseSwagger2);
+                        options.UseSwagger2, jsonFields: method.JsonFields);
                 }
                 catch (Exception err)
                 {
                     WriteJsonSchema(resultSchema, Array.Empty<SqlFieldDescription>(), namingMappingHandler, options.ResponseFieldsAreRequired,
-                        options.UseSwagger2);
+                        options.UseSwagger2, jsonFields: method.JsonFields);
                     logger.LogError($"Error getting result set for {method.DbObject}. \r\n{err.ToString()}");
                 }
                 swaggerDoc.Components.Schemas.Add(typeName, resultSchema);
@@ -226,7 +226,8 @@ public class DatabaseOperations : IDocumentFilter
         IEnumerable<SqlFieldDescription> props,
         NamingMappingHandler namingMappingHandler,
         bool addRequired,
-        bool forSwagger2)
+        bool forSwagger2,
+        IReadOnlyCollection<string> jsonFields)
     {
         schema.Type = "object";
         var names = namingMappingHandler.GetNames(props.Select(p => p.Name))
@@ -239,10 +240,18 @@ public class DatabaseOperations : IDocumentFilter
         {
 
             OpenApiSchema property = new OpenApiSchema();
-            property.Type = prop.DbType.JsType;
-            if (prop.DbType.JsFormat != null)
+            if (jsonFields.Contains(prop.Name, StringComparer.OrdinalIgnoreCase))
             {
-                property.Format = prop.DbType.JsFormat;
+                property.Type = "object";
+                // property.AdditionalPropertiesAllowed = true;// Not needed as per spec https://swagger.io/docs/specification/data-models/data-types/
+            }
+            else
+            {
+                property.Type = prop.DbType.JsType;
+                if (prop.DbType.JsFormat != null)
+                {
+                    property.Format = prop.DbType.JsFormat;
+                }
             }
             property.Nullable = prop.IsNullable;
             if (forSwagger2 && prop.IsNullable)
@@ -395,14 +404,14 @@ public class DatabaseOperations : IDocumentFilter
         var settings = new Newtonsoft.Json.JsonSerializerSettings();
         settings.MetadataPropertyHandling = Newtonsoft.Json.MetadataPropertyHandling.Ignore;
         var docOld = Newtonsoft.Json.JsonConvert.DeserializeObject<SwaggerDocument>(json, settings);
-        if (docOld.paths != null)
+        if (docOld !=null && docOld.paths != null)
         {
             foreach (var p in docOld.paths)
             {
                 swaggerDoc.paths.Add(p.Key, p.Value);
             }
         }
-        if (docOld.definitions != null)
+        if (docOld !=null && docOld.definitions != null)
         {
             foreach (var p in docOld.definitions)
             {

@@ -33,7 +33,7 @@ public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericS
     { }
 
     protected override async Task WriteCurrentResultSet(Stream outputStream, DbDataReader rdr,
-        string?[] fieldNamesToUse, bool? firstReadResult, bool objectOfFirstOnly)
+        string?[] fieldNamesToUse, bool? firstReadResult, bool objectOfFirstOnly, IReadOnlyCollection<int> jsonFields)
     {
 
         if (options.Encoding.BodyName != "utf-8")
@@ -50,7 +50,7 @@ public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericS
         {
             if (firstReadResult.Value)
             {
-                await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream);
+                await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream, jsonFields);
             }
             else
             {
@@ -67,7 +67,7 @@ public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericS
         {
             do
             {
-                await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream);
+                await WriteSingleRow(rdr, jsFields, types, jsonWriter, outputStream, jsonFields);
             }
             while (rdr.Read());
         }
@@ -101,8 +101,11 @@ public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericS
     }
 #endif
 
+    [Obsolete("Use overload with json fields instead")]
+    protected Task WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText?[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter, Stream baseStream)
+        => WriteSingleRow(rdr, fieldNamesToUse, types, jsonWriter, baseStream, Array.Empty<int>());
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously. Suppress because of targeting
-    protected async Task WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText?[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter, Stream baseStream)
+    protected async Task WriteSingleRow(System.Data.IDataRecord rdr, JsonEncodedText?[] fieldNamesToUse, Type[] types, Utf8JsonWriter jsonWriter, Stream baseStream, IReadOnlyCollection<int> jsonFields)
 #pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
     {
         jsonWriter.WriteStartObject();
@@ -204,7 +207,7 @@ public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericS
         var jsonWriter = new Utf8JsonWriter(outputStream);
         var types = GetTypesFromReader(objectData);
         var jsFields = fieldNames.Select(s => s == null ? null : (JsonEncodedText?)JsonEncodedText.Encode(s)).ToArray();
-        await WriteSingleRow(objectData, jsFields, types, jsonWriter, outputStream);
+        await WriteSingleRow(objectData, jsFields, types, jsonWriter, outputStream, Array.Empty<int>());
         await jsonWriter.FlushAsync();
     }
 }

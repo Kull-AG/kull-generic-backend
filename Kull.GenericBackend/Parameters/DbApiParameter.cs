@@ -160,10 +160,10 @@ public class DbApiParameter : WebApiParameter
         {
             if (this.UserDefinedType != null)
             {
-                var jar_ob = new IDictionary<string, object>[]
+                var jar_ob = new IDictionary<string, object?>[]
                 {
                             obj2.Properties()
-                                .ToDictionary(p => p.Name, p => p.Value.ToObject<object>())
+                                .ToDictionary(p => p.Name, p => p.Value.ToObject<object?>())
 
                 };
                 return TableParameter!.GetValue(http, jar_ob);

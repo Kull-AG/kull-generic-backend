@@ -51,7 +51,7 @@ public class CommandPreparation
             var cmd = con.CreateCommand();
             cmd.CommandType = CommandType.Text;
             cmd.CommandText = "SELECT * FROM " + name.ToString(false, true) + "(" +
-               string.Join(", ", parameters.Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => "@" + p.SqlName))
+               string.Join(", ", (parameters ?? Array.Empty<SPParameter>()).Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => "@" + p.SqlName))
                + ")";
             return cmd;
 
@@ -62,7 +62,7 @@ public class CommandPreparation
             var cmd = con.CreateCommand();
             cmd.CommandType = CommandType.Text;
             cmd.CommandText = "SELECT " + name.ToString(false, true) + "(" +
-                string.Join(", ", parameters.Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => p.SqlName))
+                string.Join(", ", (parameters ?? Array.Empty<SPParameter>()).Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => p.SqlName))
                 + ")";
             return cmd;
         }

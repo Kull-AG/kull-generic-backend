@@ -42,6 +42,10 @@ public static class DictionaryHelper
                 {
                     return (T)(object)es2.Select(s => s.ToString()).ToList();
                 }
+                else if (value is string s)
+                {
+                    return (T)(object)new string[] { s };
+                }
             }
             else if (value is IConvertible c)
             {

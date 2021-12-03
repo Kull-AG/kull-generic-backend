@@ -1,4 +1,4 @@
-﻿CREATE TABLE dbo.Pets (PetId int PRIMARY KEY , PetName varchar(100), Description nvarchar(MAX), IsNice bit, ts timestamp)
+CREATE TABLE dbo.Pets (PetId int PRIMARY KEY , PetName varchar(100), Description nvarchar(MAX), IsNice bit, ts timestamp)
 GO
 CREATE TABLE dbo.TestDbVersion(VersionNr int)
 GO
@@ -27,6 +27,17 @@ BEGIN
 	SELECT PetId, PetName, Description, IsNice, ts FROM dbo.Pets
 		WHERE IsNice=1 OR @OnlyNice=0
 		ORDER BY PetId;
+END
+GO
+CREATE PROCEDURE dbo.spGetPetsJson
+	@OnlyNice bit=0,
+	@searchString varchar(100)='',
+	@IpAddress varchar(100)
+AS
+BEGIN
+	SELECT (SELECT PetId, PetName, Description, IsNice, ts FROM dbo.Pets
+		WHERE IsNice=1 OR @OnlyNice=0
+		FOR JSON AUTO) AS js;
 END
 GO
 CREATE PROCEDURE spGetPet
