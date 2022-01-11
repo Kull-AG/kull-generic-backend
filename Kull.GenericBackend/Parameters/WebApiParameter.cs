@@ -69,4 +69,17 @@ public abstract class WebApiParameter
     }
 
     public abstract OpenApiSchema GetSchema();
+
+
+    public override string? ToString()
+    {
+
+        if (SqlName == WebApiName)
+            return WebApiName!;
+        if (SqlName == null)
+            return "Api: " + WebApiName;
+        if (WebApiName == null)
+            return "Sql: " + SqlName;
+        return base.ToString();
+    }
 }

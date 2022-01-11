@@ -93,52 +93,59 @@ public class DbApiParameter : WebApiParameter
     }
 
 
-    private XElement ToXml(IDictionary<string, object> input)
+    private XElement ToXml(IEnumerable<KeyValuePair<string, object>> input)
+    {
+        return new XElement("el",
+            input.Select(k => new XAttribute(k.Key, k.Value)));
+    }
+    private XElement ToXml(IReadOnlyDictionary<string, object> input)
     {
         return new XElement("el",
             input.Keys.Select(k => new XAttribute(k, input[k])));
     }
 
 
-    private XElement ToXml(IEnumerable<IDictionary<string, object>> input)
+    private XElement ToXml(IEnumerable<IReadOnlyDictionary<string, object>> input)
     {
         return new XElement("root",
             input.Select(s => ToXml(s)));
     }
 
+    protected bool IsXmlParameter() => this.SqlName!.EndsWith("Xml") || this.DbType.DbType == "xml";
 
 
     public override object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? apiParameterContext)
     {
-        if (valueProvided is IDictionary<string, object> obj)
+        if (IsXmlParameter())
         {
-            if (this.SqlName!.EndsWith("Xml") || this.DbType.DbType == "xml")
+            if (valueProvided is IEnumerable<KeyValuePair<string, object>> xobj1)
             {
-                return ToXml(obj)?.ToString();
+                return ToXml(xobj1)?.ToString();
             }
-            else if (this.UserDefinedType != null)
+            else if (valueProvided is IEnumerable<Dictionary<string, object>> xobj2)
             {
-                return this.TableParameter!.GetValue(http, new IDictionary<string, object>[] { obj }, apiParameterContext);
+                return ToXml(xobj2)?.ToString();
             }
-            else
+            else if (valueProvided is IEnumerable<IReadOnlyDictionary<string, object>> xobj3)
             {
-                return JsonHelper.SerializeObject(obj);
+                return ToXml(xobj3)?.ToString();
+            }
+            else if (valueProvided is IEnumerable<object> xobj4)
+            {
+                return ToXml(xobj4.Cast<IReadOnlyDictionary<string, object>>())?.ToString();
             }
         }
-        else if (valueProvided is IEnumerable<Dictionary<string, object>> objAr)
+        if (this.DbType.NetType == typeof(System.Byte[]) && valueProvided is string str)
         {
-            if (this.SqlName!.EndsWith("Xml") || this.DbType.DbType == "xml")
-            {
-                return ToXml(objAr)?.ToString();
-            }
-            else if (this.UserDefinedType != null)
-            {
-                return TableParameter!.GetValue(http, objAr, apiParameterContext);
-            }
-            else
-            {
-                return JsonHelper.SerializeObject(objAr);
-            }
+            return Convert.FromBase64String(str);
+        }
+        if (this.UserDefinedType == null &&
+            valueProvided != null &&
+            this.DbType.NetType == typeof(System.String)
+            && valueProvided is not string
+            && (valueProvided is System.Collections.IEnumerable || valueProvided is IReadOnlyDictionary<string, object>))
+        {
+            return JsonHelper.SerializeObject(valueProvided);
         }
 #if NEWTONSOFTJSON
         else if (valueProvided is Newtonsoft.Json.Linq.JArray ar)
@@ -174,13 +181,14 @@ public class DbApiParameter : WebApiParameter
             }
         }
 #endif
-        else if (this.DbType.NetType == typeof(System.Byte[]) && valueProvided is string str)
-        {
-            return Convert.FromBase64String(str);
-        }
         else
         {
+            if (this.UserDefinedType != null)
+            {
+                return TableParameter!.GetValue(http, valueProvided, apiParameterContext);
+            }
             return valueProvided;
         }
     }
+
 }

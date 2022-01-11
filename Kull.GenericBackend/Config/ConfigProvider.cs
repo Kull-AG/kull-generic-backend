@@ -63,8 +63,8 @@ public class ConfigProvider
         {
             throw new InvalidOperationException("no config file found");
         }
-        var deepCorrectConfig = (IDictionary<string, object?>)Config.DictionaryHelper.ConvertToDeepIDictionary(configObj, StringComparer.CurrentCultureIgnoreCase)!;
-        var ent = (IDictionary<string, object?>)deepCorrectConfig["Entities"]!;
+        var deepCorrectConfig = (IReadOnlyDictionary<string, object?>)Config.DictionaryHelper.ConvertToDeepIDictionary(configObj, StringComparer.CurrentCultureIgnoreCase)!;
+        var ent = (IReadOnlyDictionary<string, object?>)deepCorrectConfig["Entities"]!;
         if (ent == null)
         {
             throw new InvalidOperationException("no config found");
@@ -72,7 +72,7 @@ public class ConfigProvider
         return ent.Select(s => Entity.GetFromConfig(s.Key, s.Value!)).ToList();
     }
 
-    private IDictionary<string, object> ReadJsonFromFile(string file)
+    private IReadOnlyDictionary<string, object> ReadJsonFromFile(string file)
     {
         string json = System.IO.File.ReadAllText(file);
 #if NEWTONSOFTJSON

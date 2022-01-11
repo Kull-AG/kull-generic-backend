@@ -66,7 +66,9 @@ public class TableValuedParameter : WebApiParameter
         {
             dt.Columns.Add(col.Name, col.DbType.NetType);
         }
-        var rowData = (IEnumerable<IDictionary<string, object>>?)valueProvided;
+        var rowData =
+            valueProvided is IEnumerable<object> enumb ? enumb.Cast<IReadOnlyDictionary<string, object>>() :
+            (IEnumerable<IReadOnlyDictionary<string, object>>?)valueProvided;
         if (rowData == null)
         {
             return null;
