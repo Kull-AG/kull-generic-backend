@@ -15,7 +15,7 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <Deterministic>true</Deterministic>   
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-	<PackageReadmeFile>readme.md</PackageReadmeFile>
+	<PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <PropertyGroup Label="Globals">
     <SccProjectName>SAK</SccProjectName>

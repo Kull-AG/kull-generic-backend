@@ -9,21 +9,23 @@ namespace Kull.GenericBackend.Parameters;
 
 public class FileDescriptionParameter : WebApiParameter
 {
+    public bool Swagger2 { get; }
+
     public override bool RequiresFormData => true;
 
     // User cannot provide value anyway, SqlName is always null
     public override bool RequiresUserProvidedValue => false;
 
-    public FileDescriptionParameter(string webApiName) : base(null, webApiName)
+    public FileDescriptionParameter(string webApiName, bool swagger2) : base(null, webApiName)
     {
-
+        this.Swagger2 = swagger2;
     }
 
     public override OpenApiSchema GetSchema()
     {
         return new OpenApiSchema()
         {
-            Type = "file",
+            Type = Swagger2 ? "file" : "string",
             Format = "binary"
         };
     }
