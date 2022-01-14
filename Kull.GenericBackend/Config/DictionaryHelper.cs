@@ -129,7 +129,7 @@ public static class DictionaryHelper
             return dict.ToDictionary(o => o.Key, o => ConvertToDeepIDictionary(o.Value, stringComparer), stringComparer);
         }
 #if !NETFX
-        if (input is ConfigurationRoot config)
+        if (input is IConfigurationRoot config)
         {
             return new Dictionary<string, object?>(){
                     {"Entities", ConvertToDeepIDictionary(config.GetSection("Entities"),stringComparer) } };

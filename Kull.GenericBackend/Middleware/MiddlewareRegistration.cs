@@ -12,8 +12,11 @@ using System.Collections.Generic;
 using Kull.GenericBackend.Common;
 using Microsoft.OpenApi.Models;
 using Kull.GenericBackend.Config;
-using System.Web;
+using System.Linq;
 using System.Threading.Tasks;
+#if NET48
+using System.Web;
+#endif
 
 namespace Kull.GenericBackend.Middleware;
 
@@ -95,27 +98,28 @@ class MiddlewareRegistration
             };
             foreach (var method in ent.Methods)
             {
+                IEndpointConventionBuilder endpoint;
                 switch (method.Key)
                 {
                     case OperationType.Get:
-                        routeBuilder.MapGet(GetUrlForMvcRouting(ent), requestDelegate);
+                        endpoint = routeBuilder.MapGet(GetUrlForMvcRouting(ent), requestDelegate);
                         break;
                     case OperationType.Put:
-                        routeBuilder.MapPut(GetUrlForMvcRouting(ent), requestDelegate);
+                        endpoint = routeBuilder.MapPut(GetUrlForMvcRouting(ent), requestDelegate);
                         break;
                     case OperationType.Post:
-                        routeBuilder.MapPost(GetUrlForMvcRouting(ent), requestDelegate);
+                        endpoint = routeBuilder.MapPost(GetUrlForMvcRouting(ent), requestDelegate);
                         break;
                     case OperationType.Delete:
-                        routeBuilder.MapDelete(GetUrlForMvcRouting(ent), requestDelegate);
+                        endpoint = routeBuilder.MapDelete(GetUrlForMvcRouting(ent), requestDelegate);
                         break;
                     case OperationType.Patch:
                         // TODO: Testing
 
 #if NETSTD2
-                        routeBuilder.MapVerb("PATCH", GetUrlForMvcRouting(ent), requestDelegate);
+                        endpoint = routeBuilder.MapVerb("PATCH", GetUrlForMvcRouting(ent), requestDelegate);
 #else
-                        routeBuilder.Map(GetUrlForMvcRouting(ent), context =>
+                        endpoint = routeBuilder.Map(GetUrlForMvcRouting(ent), context =>
                         {
                             if (context.Request.Method.ToUpper() == "PATCH")
                             {
@@ -128,6 +132,11 @@ class MiddlewareRegistration
                     default:
                         throw new InvalidOperationException("Only Get, Pust, Post and Delete are allowed");
                 }
+                if(options.Policies.Count>0 || method.Value.Policies.Count>0)
+                {
+                    string[] policies = options.Policies.Union(method.Value.Policies).Distinct().ToArray();
+                    endpoint.RequireAuthorization(policies);
+                }
             }
         }
     }
@@ -135,7 +144,7 @@ class MiddlewareRegistration
 
 
 
-    private string GetUrlForMvcRouting(Entity ent)
+                private string GetUrlForMvcRouting(Entity ent)
     {
         if (options == null) throw new InvalidOperationException("Must register first");
         var url = ent.GetUrl(options.Prefix, true);

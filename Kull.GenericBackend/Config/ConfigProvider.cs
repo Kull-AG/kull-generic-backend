@@ -51,9 +51,11 @@ public class ConfigProvider
 
     protected virtual List<Entity> ReadConfig()
     {
-        var configFile = System.IO.Path.Combine(hostingEnvironment?.ContentRootPath ?? "", "backendconfig.json");
 #if NETFX
+        var configFile = System.IO.Path.Combine(hostingEnvironment?.ContentRootPath ?? "", "backendconfig.json");
         object? config = null;
+#else   
+        var configFile = System.IO.Path.Combine(hostingEnvironment?.ContentRootPath ?? "", config.GetValue<string>("GenericBackendConfigFile", "backendconfig.json"));
 #endif
         bool useConfigFile = System.IO.File.Exists(configFile);
         object? configObj = useConfigFile ?
