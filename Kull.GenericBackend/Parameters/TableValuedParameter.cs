@@ -68,6 +68,7 @@ public class TableValuedParameter : WebApiParameter
         }
         var rowData =
             valueProvided is IEnumerable<object> enumb ? enumb.Cast<IReadOnlyDictionary<string, object>>() :
+            valueProvided is IReadOnlyDictionary<string, object> dict ?  new IReadOnlyDictionary<string, object>[] {dict} :
             (IEnumerable<IReadOnlyDictionary<string, object>>?)valueProvided;
         if (rowData == null)
         {

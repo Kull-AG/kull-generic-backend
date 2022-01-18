@@ -32,4 +32,13 @@ internal class JsonHelper
         });
 #endif
     }
+    public static object DeserializeObject(string json)
+    {
+#if NEWTONSOFTJSON
+        var obj = Newtonsoft.Json.JsonConvert.DeserializeObject<Newtonsoft.Json.Linq.JToken>(json);
+#else
+        var obj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(json);
+#endif
+        return Config.DictionaryHelper.ConvertToDeepIDictionary(obj, StringComparer.InvariantCultureIgnoreCase)!;
+    }
 }

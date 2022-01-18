@@ -183,6 +183,10 @@ public class DbApiParameter : WebApiParameter
 #endif
         else
         {
+            if (this.UserDefinedType != null && valueProvided is string s)
+            {
+                return TableParameter!.GetValue(http, Utils.JsonHelper.DeserializeObject(s), apiParameterContext);
+            }
             if (this.UserDefinedType != null)
             {
                 return TableParameter!.GetValue(http, valueProvided, apiParameterContext);

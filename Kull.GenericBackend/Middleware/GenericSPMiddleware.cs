@@ -195,7 +195,9 @@ public class GenericSPMiddleware : IGenericSPMiddleware
 #else
             foreach (var item in request.Form)
             {
-                parameterObject.Add(item.Key, string.Join(",", item.Value));
+                parameterObject.Add(item.Key, 
+                    item.Value.Count ==1 ? item.Value[0] 
+                    : "[" + string.Join(",", item.Value) + "]");
             }
             foreach (var file in request.Form.Files)
             {
