@@ -141,6 +141,15 @@ BEGIN
 	SELECT @Image_ContentType as ContentType, @Image_FileName AS [FileName], @Image_Content AS Content
 END
 GO
+CREATE PROCEDURE dbo.spFileNoFn
+	@Image_Content varbinary(MAX),
+	@Image_ContentType varchar(1000),
+	@FileDesc varchar(1000)
+AS
+BEGIN
+	SELECT @Image_ContentType as ContentType, @Image_Content AS Content
+END
+GO
 CREATE PROCEDURE dbo.spGetSomeTempTable
 	@IgnoreMe bit=0,
 	@AnAwesomeParam int

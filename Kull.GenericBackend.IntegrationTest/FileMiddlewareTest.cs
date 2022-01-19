@@ -50,4 +50,33 @@ public class FileMiddlewareTest
 
 
     }
+
+    [Theory]
+    [InlineData("/rest/FileNoFn")]
+    public async Task UploadFileNoFn(string url)
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+
+        using (var formContent = new MultipartFormDataContent("NKdKd9Yk"))
+        {
+            formContent.Headers.ContentType.MediaType = "multipart/form-data";
+            // 3. Add the filename C:\\... + fileName is the path your file
+            Stream fileStream = System.IO.File.OpenRead("sampleImage.jpg");
+            formContent.Add(new StreamContent(fileStream), "image", "sampleImage.jpg");
+            formContent.Add(new StringContent("tester"), "FileDesc");
+
+
+            // 4.. Execute the MultipartPostMethod
+            var message = await client.PostAsync(url, formContent);
+            // 5.a Receive the response
+            message.EnsureSuccessStatusCode();
+            var img = await message.Content.ReadAsByteArrayAsync();
+            using var ts = SixLabors.ImageSharp.Image.Load(img);
+            Assert.Equal(360, ts.Height);
+            Assert.Equal(640, ts.Width);
+        }
+
+
+    }
 }
