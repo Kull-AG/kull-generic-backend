@@ -114,11 +114,6 @@ class MiddlewareRegistration
                         endpoint = routeBuilder.MapDelete(GetUrlForMvcRouting(ent), requestDelegate);
                         break;
                     case OperationType.Patch:
-                        // TODO: Testing
-
-#if NETSTD2
-                        endpoint = routeBuilder.MapVerb("PATCH", GetUrlForMvcRouting(ent), requestDelegate);
-#else
                         endpoint = routeBuilder.Map(GetUrlForMvcRouting(ent), context =>
                         {
                             if (context.Request.Method.ToUpper() == "PATCH")
@@ -127,14 +122,13 @@ class MiddlewareRegistration
                             }
                             return null;
                         });
-#endif
                         break;
                     default:
                         throw new InvalidOperationException("Only Get, Pust, Post and Delete are allowed");
                 }
-                if(options.Policies.Count>0 || method.Value.Policies.Count>0)
+                if (method.Value.Policies != null || (options.Policies.Count>0))
                 {
-                    string[] policies = options.Policies.Union(method.Value.Policies).Distinct().ToArray();
+                    string[] policies = (method.Value.Policies ?? options.Policies).ToArray();
                     endpoint.RequireAuthorization(policies);
                 }
             }

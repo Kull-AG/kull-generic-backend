@@ -56,7 +56,8 @@ public static class GenericBackendExtensions
         services.TryAddSingleton<Serialization.ResponseDescriptor>();
         services.TryAddTransient<Execution.CommandPreparation>();
 #if NETFX || NETSTD
-            services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerJsonNet>();
+        services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerJsonNet>();
+        services.TryAddSingleton<Middleware.IPolicyResolver>(new Middleware.ThrowPolicyResolver());
 #else
         services.AddTransient<IGenericSPSerializer, GenericSPJsonSerializerSTJ>();
 #endif
