@@ -20,7 +20,7 @@ using System.Web;
 
 namespace Kull.GenericBackend.Middleware;
 
-class MiddlewareRegistration
+public class MiddlewareRegistration
 {
     private IReadOnlyList<Entity> entities;
     private SPMiddlewareOptions? options;
@@ -138,7 +138,7 @@ class MiddlewareRegistration
 
 
 
-                private string GetUrlForMvcRouting(Entity ent)
+    private string GetUrlForMvcRouting(Entity ent)
     {
         if (options == null) throw new InvalidOperationException("Must register first");
         var url = ent.GetUrl(options.Prefix, true);

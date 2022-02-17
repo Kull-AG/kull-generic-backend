@@ -1,8 +1,10 @@
+using System;
 using Kull.DatabaseMetadata;
 using Kull.GenericBackend.Parameters;
 using Kull.GenericBackend.Serialization;
 using Kull.GenericBackend.SwaggerGeneration;
 #if NETFX 
+using Unity;
 using IServiceCollection = Unity.IUnityContainer;
 using Kull.MvcCompat;
 #else 
@@ -22,11 +24,11 @@ namespace Kull.GenericBackend;
 public static class SwashbuckleExtensions
 {
 #if NETFX
-        public static void AddGenericBackend(this Swashbuckle.Application.SwaggerDocsConfig options)
-        {
-            options.DocumentFilter<DatabaseOperationWrap>();
+    public static void AddGenericBackend(this Swashbuckle.Application.SwaggerDocsConfig options)
+    {
+        options.DocumentFilter<DatabaseOperationWrap>();
 
-        }
+    }
 #else
     public static void AddGenericBackend(this Swashbuckle.AspNetCore.SwaggerGen.SwaggerGenOptions options)
     {
@@ -74,25 +76,32 @@ public static class GenericBackendExtensions
         services.TryAddSingleton(opts);
         services.TryAddSingleton(swaggerFromSPOptions ?? new SwaggerGeneration.SwaggerFromSPOptions());
 #if NETFX
-            services.AddTransient<Swashbuckle.Swagger.IDocumentFilter, DatabaseOperations>();
+        services.AddTransient<Swashbuckle.Swagger.IDocumentFilter, DatabaseOperations>();
 #endif
         return new GenericBackendBuilder(services);
     }
 
 #if NETFX
-        public static void UseGenericBackend(this System.Web.Routing.RouteCollection routeBuilder
-           )
-        {
-            var midm = System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.MiddlewareRegistration));
-            if (midm == null)
-            {
-                throw new System.InvalidOperationException("Must call AddGenericBackend on UnityContainer first");
-            }
 
-            var service = (Middleware.MiddlewareRegistration)midm;
-            var opts = (Middleware.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.SPMiddlewareOptions));
-            service.RegisterMiddleware(opts, routeBuilder);
+    [Obsolete("Use overload with unity Container given. Has much better error handling")]
+    public static void UseGenericBackend(this System.Web.Routing.RouteCollection routeBuilder)
+    {
+        var midm = System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.MiddlewareRegistration));
+        if (midm == null)
+        {
+            throw new System.InvalidOperationException("Must call AddGenericBackend on UnityContainer first");
         }
+
+        var service = (Middleware.MiddlewareRegistration)midm;
+        var opts = (Middleware.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.SPMiddlewareOptions));
+        service.RegisterMiddleware(opts, routeBuilder);
+    }
+    public static void UseGenericBackend(this System.Web.Routing.RouteCollection routeBuilder, Unity.IUnityContainer unityContainer)
+    {
+        var service = unityContainer.Resolve<Middleware.MiddlewareRegistration>();
+        var opts = unityContainer.Resolve<Middleware.SPMiddlewareOptions>();
+        service.RegisterMiddleware(opts, routeBuilder);
+    }
 #else
 
     public static void UseGenericBackend(

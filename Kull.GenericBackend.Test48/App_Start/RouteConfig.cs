@@ -18,7 +18,7 @@ namespace Kull.GenericBackend.Test48
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional }
             );
-            routes.UseGenericBackend();
+            routes.UseGenericBackend(UnityConfig.Container);
         }
     }
 }
