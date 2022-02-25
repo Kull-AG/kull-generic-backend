@@ -123,8 +123,8 @@ internal class SerializationContextCmd : SerializationContext
     }
 
 #if NET48
-    public override Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior = System.Data.CommandBehavior.Default) => cmd.ExecuteReaderAsync(commandBehavior);
-    public override Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync();
+    public override Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior = System.Data.CommandBehavior.Default) => cmd.ExecuteReaderAsync(commandBehavior, httpContext.Response.ClientDisconnectedToken);
+    public override Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync(httpContext.Response.ClientDisconnectedToken);
 
 #else
     public override Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior = System.Data.CommandBehavior.Default) => cmd.ExecuteReaderAsync(commandBehavior, httpContext.RequestAborted);
