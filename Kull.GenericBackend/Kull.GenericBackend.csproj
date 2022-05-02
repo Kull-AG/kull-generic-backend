@@ -45,8 +45,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Kull.Data" Version="6.0.0" />
-    <PackageReference Include="Kull.DatabaseMetadata" Version="1.4.0" />
+    <PackageReference Include="Kull.Data" Version="6.0.3" />
+    <PackageReference Include="Kull.DatabaseMetadata" Version="1.4.1" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
