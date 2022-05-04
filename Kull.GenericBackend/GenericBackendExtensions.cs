@@ -114,4 +114,14 @@ public static class GenericBackendExtensions
         service.RegisterMiddleware(opts, routeBuilder);
     }
 #endif
+#if NET6_0_OR_GREATER
+    public static void UseGenericBackend(
+        this Microsoft.AspNetCore.Builder.WebApplication applicationBuilder
+        )
+    {
+        var service = applicationBuilder.Services.GetService<Middleware.MiddlewareRegistration>()!;
+        var opts = applicationBuilder.Services.GetService<Middleware.SPMiddlewareOptions>()!;
+        service.RegisterMiddleware(opts, applicationBuilder);
+    }
+#endif
 }

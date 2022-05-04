@@ -46,7 +46,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Kull.Data, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Kull.Data.6.0.1\lib\net48\Kull.Data.dll</HintPath>
+      <HintPath>..\packages\Kull.Data.6.0.3\lib\net48\Kull.Data.dll</HintPath>
     </Reference>
     <Reference Include="Kull.DatabaseMetadata, Version=1.4.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Kull.DatabaseMetadata.1.4.1\lib\net48\Kull.DatabaseMetadata.dll</HintPath>
@@ -127,8 +127,8 @@
       <Private>True</Private>
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.7\lib\net45\System.Web.WebPages.Razor.dll</HintPath>
     </Reference>
-    <Reference Include="TimeZoneConverter, Version=3.1.0.0, Culture=neutral, PublicKeyToken=e20ab7d0d9479841, processorArchitecture=MSIL">
-      <HintPath>..\packages\TimeZoneConverter.3.1.0\lib\net471\TimeZoneConverter.dll</HintPath>
+    <Reference Include="TimeZoneConverter, Version=5.0.0.0, Culture=neutral, PublicKeyToken=e20ab7d0d9479841, processorArchitecture=MSIL">
+      <HintPath>..\packages\TimeZoneConverter.5.0.0\lib\net461\TimeZoneConverter.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Abstractions, Version=5.11.7.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
       <HintPath>..\packages\Unity.Abstractions.5.11.7\lib\net48\Unity.Abstractions.dll</HintPath>
