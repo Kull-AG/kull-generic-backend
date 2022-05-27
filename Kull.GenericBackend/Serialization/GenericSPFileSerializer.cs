@@ -43,13 +43,16 @@ public class GenericSPFileSerializer : IGenericSPSerializer
 
     private readonly ILogger<GenericSPFileSerializer> logger;
     private readonly JsonErrorHandler jsonErrorHandler;
+    private readonly SwaggerFromSPOptions options;
 
     public GenericSPFileSerializer(
             ILogger<GenericSPFileSerializer> logger,
-            Error.JsonErrorHandler jsonErrorHandler)
+            Error.JsonErrorHandler jsonErrorHandler,
+            SwaggerFromSPOptions options)
     {
         this.logger = logger;
         this.jsonErrorHandler = jsonErrorHandler;
+        this.options = options;
     }
 
     /// <summary>
@@ -189,10 +192,10 @@ public class GenericSPFileSerializer : IGenericSPSerializer
                             {
                                 Schema = new OpenApiSchema()
                                 {
-                                    // Actually in v3, type string would be correct, but I don't think this describes it correctly
+                                    
                                     // https://swagger.io/docs/specification/describing-responses/
-                                    Type = "file",
-                                    Format = "binary"
+                                    Type = this.options.UseSwagger2 ? "file" : "string",
+                                    Format =  "binary"
                                 }
                             }
                         }

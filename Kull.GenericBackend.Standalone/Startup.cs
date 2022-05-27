@@ -34,7 +34,6 @@ namespace Kull.GenericBackend.Standalone
                     o.PersistResultSets = true;
                 })
                 .AddFileSupport()
-                .AddXmlSupport()
                 .AddSystemParameters();
             services.AddSwaggerGen(c =>
             {
