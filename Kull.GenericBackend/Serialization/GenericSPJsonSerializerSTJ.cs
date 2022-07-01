@@ -118,33 +118,52 @@ public class GenericSPJsonSerializerSTJ : GenericSPJsonSerializerBase, IGenericS
             {
                 jsonWriter.WriteNull(realFieldName);
             }
+#if NET6_0_OR_GREATER
+            else if (jsonFields.Contains(p))
+            {
+                jsonWriter.WritePropertyName(realFieldName);
+                jsonWriter.WriteRawValue(rdr.GetString(p));
+            }
+#endif
             else if (types[p] == typeof(string))
             {
 #if !NET6_0_OR_GREATER
                 jsonWriter.WriteString(realFieldName, rdr.GetString(p));
 #else
-                jsonWriter.WritePropertyName(realFieldName);
+                
                 byte[] charStart = new byte[] { ((byte)'"') };
-                jsonWriter.WriteRawValue(charStart, true);// We need this one call to WriteRawValue to have correcct internal state
-                await jsonWriter.FlushAsync();
 
 
-
-                charBuffer ??= new char[100];
+                charBuffer ??= new char[255];
                 long offset = 0;
                 int bytesRead = 0;
-                do
+
+                bytesRead = (int)rdr.GetChars(p, offset, charBuffer, 0, charBuffer.Length);
+                offset += bytesRead;
+                if (bytesRead == 0)
                 {
-                    bytesRead = (int)rdr.GetChars(p, offset, charBuffer, 0, charBuffer.Length);
-                    offset += bytesRead;
-                    if (bytesRead > 0)
+                    jsonWriter.WriteString(realFieldName, String.Empty);
+                }
+                else if (bytesRead < charBuffer.Length)
+                {
+                    jsonWriter.WriteString(realFieldName, new String(charBuffer, 0, bytesRead));
+                }
+                else
+                {
+                    jsonWriter.WritePropertyName(realFieldName);
+                    jsonWriter.WriteRawValue(charStart, true);// We need this one call to WriteRawValue to have correcct internal state
+                    await jsonWriter.FlushAsync();
+
+                    while (bytesRead > 0)
                     {
                         var j = GetJsonEncodedText(charBuffer, 0, bytesRead);
                         await baseStream.WriteAsync(j);
-                    }
+
+                        bytesRead = (int)rdr.GetChars(p, offset, charBuffer, 0, charBuffer.Length);
+                        offset += bytesRead;
+                    };
+                    await baseStream.WriteAsync(charStart);
                 }
-                while (bytesRead > 0);
-                await baseStream.WriteAsync(charStart);
 #endif
                 //rdr.GetChars()
             }

@@ -43,13 +43,16 @@ public class GenericSPFileSerializer : IGenericSPSerializer
 
     private readonly ILogger<GenericSPFileSerializer> logger;
     private readonly JsonErrorHandler jsonErrorHandler;
+    private readonly SwaggerFromSPOptions options;
 
     public GenericSPFileSerializer(
             ILogger<GenericSPFileSerializer> logger,
-            Error.JsonErrorHandler jsonErrorHandler)
+            Error.JsonErrorHandler jsonErrorHandler,
+            SwaggerFromSPOptions options)
     {
         this.logger = logger;
         this.jsonErrorHandler = jsonErrorHandler;
+        this.options = options;
     }
 
     /// <summary>
@@ -125,18 +128,20 @@ public class GenericSPFileSerializer : IGenericSPSerializer
                     await PrepareHeader(serializationContext, method, ent, 404, "application/json", null);
                     return null;
                 }
-                int fileNameOrdinal = rdr.GetOrdinal(FileNameColumn);
+                var fieldNames = Enumerable.Range(0, rdr.FieldCount).Select(s => rdr.GetName(s)).ToArray();
+                int? fileNameOrdinal = fieldNames.Contains(FileNameColumn, StringComparer.OrdinalIgnoreCase) ? rdr.GetOrdinal(FileNameColumn): null;
                 int contentTypeOrdinal = rdr.GetOrdinal(ContentTypeColumn);
                 int contentColOrdinal = rdr.GetOrdinal(ContentColumn);
-                string? firstValue = rdr.GetNString(Math.Min(fileNameOrdinal, contentTypeOrdinal));
-                string? secondValue = rdr.GetNString(Math.Max(fileNameOrdinal, contentTypeOrdinal));
-                if (Math.Max(contentColOrdinal, Math.Max(fileNameOrdinal, contentTypeOrdinal)) != contentColOrdinal)
+                string? firstValue = fileNameOrdinal == null ? rdr.GetNString(contentTypeOrdinal) : rdr.GetNString(Math.Min(fileNameOrdinal.Value, contentTypeOrdinal));
+                string? secondValue = fileNameOrdinal == null  ? null: rdr.GetNString(Math.Max(fileNameOrdinal.Value, contentTypeOrdinal));
+                if (Math.Max(contentColOrdinal, fileNameOrdinal == null? contentTypeOrdinal : Math.Max(fileNameOrdinal.Value, contentTypeOrdinal)) != contentColOrdinal)
                 {
                     await PrepareHeader(serializationContext, method, ent, 500, "text/plain", null);
                     await serializationContext.HttpContentToResponse(new System.Net.Http.StringContent($"{ContentColumn} must come after Filename and content type"));
+                    return new Exception("Error because of order");
                 }
-                string? fileName = fileNameOrdinal > contentTypeOrdinal ? secondValue : firstValue;
-                string? contentType = (fileNameOrdinal > contentTypeOrdinal ? firstValue : secondValue);
+                string? fileName = fileNameOrdinal == null ? null: fileNameOrdinal.Value > contentTypeOrdinal ? secondValue : firstValue;
+                string? contentType = (fileNameOrdinal == null || fileNameOrdinal.Value > contentTypeOrdinal ? firstValue : secondValue);
 
 
                 await PrepareHeader(serializationContext, method, ent, 200, contentType, fileName);
@@ -187,10 +192,10 @@ public class GenericSPFileSerializer : IGenericSPSerializer
                             {
                                 Schema = new OpenApiSchema()
                                 {
-                                    // Actually in v3, type string would be correct, but I don't think this describes it correctly
+                                    
                                     // https://swagger.io/docs/specification/describing-responses/
-                                    Type = "file",
-                                    Format = "binary"
+                                    Type = this.options.UseSwagger2 ? "file" : "string",
+                                    Format =  "binary"
                                 }
                             }
                         }

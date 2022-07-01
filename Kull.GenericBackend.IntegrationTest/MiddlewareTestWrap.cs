@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc.Testing;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
@@ -86,6 +88,59 @@ public class MiddlewareTestWrap
             },
             value = new string[] { }
         });
+
+    }
+
+    [Theory]
+    [InlineData("/rest/Test")]
+    public async Task GetTableValuedParamter1(string url)
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        MultipartFormDataContent form = new MultipartFormDataContent();
+
+        form.Add(new StringContent("1"), "SomeId");
+        var data1 = new { id = 1, name = "Test1" };
+        form.Add(new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(data1)), "Ids");
+        HttpResponseMessage response = await client.PostAsync(url, form);
+
+        response.EnsureSuccessStatusCode();
+        string sd = response.Content.ReadAsStringAsync().Result;
+        var content = JsonConvert.DeserializeObject<JToken>(sd);
+        Utils.JsonUtils.AssertJsonEquals(new
+        {
+            value = new[] {
+                data1
+            }
+        }, content);
+
+    }
+
+    [Theory]
+    [InlineData("/rest/Test")]
+    public async Task GetTableValuedParamter2(string url)
+    {
+        // Arrange
+        var client = _factory.CreateClient();
+        MultipartFormDataContent form = new MultipartFormDataContent();
+
+        form.Add(new StringContent("1"), "SomeId");
+        var data1 = new { id = 1, name = "Test1" };
+        var data2 = new { id = 2, name = "Test2" };
+        form.Add(new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(data1)), "Ids");
+        form.Add(new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(data2)), "Ids");
+        HttpResponseMessage response = await client.PostAsync(url, form);
+
+        response.EnsureSuccessStatusCode();
+        string sd = response.Content.ReadAsStringAsync().Result;
+        var content = JsonConvert.DeserializeObject<JToken>(sd);
+        Utils.JsonUtils.AssertJsonEquals(new
+        {
+            value = new[] {
+                data1,
+                data2
+            }
+        }, content);
 
     }
 }

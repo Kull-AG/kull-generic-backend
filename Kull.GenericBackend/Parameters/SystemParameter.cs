@@ -25,7 +25,7 @@ public class SystemParameter : WebApiParameter
         return null!;
     }
 
-    public override object? GetValue(HttpContext? http, object? valueProvided)
+    public override object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? parameterContext)
     {
         if (http == null) return null;
         var vl = getParameterValue(http);

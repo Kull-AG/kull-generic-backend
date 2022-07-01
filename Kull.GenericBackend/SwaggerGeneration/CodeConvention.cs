@@ -59,15 +59,9 @@ public class CodeConvention
         return string.Join("", result);
     }
 
-    /// <summary>
-    /// Gets a unique operation name withing the tag
-    /// </summary>
-    /// <param name="ent"></param>
-    /// <param name="method"></param>
-    /// <param name="operationType"></param>
-    /// <returns></returns>
-    public virtual string GetOperationName(Entity ent, Method method)
+    protected virtual string GetOperationDescription(Entity ent, Method method)
     {
+
         var operationType = method.HttpMethod;
         return operationType == OperationType.Post &&
               (method.DbObject.Name.StartsWith("spAddUpdate") ||
@@ -79,6 +73,19 @@ public class CodeConvention
           operationType == OperationType.Delete ? "Delete" :
           operationType == OperationType.Get ? "Get" :
           ToCamelCase(operationType.ToString());
+
+    }
+
+    /// <summary>
+    /// Gets a unique operation name withing the tag
+    /// </summary>
+    /// <param name="ent"></param>
+    /// <param name="method"></param>
+    /// <param name="operationType"></param>
+    /// <returns></returns>
+    public virtual string GetOperationName(Entity ent, Method method)
+    {
+        return GetOperationDescription(ent, method);
     }
 
     /// <summary>
@@ -91,10 +98,10 @@ public class CodeConvention
     /// <returns></returns>
     public virtual string GetOperationId(Entity ent, Method method)
     {
-        return GetOperationName(ent, method) + GetTag(ent, method);
+        return GetOperationDescription(ent, method) + GetTag(ent, method);
     }
 
-    private static string ToCamelCase(string key) => key[0].ToString().ToUpper() + key.Substring(1).ToLower();
+    protected static string ToCamelCase(string key) => key[0].ToString().ToUpper() + key.Substring(1).ToLower();
 
     public virtual string GetParameterObjectName(Entity ent, Method method) =>
              GetOperationId(ent, method) + "Parameters";

@@ -51,9 +51,11 @@ public class ConfigProvider
 
     protected virtual List<Entity> ReadConfig()
     {
-        var configFile = System.IO.Path.Combine(hostingEnvironment?.ContentRootPath ?? "", "backendconfig.json");
 #if NETFX
+        var configFile = System.IO.Path.Combine(hostingEnvironment?.ContentRootPath ?? "", "backendconfig.json");
         object? config = null;
+#else   
+        var configFile = System.IO.Path.Combine(hostingEnvironment?.ContentRootPath ?? "", config.GetValue<string>("GenericBackendConfigFile", "backendconfig.json"));
 #endif
         bool useConfigFile = System.IO.File.Exists(configFile);
         object? configObj = useConfigFile ?
@@ -63,8 +65,8 @@ public class ConfigProvider
         {
             throw new InvalidOperationException("no config file found");
         }
-        var deepCorrectConfig = (IDictionary<string, object?>)Config.DictionaryHelper.ConvertToDeepIDictionary(configObj, StringComparer.CurrentCultureIgnoreCase)!;
-        var ent = (IDictionary<string, object?>)deepCorrectConfig["Entities"]!;
+        var deepCorrectConfig = (IReadOnlyDictionary<string, object?>)Config.DictionaryHelper.ConvertToDeepIDictionary(configObj, StringComparer.CurrentCultureIgnoreCase)!;
+        var ent = (IReadOnlyDictionary<string, object?>)deepCorrectConfig["Entities"]!;
         if (ent == null)
         {
             throw new InvalidOperationException("no config found");
@@ -72,7 +74,7 @@ public class ConfigProvider
         return ent.Select(s => Entity.GetFromConfig(s.Key, s.Value!)).ToList();
     }
 
-    private IDictionary<string, object> ReadJsonFromFile(string file)
+    private IReadOnlyDictionary<string, object> ReadJsonFromFile(string file)
     {
         string json = System.IO.File.ReadAllText(file);
 #if NEWTONSOFTJSON

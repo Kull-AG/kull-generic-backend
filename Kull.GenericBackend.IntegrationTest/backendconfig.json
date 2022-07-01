@@ -1,88 +1,97 @@
 {
   "$schema": "https://raw.githubusercontent.com/Kull-AG/kull-generic-backend/master/backendconfig.schema.json",
-  "Entities": {
-    "Pet": {
-      "GET": "spGetPets",
-      "PUT": "spUpdatePet"
-    },
-    "Dog/{DogIg}": {
-        "PUT": "spUpdateDog"
-    },
-    "Pets/Json": {
-        "GET": {
-            "SP": "spGetPetsJson",
-            "JsonFields": [ "js" ]
+    "Entities": {
+        "Pet": {
+            "GET": "spGetPets",
+            "PUT": "spUpdatePet"
+        },
+        "Dog/{DogIg}": {
+            "PUT": "spUpdateDog"
+        },
+        "Pets/Json": {
+            "GET": {
+                "SP": "spGetPetsJson",
+                "JsonFields": [ "js" ]
+            }
+        },
+        "Pet/{petid}": {
+            "GET": {
+                "SP": "spGetPet",
+                "ResultType": "first"
+            },
+            "POST": {
+                "SP": "spAddPet",
+                "ResultType": "none"
+            },
+            "DELETE": "spDeletePet"
+        },
+        "Pet/search": {
+            "GET": {
+                "Sp": "spSearchPets",
+                "CommandTimeout": 360
+            }
+        },
+        "Test": {
+            "POST": {
+                "SP": "spTestBackend",
+                "OperationId": "GetBackend"
+            },
+            "Patch": {
+                "SP": "spTestNoColumnName"
+            }
+        },
+        "Date": {
+            "Get": "spTestDate"
+        },
+        "Bug": {
+            "Get": "spBuggyProc"
+        },
+        "Confidential": {
+            "Get": "spUserNotPermitted"
+        },
+        "File": {
+            "POST": {
+                "SP": "spFile",
+                "ResultType": "File"
+            }
+        },
+        "FileNoFn": {
+            "POST": {
+                "SP": "spFileNoFn",
+                "ResultType": "File"
+            }
+        },
+        "htcp": {
+            "GET": {
+                "Sp": "None"
+            }
+        },
+        "TestTemp": {
+            "GET": {
+                "SP": "spGetSomeTempTable",
+                "IgnoreParameters": [ "IgnoreMe" ],
+                "ExecuteParameters": {
+                    "AnAwesomeParam": 56
+                }
+            }
+        },
+        "TestSystemWithSpecial": {
+            "GET": {
+                "SP": "Procedure with - strange name"
+            }
+        },
+        "TestTableDataWithSchema": {
+            "GET": "tester.spTestTableParam"
+        },
+        "Reporting/Pet": {
+            "GET": {
+                "View": "reporting.[Pet Names]"
+            }
+        },
+        "NiceForPets": {
+            "GET": {
+                "Function": "reporting.FT_GetIsNiceFor"
+            }
         }
-    },
-    "Pet/{petid}": {
-      "GET": { "SP": "spGetPet", "ResultType": "first" },
-      "POST": {
-        "SP": "spAddPet",
-        "ResultType": "none"
-      },
-      "DELETE": "spDeletePet"
-    },
-    "Pet/search": {
-      "GET": {
-        "Sp": "spSearchPets",
-        "CommandTimeout": 360
-      }
-    },
-    "Test": {
-      "POST": {
-        "SP": "spTestBackend",
-        "OperationId": "GetBackend"
-      },
-      "Patch": {
-        "SP": "spTestNoColumnName"
-      }
-    },
-    "Date": {
-      "Get": "spTestDate"
-    },
-    "Bug": {
-      "Get": "spBuggyProc"
-    },
-    "Confidential": {
-      "Get": "spUserNotPermitted"
-    },
-    "File": {
-      "POST": {
-        "SP": "spFile",
-        "ResultType": "File"
-      }
-    },
-    "htcp": {
-      "GET": {
-        "Sp": "None"
-      }
-    },
-    "TestTemp": {
-      "GET": {
-        "SP": "spGetSomeTempTable",
-        "IgnoreParameters": [ "IgnoreMe" ],
-        "ExecuteParameters": {
-          "AnAwesomeParam": 56
-        }
-      }
-    },
-    "TestSystemWithSpecial": {
-      "GET": {
-        "SP": "Procedure with - strange name"
-      }
-    },
-    "TestTableDataWithSchema": {
-      "GET": "tester.spTestTableParam"
-    },
-    "Reporting/Pet": {
-      "GET": {
-        "View": "reporting.[Pet Names]"
-      }
-    },
-    "NiceForPets": {
-      "GET": {
-        "Function": "reporting.FT_GetIsNiceFor"
-      }
     }
-  }
 }

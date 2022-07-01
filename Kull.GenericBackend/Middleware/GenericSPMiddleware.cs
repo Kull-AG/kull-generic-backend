@@ -37,6 +37,9 @@ public class GenericSPMiddleware : IGenericSPMiddleware
     private readonly DbConnection dbConnection;
     private readonly IEnumerable<IRequestInterceptor> requestInterceptors;
     private readonly CommandPreparation commandPreparation;
+#if NET48
+    private readonly IPolicyResolver policyResolver;
+#endif
     private readonly IEnumerable<Filter.RequestLogger> requestLoggers;
 
     public GenericSPMiddleware(
@@ -46,7 +49,11 @@ public class GenericSPMiddleware : IGenericSPMiddleware
         DbConnection dbConnection,
         IEnumerable<Filter.IRequestInterceptor> requestInterceptors,
         IEnumerable<Filter.RequestLogger> requestLoggers,
-        CommandPreparation commandPreparation)
+        CommandPreparation commandPreparation
+#if NET48
+        , IPolicyResolver policyResolver
+#endif
+        )
     {
         this.logger = logger;
         this.serializerResolver = serializerResolver;
@@ -54,11 +61,15 @@ public class GenericSPMiddleware : IGenericSPMiddleware
         this.dbConnection = dbConnection;
         this.requestInterceptors = requestInterceptors;
         this.commandPreparation = commandPreparation;
+#if NET48
+        this.policyResolver = policyResolver;
+#endif
         this.requestLoggers = requestLoggers;
     }
 
     public Task HandleRequest(HttpContext context, Entity ent)
     {
+
 #if NET48
         var method = ent.GetMethod(context.Request.HttpMethod);
 #else
@@ -86,10 +97,20 @@ public class GenericSPMiddleware : IGenericSPMiddleware
             context.Response.StatusCode = 415;
             return Task.CompletedTask;
         }
+#if NET48 // Done by Framework in .Net Core
+        string[] policies = (method.Policies ?? sPMiddlewareOptions.Policies).ToArray();
+        if (policies.Length > 0)
+        {
+            if (!policies.All(p => policyResolver.UserIsInPolicy(context, p)))
+            {
+                return Handle40x(context, ent, method, serializer, RequestLogger.RequestValidationFailedReason.PolicyFailedNetFx);
+            }
+        }
+#endif
+
         if (this.sPMiddlewareOptions.RequireAuthenticated && context.User?.Identity?.IsAuthenticated != true)
         {
-            context.Response.StatusCode = 401;
-            return Handle401(context, ent, method, serializer);
+            return Handle40x(context, ent, method, serializer, RequestLogger.RequestValidationFailedReason.AuthenticationNotGiven);
         }
 #if NET48
         if (context.Request.HttpMethod.ToUpper() == "GET")
@@ -102,16 +123,16 @@ public class GenericSPMiddleware : IGenericSPMiddleware
         return HandleBodyRequest(context, method, ent, serializer);
     }
 
-    protected async Task Handle401(HttpContext context, Entity ent, Method method, IGenericSPSerializer serializer)
+    protected async Task Handle40x(HttpContext context, Entity ent, Method method, IGenericSPSerializer serializer, RequestLogger.RequestValidationFailedReason reason )
     {
-        context.Response.StatusCode = 401;
+        context.Response.StatusCode = reason == RequestLogger.RequestValidationFailedReason.AuthenticationNotGiven ? 401: 403;
         foreach (var log in requestLoggers)
         {
-            log.OnRequestValidationFailed(context, new RequestLogger.RequestValidationFailedInfo(RequestLogger.RequestValidationFailedReason.AuthenticationNotGiven));
+            log.OnRequestValidationFailed(context, new RequestLogger.RequestValidationFailedInfo(reason));
         }
         var objReader = new Kull.Data.DataReader.ObjectDataReader(new IReadOnlyDictionary<string, object?>[]{ new Dictionary<string, object?>()
                 {
-                    {"Error", "You are Unauthenticated" }
+                    {"Error", reason == RequestLogger.RequestValidationFailedReason.AuthenticationNotGiven ? "You are Unauthenticated" : "You are not permitted" }
                 } });
         var sercontext = new SerializationContextResult(objReader, context, method, ent, 401);
         await serializer.ReadResultToBody(sercontext);
@@ -195,7 +216,10 @@ public class GenericSPMiddleware : IGenericSPMiddleware
 #else
             foreach (var item in request.Form)
             {
-                parameterObject.Add(item.Key, string.Join(",", item.Value));
+                // In case the items are JSON, we should make sure it's still valid json after grouping by key
+                parameterObject.Add(item.Key, 
+                    item.Value.Count ==1 ? item.Value[0] 
+                    : "[" + string.Join(",", item.Value) + "]");
             }
             foreach (var file in request.Form.Files)
             {

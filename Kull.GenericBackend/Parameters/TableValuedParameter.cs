@@ -57,7 +57,7 @@ public class TableValuedParameter : WebApiParameter
         return schema;
     }
 
-    public override object? GetValue(HttpContext? http, object? valueProvided)
+    public override object? GetValue(HttpContext? http, object? valueProvided, ApiParameterContext? parameterContext)
     {
 
         System.Data.DataTable dt;
@@ -66,7 +66,10 @@ public class TableValuedParameter : WebApiParameter
         {
             dt.Columns.Add(col.Name, col.DbType.NetType);
         }
-        var rowData = (IEnumerable<IDictionary<string, object>>?)valueProvided;
+        var rowData =
+            valueProvided is IEnumerable<object> enumb ? enumb.Cast<IReadOnlyDictionary<string, object>>() :
+            valueProvided is IReadOnlyDictionary<string, object> dict ?  new IReadOnlyDictionary<string, object>[] {dict} :
+            (IEnumerable<IReadOnlyDictionary<string, object>>?)valueProvided;
         if (rowData == null)
         {
             return null;

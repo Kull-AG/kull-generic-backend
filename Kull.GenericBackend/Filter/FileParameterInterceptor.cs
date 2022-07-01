@@ -1,3 +1,4 @@
+using Kull.GenericBackend.SwaggerGeneration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,6 +14,13 @@ public class FileParameterInterceptor : IParameterInterceptor
             "FileName",
             "Length",
             "Headers"};
+
+    private readonly SwaggerFromSPOptions options;
+
+    public FileParameterInterceptor(SwaggerFromSPOptions options)
+    {
+        this.options = options;
+    }
 
     public void Intercept(ICollection<Parameters.WebApiParameter> apiParams, ParameterInterceptorContext parameterInterceptorContext)
     {
@@ -42,7 +50,7 @@ public class FileParameterInterceptor : IParameterInterceptor
                 apiParams.Add(new Parameters.FileValueParameter(fileParameter.Key,
                     existing.Parameter.SqlName!));
             }
-            apiParams.Add(new Parameters.FileDescriptionParameter(fileParameter.Key));
+            apiParams.Add(new Parameters.FileDescriptionParameter(fileParameter.Key, this.options.UseSwagger2));
         }
     }
 }

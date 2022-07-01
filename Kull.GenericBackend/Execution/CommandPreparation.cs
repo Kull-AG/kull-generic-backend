@@ -129,7 +129,7 @@ public class CommandPreparation
 
             if (hasValue)
             {
-                var value = apiPrm.GetValue(context, prm);
+                var value = apiPrm.GetValue(context, prm, new ApiParameterContext(ent, method));
                 ParameterDirection parameterDirection =
                         outputParameters.Any(p => p.SqlName.Equals(apiPrm.SqlName, StringComparison.CurrentCultureIgnoreCase)) ? ParameterDirection.InputOutput
                         : ParameterDirection.Input;

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Text;
 
 namespace Kull.GenericBackend.Middleware;
@@ -34,4 +36,9 @@ public class SPMiddlewareOptions
     /// This prevents certain CORS Attacks for GET Requests
     /// </summary>
     public bool AlwaysWrapJson { get; set; } = false;
+
+    /// <summary>
+    /// Asp.Net Core Policies for the Requests
+    /// </summary>
+    public IReadOnlyCollection<string> Policies { get; init; } = Array.Empty<string>();
 }
