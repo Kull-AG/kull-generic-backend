@@ -69,7 +69,7 @@ public class SystemParameters : IParameterInterceptor
     /// </summary>
     /// <param name="name"></param>
     /// <param name="valueAccessor"></param>
-    public void AddSystemParameter(string name, Func<HttpContext, object> valueAccessor)
+    public void AddSystemParameter(string name, Func<HttpContext, object?> valueAccessor)
     {
         this.getFns.Add(name, valueAccessor);
     }

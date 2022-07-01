@@ -46,7 +46,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Kull.Data, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Kull.Data.6.0.3\lib\net48\Kull.Data.dll</HintPath>
+      <HintPath>..\packages\Kull.Data.6.0.5\lib\net48\Kull.Data.dll</HintPath>
     </Reference>
     <Reference Include="Kull.DatabaseMetadata, Version=1.4.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Kull.DatabaseMetadata.1.4.1\lib\net48\Kull.DatabaseMetadata.dll</HintPath>
