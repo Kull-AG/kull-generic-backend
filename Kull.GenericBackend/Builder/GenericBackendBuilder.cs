@@ -43,6 +43,18 @@ public sealed class GenericBackendBuilder
         services.AddSingleton<Filter.IParameterInterceptor>(func);
     }
 
+
+    public void AddRequestLogger<T>() where T :  Filter.RequestLogger
+    {
+        services.AddTransient<Filter.RequestLogger, T>();
+    }
+
+    public void AddRequestLogger<T>(Func<IServiceProvider, T> func) where T : Kull.GenericBackend.Filter.RequestLogger
+    {
+        services.AddTransient<Filter.RequestLogger>(func);
+    }
+
+
     public void AddRequestInterceptor<T>() where T : class, Filter.IRequestInterceptor
     {
         services.AddSingleton<Filter.IRequestInterceptor, T>();
