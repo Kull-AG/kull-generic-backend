@@ -24,9 +24,16 @@ namespace Kull.GenericBackend;
 public static class SwashbuckleExtensions
 {
 #if NETFX
+    public static void AddGenericBackend(this Swashbuckle.Application.SwaggerDocsConfig options, IUnityContainer unityContainer)
+    {
+        options.DocumentFilter(() => new DatabaseOperationWrap(unityContainer));
+
+    }
+
+    [Obsolete("Use overload with container")]
     public static void AddGenericBackend(this Swashbuckle.Application.SwaggerDocsConfig options)
     {
-        options.DocumentFilter<DatabaseOperationWrap>();
+        options.DocumentFilter(()=>new DatabaseOperationWrap());
 
     }
 #else
