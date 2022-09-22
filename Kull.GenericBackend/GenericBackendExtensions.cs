@@ -101,13 +101,13 @@ public static class GenericBackendExtensions
 
         var service = (Middleware.MiddlewareRegistration)midm;
         var opts = (Middleware.SPMiddlewareOptions)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(Middleware.SPMiddlewareOptions));
-        service.RegisterMiddleware(opts, routeBuilder);
+        service.RegisterMiddleware(opts, routeBuilder, null);
     }
     public static void UseGenericBackend(this System.Web.Routing.RouteCollection routeBuilder, Unity.IUnityContainer unityContainer)
     {
         var service = unityContainer.Resolve<Middleware.MiddlewareRegistration>();
         var opts = unityContainer.Resolve<Middleware.SPMiddlewareOptions>();
-        service.RegisterMiddleware(opts, routeBuilder);
+        service.RegisterMiddleware(opts, routeBuilder, unityContainer);
     }
 #else
 

@@ -1,4 +1,5 @@
 using Kull.GenericBackend.Middleware;
+using System;
 using System.Collections.Generic;
 
 namespace Kull.GenericBackend.Common;
@@ -17,10 +18,11 @@ public class NamingMappingHandler
         this.options = options;
     }
 
-    public IEnumerable<string> GetNames(IEnumerable<string?> dt)
+    public IEnumerable<string> GetNames(IEnumerable<string?>? dt)
     {
         var setNames = new List<string>();
         int nullCount = 0;
+        if (dt == null) yield break;
         foreach (var item in dt)
         {
 #if NEWTONSOFTJSON
