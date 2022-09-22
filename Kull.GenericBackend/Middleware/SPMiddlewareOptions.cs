@@ -28,7 +28,7 @@ public class SPMiddlewareOptions
     /// <summary>
     /// Naming strategy for properties etc
     /// </summary>
-    public System.Text.Json.JsonNamingPolicy NamingStrategy { get; set; } = System.Text.Json.JsonNamingPolicy.CamelCase;
+    public System.Text.Json.JsonNamingPolicy? NamingStrategy { get; set; } = System.Text.Json.JsonNamingPolicy.CamelCase;
 #endif
 
     /// <summary>

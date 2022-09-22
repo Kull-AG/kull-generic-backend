@@ -28,7 +28,7 @@ public class NamingMappingHandler
 #if NEWTONSOFTJSON
             string? name = item == null ? null : options.NamingStrategy.GetPropertyName(item, false);
 #else
-            string? name = item == null ? null : options.NamingStrategy.ConvertName(item);
+            string? name = item == null ? null : (options.NamingStrategy == null ? item : options.NamingStrategy.ConvertName(item));
 #endif
             if (name == IgnoreFieldPlaceHolder)
             {
