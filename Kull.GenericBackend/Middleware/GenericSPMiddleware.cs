@@ -167,12 +167,12 @@ public class GenericSPMiddleware : IGenericSPMiddleware
         var start = DateTime.UtcNow;
         foreach (var log in requestLoggers)
         {
-            log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
+            await log.OnRequestStartAsync(context, new RequestLogger.RequestStartInfo(cmd));
         }
         var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
         foreach (var log in requestLoggers)
         {
-            log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
+            await log.OnRequestEndAsync(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
         }
     }
 
@@ -247,12 +247,12 @@ public class GenericSPMiddleware : IGenericSPMiddleware
         var start = DateTime.UtcNow;
         foreach (var log in requestLoggers)
         {
-            log.OnRequestStart(context, new RequestLogger.RequestStartInfo(cmd));
+            await log.OnRequestStartAsync(context, new RequestLogger.RequestStartInfo(cmd));
         }
         var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
         foreach (var log in requestLoggers)
         {
-            log.OnRequestEnd(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
+            await log.OnRequestEndAsync(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
         }
     }
 

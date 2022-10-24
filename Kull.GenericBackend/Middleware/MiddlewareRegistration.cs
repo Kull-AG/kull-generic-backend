@@ -34,9 +34,12 @@ public class MiddlewareRegistration
     class RouteHandlerWrap : HttpTaskAsyncHandler, IRouteHandler
     {
         Entity entity;
-        public RouteHandlerWrap(Entity entity)
+        private readonly IUnityContainer? unityContainer;
+
+        public RouteHandlerWrap(Entity entity, IUnityContainer? unityContainer)
         {
             this.entity = entity;
+            this.unityContainer = unityContainer;
         }
         public override bool IsReusable => false;
 
@@ -47,7 +50,9 @@ public class MiddlewareRegistration
 
         public override async Task ProcessRequestAsync(HttpContext context)
         {
-            var container = (IUnityContainer)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IUnityContainer));
+            var container = 
+                unityContainer ??
+                (IUnityContainer)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IUnityContainer));
             if (container != null)
             {
                 using (var child = container.CreateChildContainer())
@@ -64,14 +69,14 @@ public class MiddlewareRegistration
         }
     }
     protected internal void RegisterMiddleware(SPMiddlewareOptions options,
-            RouteCollection routeBuilder)
+            RouteCollection routeBuilder, IUnityContainer? unityContainer)
     {
         this.options = options;
 
         foreach (var ent in entities)
         {
             routeBuilder.Add(ent.ToString(),
-                new Route(GetUrlForMvcRouting(ent), new RouteHandlerWrap(ent)));
+                new Route(GetUrlForMvcRouting(ent), new RouteHandlerWrap(ent, unityContainer)));
 
         }
     }

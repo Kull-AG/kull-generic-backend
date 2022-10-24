@@ -28,7 +28,7 @@ internal class JsonHelper
 #else
         return System.Text.Json.JsonSerializer.Serialize(obj, new System.Text.Json.JsonSerializerOptions()
         {
-            PropertyNamingPolicy = settings?.NamingStrategy ?? System.Text.Json.JsonNamingPolicy.CamelCase
+            PropertyNamingPolicy = settings == null ? System.Text.Json.JsonNamingPolicy.CamelCase: settings?.NamingStrategy
         });
 #endif
     }

@@ -14,6 +14,7 @@ using System;
 using System.Threading.Tasks;
 using Kull.GenericBackend.Utils;
 #if NETFX
+using Unity;
 using Swashbuckle.Swagger;
 using Kull.MvcCompat;
 using System.Web.Http.Description;
@@ -31,10 +32,28 @@ namespace Kull.GenericBackend.SwaggerGeneration;
 #if NET48
 public class DatabaseOperationWrap : IDocumentFilter
 {
+    private readonly IUnityContainer? container = null;
+
+    [Obsolete]
+    public DatabaseOperationWrap()
+    {
+    }
+    public DatabaseOperationWrap(IUnityContainer container)
+    {
+        this.container = container;
+    }
     public void Apply(SwaggerDocument swaggerDoc, SchemaRegistry schemaRegistry, IApiExplorer apiExplorer)
     {
-        IDocumentFilter realFilter = (IDocumentFilter)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IDocumentFilter));
-        realFilter.Apply(swaggerDoc, schemaRegistry, apiExplorer);
+        if (container != null)
+        {
+            var realFilter = container.Resolve<IDocumentFilter>();
+            realFilter.Apply(swaggerDoc, schemaRegistry, apiExplorer);
+        }
+        else
+        {
+            IDocumentFilter realFilter = (IDocumentFilter)System.Web.Mvc.DependencyResolver.Current.GetService(typeof(IDocumentFilter));
+            realFilter.Apply(swaggerDoc, schemaRegistry, apiExplorer);
+        }
     }
 }
 #endif
@@ -404,14 +423,14 @@ public class DatabaseOperations : IDocumentFilter
         var settings = new Newtonsoft.Json.JsonSerializerSettings();
         settings.MetadataPropertyHandling = Newtonsoft.Json.MetadataPropertyHandling.Ignore;
         var docOld = Newtonsoft.Json.JsonConvert.DeserializeObject<SwaggerDocument>(json, settings);
-        if (docOld !=null && docOld.paths != null)
+        if (docOld != null && docOld.paths != null)
         {
             foreach (var p in docOld.paths)
             {
                 swaggerDoc.paths.Add(p.Key, p.Value);
             }
         }
-        if (docOld !=null && docOld.definitions != null)
+        if (docOld != null && docOld.definitions != null)
         {
             foreach (var p in docOld.definitions)
             {

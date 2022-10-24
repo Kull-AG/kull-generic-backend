@@ -37,8 +37,8 @@ public sealed class ParameterProvider
     {
         var method = context.Method;
         var spParamsRaw = await sPParametersProvider.GetSPParameters(method.DbObject, dbConnection);
-        var spParams = ignoreParameters.Count == 0 ? spParamsRaw : spParamsRaw.Where(p => !ignoreParameters.Contains(p.SqlName.StartsWith("@") ? p.SqlName.Substring(1) : p.SqlName,
-              StringComparer.OrdinalIgnoreCase));
+        var spParams = (ignoreParameters.Count == 0 ? spParamsRaw : spParamsRaw.Where(p => !ignoreParameters.Contains(p.SqlName.StartsWith("@") ? p.SqlName.Substring(1) : p.SqlName,
+              StringComparer.OrdinalIgnoreCase))) ?? Array.Empty<SPParameter>();
         var spPrmsNoCount = spParams.Where(p => p.ParameterDirection != System.Data.ParameterDirection.Output);
         var prmsOutRaw = spParams.Where(p => p.ParameterDirection == System.Data.ParameterDirection.Output || p.ParameterDirection == System.Data.ParameterDirection.InputOutput);
         var prmsOut = prmsOutRaw.Select(p => new OutputParameter(p.SqlName, p.DbType)).ToArray();

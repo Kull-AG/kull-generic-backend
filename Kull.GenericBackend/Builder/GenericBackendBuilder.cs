@@ -23,34 +23,54 @@ public sealed class GenericBackendBuilder
     {
         this.services = services;
     }
-    public void AddSerializer<T>() where T : class, IGenericSPSerializer
+    public GenericBackendBuilder AddSerializer<T>() where T : class, IGenericSPSerializer
     {
         services.AddTransient<IGenericSPSerializer, T>();
+        return this;
     }
 
-    public void AddSerializer<T>(Func<IServiceProvider, T> func) where T : class, IGenericSPSerializer
+    public GenericBackendBuilder AddSerializer<T>(Func<IServiceProvider, T> func) where T : class, IGenericSPSerializer
     {
         services.AddTransient<IGenericSPSerializer>(func);
+        return this;
     }
 
-    public void AddParameterInterceptor<T>() where T : class, Filter.IParameterInterceptor
+    public GenericBackendBuilder AddParameterInterceptor<T>() where T : class, Filter.IParameterInterceptor
     {
         services.AddSingleton<Filter.IParameterInterceptor, T>();
+        return this;
     }
 
-    public void AddParameterInterceptor<T>(Func<IServiceProvider, T> func) where T : class, Filter.IParameterInterceptor
+    public GenericBackendBuilder AddParameterInterceptor<T>(Func<IServiceProvider, T> func) where T : class, Filter.IParameterInterceptor
     {
         services.AddSingleton<Filter.IParameterInterceptor>(func);
+        return this;
     }
 
-    public void AddRequestInterceptor<T>() where T : class, Filter.IRequestInterceptor
+
+    public GenericBackendBuilder AddRequestLogger<T>() where T :  Filter.RequestLogger
+    {
+        services.AddTransient<Filter.RequestLogger, T>();
+        return this;
+    }
+
+    public GenericBackendBuilder AddRequestLogger<T>(Func<IServiceProvider, T> func) where T : Kull.GenericBackend.Filter.RequestLogger
+    {
+        services.AddTransient<Filter.RequestLogger>(func);
+        return this;
+    }
+
+
+    public GenericBackendBuilder AddRequestInterceptor<T>() where T : class, Filter.IRequestInterceptor
     {
         services.AddSingleton<Filter.IRequestInterceptor, T>();
+        return this;
     }
 
-    public void AddRequestInterceptor<T>(Func<IServiceProvider, T> func) where T : class, Filter.IRequestInterceptor
+    public GenericBackendBuilder AddRequestInterceptor<T>(Func<IServiceProvider, T> func) where T : class, Filter.IRequestInterceptor
     {
         services.AddSingleton<Filter.IRequestInterceptor>(func);
+        return this;
     }
 
 
