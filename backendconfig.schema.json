@@ -52,73 +52,141 @@
       }
     },
     "Method": {
-      "oneOf": [
-        {
-          "type": "string",
-          "description": "The name of the procedure to call"
-        },
-        {
-          "type": "object",
-          "description": "A config object for your Http Method",
-          "allOf": [
+        "oneOf": [
             {
-              "type": "object",
-              "properties": {
-                "SP": {
-                  "type": "string",
-                  "description": "The name of the procedure to call"
-                }
-              }
+                "type": "string",
+                "description": "The name of the procedure to call"
             },
             {
-              "$ref": "#/definitions/MethodBase"
+                "type": "object",
+                "description": "A config object for your Http Method which invoices a procedure",
+                "allOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "SP": {
+                                "type": "string",
+                                "description": "The name of the procedure to call"
+                            }
+                        }
+                    },
+                    {
+                        "$ref": "#/definitions/MethodBase"
+                    }
+                ]
+            },
+            {
+                "type": "object",
+                "description": "A config object for your Http Method which invoices a View",
+                "allOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "View": {
+                                "type": "string",
+                                "description": "The name of the procedure to call"
+                            }
+                        }
+                    },
+                    {
+                        "$ref": "#/definitions/MethodBase"
+                    }
+                ]
+            },
+            {
+                "type": "object",
+                "description": "A config object for your Http Method which invoices a Table-Valued Function",
+                "allOf": [
+                    {
+                        "type": "object",
+                        "properties": {
+                            "Function": {
+                                "type": "string",
+                                "description": "The name of the procedure to call"
+                            }
+                        }
+                    },
+                    {
+                        "$ref": "#/definitions/MethodBase"
+                    }
+                ]
             }
-          ]
-        }
-      ]
+        ]
     },
     "MethodBase": {
       "type": "object",
       "title": "HTTP Method to DB Mapping",
       "description": "Represents a HTTP Method that is mapped to a Stored Procedure",
-      "properties": {
-        "OperationId": {
-          "type": "string",
-          "description": "Value for the operationId. Must be unique amount the whole Api"
-        },
-        "OperationName": {
-          "type": "string",
-          "description": "Value for x-operation-name as used in some client code generators (eg, ng-openapi-gen). Use this for a unique name within a tag"
-        },
-        "Tag": {
-          "type": "string",
-          "description": "Value for the OpenApi-Tag, overwrites the Tag of the Entity. Use this to group your methods"
-        },
-        "ResultType": {
-          "type": "string",
-          "title": "The result Content Type",
-          "description": "The content type to be return. Use only, if the Accept Header does not suit your needs",
-          "enum": [ "File", "Json", "Xml" ]
-        },
-        "CommandTimeout": {
-          "type": "integer",
-          "title": "Timeout of Database Command",
-          "description": "The timeout in seconds"
-        },
-        "IgnoreParameters": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "Parameters that you do not want in your API",
-          "description": "Sometimes you might have parameters for your procedures that are not meant for the API. You can set a default value for those and ignore them using the IgnoreParameters"
-        },
-        "ExecuteParameters": {
-          "type": "object",
-          "additionalProperties": true,
-          "title": "Parameters for execution of the Proc in case you have no metadata otherwise"
+        "properties": {
+            "OperationId": {
+                "type": "string",
+                "description": "Value for the operationId. Must be unique amount the whole Api"
+            },
+            "OperationName": {
+                "type": "string",
+                "description": "Value for x-operation-name as used in some client code generators (eg, ng-openapi-gen). Use this for a unique name within a tag"
+            },
+            "Tag": {
+                "type": "string",
+                "description": "Value for the OpenApi-Tag, overwrites the Tag of the Entity. Use this to group your methods"
+            },
+            "ResultType": {
+                "type": "string",
+                "title": "The result Content Type",
+                "description": "The content type to be return. Use only, if the Accept Header does not suit your needs",
+                "enum": [ "File", "Json", "Xml", "None", "First" ]
+            },
+            "CommandTimeout": {
+                "type": "integer",
+                "title": "Timeout of Database Command",
+                "description": "The timeout in seconds"
+            },
+            "IgnoreParameters": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "title": "Parameters that you do not want in your API",
+                "description": "Sometimes you might have parameters for your procedures that are not meant for the API. You can set a default value for those and ignore them using the IgnoreParameters"
+            },
+            "ExecuteParameters": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Parameters for execution of the Proc in case you have no metadata otherwise"
+            },
+            "IgnoreFields": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "title": "Fields that you do not want in your API",
+                "description": "Fields that your API should not return or document. Attention: not supported by XML Serializer"
+            },
+            "ParameterSchemaName": {
+                "type": "string",
+                "title": "The Name for the OpenAPI object that is for the Parameter"
+            },
+            "ResultSchemaName": {
+                "type": "string",
+                "title": "The Name for the OpenAPI object that is for the Parameter"
+            },
+            "JsonFields": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "title": "A list of fields that contain JSON",
+                "description": "You must return JSON for the DB in these fields - and nothing else (your responsible for handling validity on server)"
+            },
+            "Policies": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "title": "A list of Asp.Net Policies that must be fullfilled to execute that action",
+                "description": "In .Net 4.8 you are expected to register a IPolicyResolver "
+            }
         }
-      }
     }
   }
 }

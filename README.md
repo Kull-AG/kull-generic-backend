@@ -24,59 +24,56 @@ In Startup.cs, add the following services:
 using Kull.GenericBackend;
 // ...
 
-public void ConfigureServices(IServiceCollection services)
-{
-		services.AddMvcCore().AddApiExplorer(); //Or AddMvc() depending on your needs
-		services.AddGenericBackend()
-            .ConfigureMiddleware(m =>
-            { // Set your options
-                m.AlwaysWrapJson = true; // Recommended
-                m.RequireAuthenticated = true; // default since 2.0. for local development, you might want to use false
-            })
-            .ConfigureOpenApiGeneration(o =>
-            { // Set your options
-            })
-            .AddFileSupport()
-            .AddXmlSupport()
-            .AddSystemParameters();
+var services = builder.Services;
+services.AddMvcCore().AddApiExplorer(); //Or AddMvc() depending on your needs
+services.AddGenericBackend()
+    .ConfigureMiddleware(m =>
+    { // Set your options
+        m.AlwaysWrapJson = true; // Recommended
+        m.RequireAuthenticated = true; // default since 2.0. for local development, you might want to use false
+    })
+    .ConfigureOpenApiGeneration(o =>
+    { // Set your options
+    })
+    .AddFileSupport()
+    //.AddXmlSupport() if needed
+    .AddSystemParameters();
 	
-	// You might have to register your Provider Factory
-	if (!DbProviderFactories.TryGetFactory("Microsoft.Data.SqlClient", out var _))
-             DbProviderFactories.RegisterFactory("Microsoft.Data.SqlClient", Microsoft.Data.SqlClient.SqlClientFactory.Instance);
+// You might have to register your Provider Factory
+if (!DbProviderFactories.TryGetFactory("Microsoft.Data.SqlClient", out var _))
+        DbProviderFactories.RegisterFactory("Microsoft.Data.SqlClient", Microsoft.Data.SqlClient.SqlClientFactory.Instance);
 	
-		// IMPORTANT: You have to inject a DbConnection somehow
-        services.AddTransient(typeof(DbConnection), (s) =>
-        {
-            var conf = s.GetRequiredService<IConfiguration>();
-            var constr = conf["ConnectionStrings:DefaultConnection"];
-            return new Microsoft.Data.SqlClient.SqlConnection(constr);
-        });
-		services.AddSwaggerGen(c=> {
-			c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-			c.AddGenericBackend();
-		});
-}
-public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+// IMPORTANT: You have to inject a DbConnection somehow
+services.AddTransient(typeof(DbConnection), (s) =>
 {
-	app.UseSwagger(o =>
-    {
-	// Depending on your client, set this to true (eg, ng-swagger-gen)
-        o.SerializeAsV2 = false;
-    });
-    app.UseRouting();
-    app.UseEndpoints(endpoints =>
-    {
-	app.UseGenericBackend(endpoints);
-	endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
-    });
+    var conf = s.GetRequiredService<IConfiguration>();
+    var constr = conf["ConnectionStrings:DefaultConnection"];
+    return new Microsoft.Data.SqlClient.SqlConnection(constr);
+});
+services.AddSwaggerGen(c=> {
+	c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+	c.AddGenericBackend();
+});
 
-    // If needed, Swagger UI, see https://github.com/domaindrivendev/Swashbuckle.AspNetCore
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
-    });
+//...
+var app = builder.Build();
+//...
 
-}
+
+app.UseSwagger(o =>
+{
+// Depending on your client, set this to true (eg, ng-swagger-gen)
+    o.SerializeAsV2 = false;
+});
+app.UseRouting();
+app.UseGenericBackend(); 
+
+// If needed, Swagger UI, see https://github.com/domaindrivendev/Swashbuckle.AspNetCore
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+});
+
 ```
 In a File called backendconfig.json, set the URI's:
 
