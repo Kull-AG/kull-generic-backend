@@ -37,7 +37,7 @@ services.AddGenericBackend()
     })
     .AddFileSupport()
     //.AddXmlSupport() if needed
-    .AddSystemParameters();
+    .AddSystemParameters(); // You probably want to configure these, see https://github.com/Kull-AG/kull-generic-backend/wiki/System-Parameters
 	
 // You might have to register your Provider Factory
 if (!DbProviderFactories.TryGetFactory("Microsoft.Data.SqlClient", out var _))
@@ -109,7 +109,7 @@ In a File called backendconfig.json, set the URI's:
     }
 }
 ```
-You can place this in appsettings.json as well if you don't like a separate file.
+You can place this in appsettings.json as well if you don't like a separate file. However having a separate file seems more appropriate here as it enables IntelliSense with VS Code. Also you usually do not have different configs per environment for this file.
 
 In the "Entities" Section, the URL's are configured. Each entry correspondends to a URL.
 Each URL can be accessed by multiple HTTP Methods. Common methods are:
@@ -144,31 +144,15 @@ out of the information of the database. This is done by using the
 [sp_describe_first_result_set](https://docs.microsoft.com/en-us/sql/relational-databases/system-stored-procedures/sp-describe-first-result-set-transact-sql?view=sql-server-2017)
 and INFORMATION_SCHEMA.parameters. There is a separate Package for the Metadata: [Kull-AG/kull-databasemetadata](https://github.com/Kull-AG/kull-databasemetadata)
 
-It works by adding an IDocumentFilter to Swashbuckle. Swashbuckle generates the swagger.json
+It works by adding an IDocumentFilter to Swashbuckle. Swashbuckle generates the swagger.json/openapi.json
 This means you can mix this backend and your own Controllers and it will just work in the swagger.json.
 
 ### Special parameters
 
 There are so called System Parameters, which are parameters defined in any Stored Procedure
 which should be resolved by the Webserver and not by the Consumer of the API. 
-Built-in are the following System Parameters:
 
-- ADLogin & NTLogin: The Username in the HttpContext
-- IPAddress: The IP Adress of the User
-- UserAgent: The UserAgent of the Browser
-
-If you would like to add something to this, or remove the default ones, you can do this in startup.cs:
-
-```C#
-    .AddSystemParameters(prms=>
-    {
-        prms.Clear();
-        //Usually you will want to set global system parameters
-        prms.AddSystemParameter("UserClaims", c => Newtonsoft.Json.JsonConvert.SerializeObject(c.User.Claims));
-        //But if you want one for just one SP, you can do this by using the dot
-        prms.AddSystemParameter("SchemaName.ProcecureName.ParameterNameInThere", c => c.GetType().ToString());
-    });
-```
+More info here in the [wiki](https://github.com/Kull-AG/kull-generic-backend/wiki/System-Parameters)
 
 # Error Handling 
 
