@@ -168,12 +168,17 @@ throw 50503, 'No access to this', 1
 
 # .Net 4.8
 
-It works in theory, but requires a lot of #if's and is not integration-tested. It's used in a number of projects though and does it's job.
+It works, but requires a lot of #if's and is not integration-tested. It's used in a number of projects though and does it's job.
 See [wiki](https://github.com/Kull-AG/kull-generic-backend/wiki/Usage-with-MVC-5)
+
+.Net Core is definitely the way to go, .Net 4.8 support is mainly to make porting to .Net Core easier.
+
+# Performance
+
+The performance should be very good as for the invocation very few Reflection is needed (if at all). Of course as this is IO-Bound/Database-Bound Code in practice the main bottleneck will be the database and the network. Meanwhile the Generic Backend should be as fast as it gets. 
 
 # Possible futher development
 
 - Direct manipulation of views without Stored Procedures (while staying secure)
-- Support for other databases, eg Sqlite for Testing (Sqlite requires View support)
-- Support for Return Codes, though the benefit seems reasonable
+- Support for other databases, eg. Sqlite for Testing (Might works already, tests pending)
 - Even More Unit Tests
