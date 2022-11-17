@@ -11,9 +11,9 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.2" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
-    <PackageReference Include="Kull.Data" Version="6.1.0-beta8" />
+    <PackageReference Include="Kull.Data" Version="6.1.2" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0"></PackageReference>
-    <PackageReference Include="Kull.DatabaseMetadata" Version="1.5.0-beta9" />
+    <PackageReference Include="Kull.DatabaseMetadata" Version="1.5.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.9.4" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='netcoreapp2.1'">
