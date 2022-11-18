@@ -19,10 +19,18 @@ public sealed class GenericBackendBuilder
 {
     private IServiceCollection services;
 
+    /// <summary>
+    /// The Service collection used for Generic Backend
+    /// </summary>
+    public IServiceCollection Services => services;
+
     public GenericBackendBuilder(IServiceCollection services)
     {
         this.services = services;
     }
+
+    
+
     public GenericBackendBuilder AddSerializer<T>() where T : class, IGenericSPSerializer
     {
         services.AddTransient<IGenericSPSerializer, T>();
