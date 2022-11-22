@@ -24,6 +24,7 @@ using Kull.GenericBackend.SwaggerGeneration;
 using System.Data.Common;
 using System.IO;
 using Kull.GenericBackend.Error;
+using Kull.GenericBackend.Parameters;
 
 namespace Kull.GenericBackend.Serialization;
 
@@ -71,6 +72,7 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
     /// <param name="context">The http context</param>
     /// <param name="method">The Http/SP mapping</param>
     /// <param name="ent">The Entity mapping</param>
+    /// <param name="statusCode">status</param>
     /// <returns></returns>
     protected Task PrepareHeader(SerializationContext context, Method method, Entity ent, int statusCode)
     {
@@ -78,11 +80,12 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
         return Task.CompletedTask;
     }
 
-    private async Task WriteOutputParameters(Stream outputStream, IReadOnlyCollection<DbParameter> outParameters)
+    private async Task WriteOutputParameters(Stream outputStream, SerializationContext serializationContext)
     {
-        Dictionary<string, object?> outParameterValues = outParameters.Cast<DbParameter>().ToDictionary(
-            p => p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName,
-              p => (object?)p.Value);
+
+        Dictionary<string, object?> outParameterValues = serializationContext.OutputParameters.ToDictionary(
+            p => p.SqlName,
+              p => serializationContext.GetOutputValue(p));
 
         Kull.Data.DataReader.ObjectDataReader objectData = new Data.DataReader.ObjectDataReader(
             new IReadOnlyDictionary<string, object?>[]
@@ -126,6 +129,8 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
     /// <param name="reader"></param>
     /// <param name="fieldNames"></param>
     /// <param name="firstReadResult"></param>
+    /// <param name="objectOfFirstOnly">Expect only single object</param>
+    /// <param name="jsonFieldIndexes">Indexes where the json fields are</param>
     /// <returns></returns>
     protected abstract Task WriteCurrentResultSet(Stream outputStream, DbDataReader reader, string?[] fieldNames, bool? firstReadResult, bool objectOfFirstOnly, IReadOnlyCollection<int> jsonFieldIndexes);
 
@@ -146,20 +151,13 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
     /// <summary>
     /// Writes the result data to the body
     /// </summary>
-    /// <param name="context">The HttpContext</param>
-    /// <param name="cmd">The Db Command</param>
-    /// <param name="method">The Http/SP mapping</param>
-    /// <param name="ent">The Entity mapping</param>
     /// <returns>A Task</returns>
     public async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
     {
         var method = serializationContext.Method;
         var ent = serializationContext.Entity;
         var resultType = serializationContext.Method.ResultType;
-        var outParameters = serializationContext.GetParameters()
-            .Where(p => p.Direction == System.Data.ParameterDirection.Output || p.Direction == System.Data.ParameterDirection.InputOutput)
-            .ToArray();
-        bool wrap = WrapJson(options, outParameters.Length > 0);
+        bool wrap = WrapJson(options, serializationContext.OutputParameters.Count > 0);
 
         try
         {
@@ -218,10 +216,11 @@ public abstract class GenericSPJsonSerializerBase : IGenericSPSerializer
                     {
                         await WriteRaw(stream, "]");
                     }
-                    if (outParameters.Length > 0)
+                    if (serializationContext.OutputParameters.Count > 0)
                     {
                         await WriteRaw(stream, $", \"{codeConvention.OutputParametersKey}\": ");
-                        await WriteOutputParameters(stream, outParameters);
+
+                        await WriteOutputParameters(stream, serializationContext);
                     }
                     await WriteRaw(stream, "\r\n}");
                 }

@@ -58,6 +58,7 @@ public class GenericSPXmlSerializer : IGenericSPSerializer
     /// <param name="context">The http context</param>
     /// <param name="method">The Http/SP mapping</param>
     /// <param name="ent">The Entity mapping</param>
+    /// <param name="statusCode">the status </param>
     /// <returns></returns>
     protected Task PrepareHeader(SerializationContext context, Method method, Entity ent, int statusCode)
     {
@@ -75,10 +76,6 @@ public class GenericSPXmlSerializer : IGenericSPSerializer
     /// <summary>
     /// Writes the result data to the body
     /// </summary>
-    /// <param name="context">The HttpContext</param>
-    /// <param name="cmd">The Db Command</param>
-    /// <param name="method">The Http/SP mapping</param>
-    /// <param name="ent">The Entity mapping</param>
     /// <returns>A Task</returns>
     public async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
     {

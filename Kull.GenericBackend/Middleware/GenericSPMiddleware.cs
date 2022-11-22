@@ -163,13 +163,13 @@ public class GenericSPMiddleware : IGenericSPMiddleware
             queryParameters = new Dictionary<string, object>();
         }
 #endif
-        var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
+        var (cmd, hasOutputParameters) = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, queryParameters);
         var start = DateTime.UtcNow;
         foreach (var log in requestLoggers)
         {
             await log.OnRequestStartAsync(context, new RequestLogger.RequestStartInfo(cmd));
         }
-        var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
+        var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent, hasOutputParameters));
         foreach (var log in requestLoggers)
         {
             await log.OnRequestEndAsync(context, new RequestLogger.RequestEndInfo(cmd, start, excep));
@@ -243,13 +243,13 @@ public class GenericSPMiddleware : IGenericSPMiddleware
             parameterObject = retValue!.ToDictionary(k => k.Key, v => Config.DictionaryHelper.ConvertToDeepIDictionary(v.Value, StringComparer.CurrentCultureIgnoreCase), StringComparer.CurrentCultureIgnoreCase)!;
 #endif
         }
-        var cmd = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
+        var (cmd, hasOutputParameters) = await commandPreparation.GetCommandWithParameters(context, null, dbConnection, ent, method, parameterObject);
         var start = DateTime.UtcNow;
         foreach (var log in requestLoggers)
         {
             await log.OnRequestStartAsync(context, new RequestLogger.RequestStartInfo(cmd));
         }
-        var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent));
+        var excep = await serializer.ReadResultToBody(new SerializationContextCmd(cmd, context, method, ent,hasOutputParameters));
         foreach (var log in requestLoggers)
         {
             await log.OnRequestEndAsync(context, new RequestLogger.RequestEndInfo(cmd, start, excep));

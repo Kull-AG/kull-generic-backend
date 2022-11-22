@@ -61,6 +61,9 @@ public class GenericSPFileSerializer : IGenericSPSerializer
     /// <param name="context">The http context</param>
     /// <param name="method">The Http/SP mapping</param>
     /// <param name="ent">The Entity mapping</param>
+    /// <param name="statusCode">The Http Status</param>
+    /// <param name="contentType">The Content Type</param>
+    /// <param name="fileName">The file name</param>
     /// <returns></returns>
     protected Task PrepareHeader(SerializationContext context, Method method, Entity ent, int statusCode, string? contentType, string? fileName)
     {
@@ -109,10 +112,6 @@ public class GenericSPFileSerializer : IGenericSPSerializer
     /// <summary>
     /// Writes the result data to the body
     /// </summary>
-    /// <param name="context">The HttpContext</param>
-    /// <param name="cmd">The Db Command</param>
-    /// <param name="method">The Http/SP mapping</param>
-    /// <param name="ent">The Entity mapping</param>
     /// <returns>A Task</returns>
     public virtual async Task<Exception?> ReadResultToBody(SerializationContext serializationContext)
     {
@@ -129,18 +128,18 @@ public class GenericSPFileSerializer : IGenericSPSerializer
                     return null;
                 }
                 var fieldNames = Enumerable.Range(0, rdr.FieldCount).Select(s => rdr.GetName(s)).ToArray();
-                int? fileNameOrdinal = fieldNames.Contains(FileNameColumn, StringComparer.OrdinalIgnoreCase) ? rdr.GetOrdinal(FileNameColumn): null;
+                int? fileNameOrdinal = fieldNames.Contains(FileNameColumn, StringComparer.OrdinalIgnoreCase) ? rdr.GetOrdinal(FileNameColumn) : null;
                 int contentTypeOrdinal = rdr.GetOrdinal(ContentTypeColumn);
                 int contentColOrdinal = rdr.GetOrdinal(ContentColumn);
                 string? firstValue = fileNameOrdinal == null ? rdr.GetNString(contentTypeOrdinal) : rdr.GetNString(Math.Min(fileNameOrdinal.Value, contentTypeOrdinal));
-                string? secondValue = fileNameOrdinal == null  ? null: rdr.GetNString(Math.Max(fileNameOrdinal.Value, contentTypeOrdinal));
-                if (Math.Max(contentColOrdinal, fileNameOrdinal == null? contentTypeOrdinal : Math.Max(fileNameOrdinal.Value, contentTypeOrdinal)) != contentColOrdinal)
+                string? secondValue = fileNameOrdinal == null ? null : rdr.GetNString(Math.Max(fileNameOrdinal.Value, contentTypeOrdinal));
+                if (Math.Max(contentColOrdinal, fileNameOrdinal == null ? contentTypeOrdinal : Math.Max(fileNameOrdinal.Value, contentTypeOrdinal)) != contentColOrdinal)
                 {
                     await PrepareHeader(serializationContext, method, ent, 500, "text/plain", null);
                     await serializationContext.HttpContentToResponse(new System.Net.Http.StringContent($"{ContentColumn} must come after Filename and content type"));
                     return new Exception("Error because of order");
                 }
-                string? fileName = fileNameOrdinal == null ? null: fileNameOrdinal.Value > contentTypeOrdinal ? secondValue : firstValue;
+                string? fileName = fileNameOrdinal == null ? null : fileNameOrdinal.Value > contentTypeOrdinal ? secondValue : firstValue;
                 string? contentType = (fileNameOrdinal == null || fileNameOrdinal.Value > contentTypeOrdinal ? firstValue : secondValue);
 
 

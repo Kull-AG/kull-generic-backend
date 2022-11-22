@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System;
+using Kull.GenericBackend.Parameters;
 
 namespace Kull.GenericBackend.Serialization;
 
@@ -66,11 +67,16 @@ public abstract class SerializationContext
     public Method Method { get; }
     public Entity Entity { get; }
 
-    internal SerializationContext(HttpContext httpContext, Method method, Entity entity)
+    public IReadOnlyCollection<Parameters.OutputParameter> OutputParameters { get; }
+
+    public abstract object? GetOutputValue(Parameters.OutputParameter parameter);
+
+    internal SerializationContext(HttpContext httpContext, Method method, Entity entity, IReadOnlyCollection<Parameters.OutputParameter> outputParameters)
     {
         this.httpContext = httpContext;
         Method = method;
         Entity = entity;
+        this.OutputParameters = outputParameters;
     }
 
     public string? GetRequestHeader(string headerName)
@@ -87,7 +93,6 @@ public abstract class SerializationContext
     public abstract Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior = System.Data.CommandBehavior.Default);
     public abstract Task<int> ExecuteNonQueryAsync();
 
-    public abstract IEnumerable<DbParameter> GetParameters();
     public override string ToString()
     {
         return Method.HttpMethod.ToString() + " " + Entity.ToString() + ": " + Method.DbObject;
@@ -117,9 +122,18 @@ internal class SerializationContextCmd : SerializationContext
 
     protected readonly DbCommand cmd;
 
-    public SerializationContextCmd(DbCommand cmd, HttpContext httpContext, Method method, Entity entity) : base(httpContext, method, entity)
+    public SerializationContextCmd(DbCommand cmd, HttpContext httpContext, Method method, Entity entity, IReadOnlyCollection<Parameters.OutputParameter> outputParameters) : base(httpContext, method, entity, outputParameters)
     {
         this.cmd = cmd;
+    }
+
+    public override object? GetOutputValue(OutputParameter parameter)
+    {
+        var vl = cmd.Parameters.Cast<DbParameter>().FirstOrDefault(p =>
+            (p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName).Equals(parameter.SqlName, StringComparison.OrdinalIgnoreCase))?.Value;
+        if (vl == DBNull.Value) return null;
+        return vl;
+
     }
 
 #if NET48
@@ -131,7 +145,6 @@ internal class SerializationContextCmd : SerializationContext
     public override Task<int> ExecuteNonQueryAsync() => cmd.ExecuteNonQueryAsync(httpContext.RequestAborted);
 #endif
 
-    public override IEnumerable<DbParameter> GetParameters() => cmd.Parameters.Cast<DbParameter>();
 
 }
 
@@ -143,7 +156,12 @@ internal class SerializationContextResult : SerializationContext
     readonly int? forceStatusCode;
     public override int? ForceStatusCode => forceStatusCode;
 
-    public SerializationContextResult(DbDataReader reader, HttpContext httpContext, Method method, Entity entity, int? forceStatusCode) : base(httpContext, method, entity)
+    public override object? GetOutputValue(OutputParameter parameter)
+    {
+        throw new InvalidOperationException("Cannot get value for an outputparameter");
+    }
+
+    public SerializationContextResult(DbDataReader reader, HttpContext httpContext, Method method, Entity entity, int? forceStatusCode) : base(httpContext, method, entity, Array.Empty<Parameters.OutputParameter>())
     {
         this.reader = reader;
         this.forceStatusCode = forceStatusCode;
@@ -152,7 +170,5 @@ internal class SerializationContextResult : SerializationContext
     public override Task<DbDataReader> ExecuteReaderAsync(System.Data.CommandBehavior commandBehavior = System.Data.CommandBehavior.Default) => Task.FromResult(this.reader);
     public override Task<int> ExecuteNonQueryAsync() => Task.FromResult(0);
 
-
-    public override IEnumerable<DbParameter> GetParameters() => Array.Empty<DbParameter>();
 
 }
