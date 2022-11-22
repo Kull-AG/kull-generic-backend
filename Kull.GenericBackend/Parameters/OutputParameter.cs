@@ -1,4 +1,7 @@
+using System;
+using System.Data.Common;
 using Kull.DatabaseMetadata;
+using System.Linq;
 
 namespace Kull.GenericBackend.Parameters;
 
@@ -11,9 +14,13 @@ public class OutputParameter
 
     public string SqlName { get; }
 
-    public OutputParameter(string name, SqlType sqlType)
+    public int? MaxLength { get; set; }
+
+    public OutputParameter(string name, SqlType sqlType, int? maxLength)
     {
         this.SqlName = name;
         this.DbType = sqlType;
+        this.MaxLength = maxLength;
     }
+
 }

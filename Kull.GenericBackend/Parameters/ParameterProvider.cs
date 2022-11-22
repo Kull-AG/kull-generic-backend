@@ -32,16 +32,16 @@ public sealed class ParameterProvider
 
 
     public async Task<(WebApiParameter[] inputParameters, OutputParameter[] outputParameters)> GetApiParameters(Filter.ParameterInterceptorContext context,
-        IReadOnlyCollection<string> ignoreParameters,
         DbConnection dbConnection)
     {
         var method = context.Method;
+        var ignoreParameters = method.IgnoreParameters;
         var spParamsRaw = await sPParametersProvider.GetSPParameters(method.DbObject, dbConnection);
         var spParams = (ignoreParameters.Count == 0 ? spParamsRaw : spParamsRaw.Where(p => !ignoreParameters.Contains(p.SqlName.StartsWith("@") ? p.SqlName.Substring(1) : p.SqlName,
               StringComparer.OrdinalIgnoreCase))) ?? Array.Empty<SPParameter>();
         var spPrmsNoCount = spParams.Where(p => p.ParameterDirection != System.Data.ParameterDirection.Output);
         var prmsOutRaw = spParams.Where(p => p.ParameterDirection == System.Data.ParameterDirection.Output || p.ParameterDirection == System.Data.ParameterDirection.InputOutput);
-        var prmsOut = prmsOutRaw.Select(p => new OutputParameter(p.SqlName, p.DbType)).ToArray();
+        var prmsOut = prmsOutRaw.Select(p => new OutputParameter(p.SqlName, p.DbType, p.MaxLength)).ToArray();
         var webApiNames = namingMappingHandler.GetNames(spParams.Select(s => s.SqlName)).ToArray();
         var userDefinedTypes = spParams.Where(u => u.UserDefinedType != null).Select(u => u.UserDefinedType!).Distinct();
         Dictionary<DBObjectName, IReadOnlyCollection<SqlFieldDescription>> udtFields = new Dictionary<DBObjectName, IReadOnlyCollection<SqlFieldDescription>>();

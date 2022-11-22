@@ -81,7 +81,6 @@ public class CodeConvention
     /// </summary>
     /// <param name="ent"></param>
     /// <param name="method"></param>
-    /// <param name="operationType"></param>
     /// <returns></returns>
     public virtual string GetOperationName(Entity ent, Method method)
     {
@@ -94,7 +93,6 @@ public class CodeConvention
     /// </summary>
     /// <param name="ent"></param>
     /// <param name="method"></param>
-    /// <param name="operationType"></param>
     /// <returns></returns>
     public virtual string GetOperationId(Entity ent, Method method)
     {

@@ -171,7 +171,7 @@ public class DatabaseOperations : IDocumentFilter
         {
             foreach (var method in ent.Methods)
             {
-                var allParameters = (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method.Value, true), method.Value.IgnoreParameters, dbConnection));
+                var allParameters = (await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method.Value, true), dbConnection));
 
                 var parameters = GetBodyOrQueryStringParameters(allParameters.inputParameters, ent, method.Value);
                 var addTypes = parameters.SelectMany(sm => sm.GetRequiredTypes()).Distinct();
@@ -345,7 +345,7 @@ public class DatabaseOperations : IDocumentFilter
         }
         IGenericSPSerializer? serializer = serializerResolver.GetSerialializerOrNull(null, entity, method);
 
-        var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), method.IgnoreParameters, dbConnection);
+        var (inputParameters, outputParameters) = await parametersProvider.GetApiParameters(new Filter.ParameterInterceptorContext(entity, method, true), dbConnection);
 
         var context = new OperationResponseContext(entity, method, sPMiddlewareOptions.AlwaysWrapJson,
                 outputParameters,

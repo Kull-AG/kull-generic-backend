@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>2.4.2</VersionPrefix>
+    <VersionPrefix>2.5.0</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -11,11 +11,13 @@
     <Nullable>enable</Nullable>
     <Copyright>Kull AG</Copyright>
     <IncludeSymbols>true</IncludeSymbols>
-     <DebugType>Portable</DebugType>
+    <DebugType>Portable</DebugType>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <Deterministic>true</Deterministic>   
+    <Deterministic>true</Deterministic>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-	<PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Trimmable>True</Trimmable>
   </PropertyGroup>
   <PropertyGroup Label="Globals">
     <SccProjectName>SAK</SccProjectName>
@@ -34,19 +36,19 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'net48' ">
     <DefineConstants>$(DefineConstants);NETFX</DefineConstants>
   </PropertyGroup>
-	<PropertyGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
-		<DefineConstants>$(DefineConstants);NEWTONSOFTJSON</DefineConstants>
-	</PropertyGroup>
-	<ItemGroup>
-	  <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="\" />
-	</ItemGroup>
+  <PropertyGroup Condition=" '$(TargetFramework)' != 'net6.0' ">
+    <DefineConstants>$(DefineConstants);NEWTONSOFTJSON</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Link="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="IsExternalInit" Version="1.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Kull.Data" Version="6.1.2" />
-    <PackageReference Include="Kull.DatabaseMetadata" Version="1.5.0" />
+    <PackageReference Include="Kull.DatabaseMetadata" Version="1.6.2" />
     <PackageReference Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="5.0.3">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -62,7 +64,7 @@
     <PackageReference Include="Microsoft.OpenApi" Version="1.2.3" />
     <PackageReference Include="Unity" Version="5.11.9" />
     <PackageReference Include="Kull.MvcCompat" Version="0.2.1" />
-	  <Reference Include="System.Web.Http" />
+    <Reference Include="System.Web.Http" />
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='netstandard2.0'">

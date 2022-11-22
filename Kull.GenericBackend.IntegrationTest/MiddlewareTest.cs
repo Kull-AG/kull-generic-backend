@@ -180,7 +180,7 @@ public class MiddlewareTest
             new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
         var putParameter = Newtonsoft.Json.JsonConvert.SerializeObject(
-            new { ts = new byte[] { (byte)0x34 }, DogId = 1 });
+            new { DogId = 1 });
 
         var putResponse = await client.PutAsync(url,
                 new System.Net.Http.StringContent(putParameter));
@@ -189,11 +189,11 @@ public class MiddlewareTest
         // Must be wraped as it has out parameters
         Utils.JsonUtils.AssertJsonEquals(putContent, new
         {
+            value = new string[] { },
             @out = new
             {
-                ts = Convert.ToBase64String(new byte[] { 1 })
+                ts = Convert.ToBase64String(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0 })
             },
-            value = new string[] { }
         });
 
     }

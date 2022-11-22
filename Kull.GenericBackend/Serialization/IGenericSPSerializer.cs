@@ -38,9 +38,6 @@ public interface IGenericSPSerializer
     /// Writes the Result of the Command to the Body
     /// </summary>
     /// <param name="context">The http context</param>
-    /// <param name="cmd">The command</param>
-    /// <param name="method">The method</param>
-    /// <param name="ent">The entity</param>
     /// <returns>The exception object if there was one that was handled. used for logging only</returns>
     Task<Exception?> ReadResultToBody(SerializationContext context);
 
@@ -48,7 +45,6 @@ public interface IGenericSPSerializer
     /// <summary>
     /// Hook to allow modifing the open api schema
     /// </summary>
-    /// <param name="responses">The respones object</param>
     /// <param name="operationResponseContext">Some context</param>
     OpenApiResponses GetResponseType(SwaggerGeneration.OperationResponseContext operationResponseContext);
 }

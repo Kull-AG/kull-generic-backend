@@ -72,6 +72,8 @@ public class CommandPreparation
         }
     }
 
+
+
     /// <summary>
     /// Gets the command with parameters
     /// </summary>
@@ -82,7 +84,7 @@ public class CommandPreparation
     /// <param name="method">The method</param>
     /// <param name="parameterOfUser">The parameters as provided from user</param>
     /// <returns>Returns a DbCommand Object, NOT executed</returns>
-    public virtual async Task<DbCommand> GetCommandWithParameters(HttpContext? context,
+    public virtual async Task<(DbCommand cmd, IReadOnlyCollection<OutputParameter> outputParameters)> GetCommandWithParameters(HttpContext? context,
             Func<string, object>? getRouteValue,
             DbConnection con,
             Entity ent,
@@ -110,7 +112,7 @@ public class CommandPreparation
         {
             cmd.CommandTimeout = method.CommandTimeout.Value;
         }
-        var (inputParameters, outputParameters) = await parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), method.IgnoreParameters, con);
+        var (inputParameters, outputParameters) = await parameterProvider.GetApiParameters(new Filter.ParameterInterceptorContext(ent, method, false), con);
 
         foreach (var apiPrm in inputParameters)
         {
@@ -201,15 +203,29 @@ public class CommandPreparation
         }
         foreach (var op in outputParameters)
         {
-            bool isAlreadyInput = inputParameters.Any(i => i.SqlName != null && i.SqlName.Equals(op.SqlName, StringComparison.CurrentCultureIgnoreCase));
+            bool isAlreadyInput = cmd.Parameters.Cast<DbParameter>()
+                .Any(p => (p.ParameterName.StartsWith("@") ? p.ParameterName.Substring(1) : p.ParameterName).Equals(op.SqlName, StringComparison.CurrentCultureIgnoreCase));
             if (!isAlreadyInput)
             {
                 cmd.AddCommandParameter(op.SqlName, DBNull.Value, op.DbType.NetType, configure: c =>
                 {
                     c.Direction = ParameterDirection.Output;
+                    c.DbType = op.DbType.DataDbType;
+                    if (op.MaxLength != null)
+                    {
+                        c.Size = op.MaxLength.Value == -1 ? -1 : (op.MaxLength.Value * op.DbType.BytesPerChar);
+                    }
+                    else if (op.DbType.DbType == "timestamp")
+                    {
+                        c.Size = 8;
+                    }
+                    else if (op.DbType.NetType == typeof(Byte[]))
+                    {
+                        c.Size = -1;
+                    }
                 });
             }
         }
-        return cmd;
+        return (cmd, outputParameters ?? Array.Empty<OutputParameter>());
     }
 }
