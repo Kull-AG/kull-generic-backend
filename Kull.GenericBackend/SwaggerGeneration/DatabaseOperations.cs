@@ -23,6 +23,7 @@ using IWebHostEnvironment = Kull.MvcCompat.IHostingEnvironment;
 using Swashbuckle.AspNetCore.SwaggerGen;
 using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
 #endif
 #if NETSTD2
 using IWebHostEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
@@ -69,36 +70,36 @@ public class DatabaseOperations : IDocumentFilter
     private readonly SqlHelper sqlHelper;
     private readonly ILogger<DatabaseOperations> logger;
     private readonly SerializerResolver serializerResolver;
-    private readonly DbConnection dbConnection;
     private readonly ParameterProvider parametersProvider;
     private readonly NamingMappingHandler namingMappingHandler;
     private readonly CodeConvention codeConvention;
     private readonly IWebHostEnvironment hostingEnvironment;
     private readonly ResponseDescriptor responseDescriptor;
+    private readonly IServiceProvider serviceProvider;
 
     public DatabaseOperations(
      SPMiddlewareOptions sPMiddlewareOptions,
      SwaggerFromSPOptions options,
      SqlHelper sqlHelper,
      ILogger<DatabaseOperations> logger,
-     DbConnection dbConnection,
      ParameterProvider parametersProvider,
      SerializerResolver serializerResolver,
      NamingMappingHandler namingMappingHandler,
      CodeConvention codeConvention,
      ConfigProvider configProvider,
      IWebHostEnvironment hostingEnvironment,
-     ResponseDescriptor responseDescriptor)
+     ResponseDescriptor responseDescriptor,
+     IServiceProvider serviceProvider)
     {
         this.codeConvention = codeConvention;
         this.hostingEnvironment = hostingEnvironment;
         this.responseDescriptor = responseDescriptor;
+        this.serviceProvider = serviceProvider;
         this.sPMiddlewareOptions = sPMiddlewareOptions;
         this.options = options;
         this.sqlHelper = sqlHelper;
         this.logger = logger;
         this.serializerResolver = serializerResolver;
-        this.dbConnection = dbConnection;
         this.parametersProvider = parametersProvider;
         this.namingMappingHandler = namingMappingHandler;
         entities = configProvider.Entities;
@@ -110,6 +111,8 @@ public class DatabaseOperations : IDocumentFilter
 
     public async Task ApplyAsync(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
+        using var scope = serviceProvider.CreateScope();
+        var dbConnection = scope.ServiceProvider.GetRequiredService<DbConnection>();
         if (swaggerDoc.Paths == null) swaggerDoc.Paths = new OpenApiPaths();
         if (swaggerDoc.Components == null) swaggerDoc.Components = new OpenApiComponents();
         if (swaggerDoc.Components.Schemas == null) swaggerDoc.Components.Schemas = new Dictionary<string, OpenApiSchema>();
@@ -126,7 +129,7 @@ public class DatabaseOperations : IDocumentFilter
                 {
                     var opType = method.Key;
                     OpenApiOperation bodyOperation = new OpenApiOperation();
-                    await WriteBodyPath(bodyOperation, ent, opType, method.Value);
+                    await WriteBodyPath(dbConnection, bodyOperation, ent, opType, method.Value);
                     openApiPathItem.Operations.Add(opType, bodyOperation);
                 }
                 swaggerDoc.Paths.Add(ent.GetUrl(this.sPMiddlewareOptions.Prefix, false), openApiPathItem);
@@ -321,7 +324,7 @@ public class DatabaseOperations : IDocumentFilter
 
 
 
-    private async Task WriteBodyPath(OpenApiOperation operation, Entity entity, OperationType operationType, Method method)
+    private async Task WriteBodyPath(DbConnection dbConnection, OpenApiOperation operation, Entity entity, OperationType operationType, Method method)
     {
         if (operation.Tags == null)
             operation.Tags = new List<OpenApiTag>();
