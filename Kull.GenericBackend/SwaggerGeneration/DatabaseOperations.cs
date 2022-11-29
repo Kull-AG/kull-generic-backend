@@ -342,6 +342,8 @@ public class DatabaseOperations : IDocumentFilter
             operationId = codeConvention.GetOperationId(entity, method);
         }
         operation.OperationId = operationId;
+        operation.AddExtension("x-dbobject-type", new OpenApiString(method.DbObjectType.ToString()));
+        operation.AddExtension("x-dbobject-name", new OpenApiString(method.DbObject.ToString()));
         if (method.OperationName != null || method.OperationId == null)
         {
             operation.AddExtension("x-operation-name", new OpenApiString(method.OperationName ?? codeConvention.GetOperationName(entity, method)));
