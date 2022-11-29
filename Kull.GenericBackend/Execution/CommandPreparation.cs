@@ -33,7 +33,12 @@ public class CommandPreparation
         this.sPParametersProvider = sPParametersProvider;
     }
 
-    private string ValidateParamterName4Sql(string sqlPrmName)
+    /// <summary>
+    /// Throws if the parameter name contains suspicous SQL
+    /// </summary>
+    /// <param name="sqlPrmName">The Sql Prm Name</param>
+    /// <returns>The Sql Prm Name, otherwise throws</returns>
+    protected string ValidateParamterName4Sql(string sqlPrmName)
     {
         char[] invalidChars = new char[] { '"', '\'', '\t', '\r', '\n', ' ', '-', '/', '*', '\\', '\0', '\b', (char)26 };
         foreach (char c in sqlPrmName)
@@ -43,6 +48,15 @@ public class CommandPreparation
         return sqlPrmName;
     }
 
+    /// <summary>
+    /// Creates the command object without (user) Parameters added
+    /// </summary>
+    /// <param name="con">The db connection</param>
+    /// <param name="type"></param>
+    /// <param name="name"></param>
+    /// <param name="parameters"></param>
+    /// <param name="parametersOfUser"></param>
+    /// <returns></returns>
     protected virtual DbCommand CreateCommand(DbConnection con, DBObjectType type, DBObjectName name, IReadOnlyCollection<SPParameter>? parameters,
         IReadOnlyDictionary<string, object> parametersOfUser)
     {
