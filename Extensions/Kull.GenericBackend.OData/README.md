@@ -15,12 +15,6 @@ Use it by using Views or Table Valued Functions in the config:
 And configure both Generic Backend and Swagger correctly:
 
 ```csharp
-services.AddSingleton<HtmlSanitizer>(_=>
-{
-    var sanitizer = new HtmlSanitizer();
-    sanitizer.AllowedAttributes.Add("class");
-    return sanitizer;
-});
 services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });
