@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <VersionPrefix>2.5.0</VersionPrefix>
+    <VersionPrefix>2.5.4</VersionPrefix>
     <PackageId>Kull.GenericBackend</PackageId>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
@@ -61,9 +61,8 @@
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework)=='net48'">
     <PackageReference Include="Swashbuckle.Core" Version="5.6.0" />
-    <PackageReference Include="Microsoft.OpenApi" Version="1.2.3" />
     <PackageReference Include="Unity" Version="5.11.9" />
-    <PackageReference Include="Kull.MvcCompat" Version="0.2.1" />
+    <PackageReference Include="Kull.MvcCompat" Version="0.3.0" />
     <Reference Include="System.Web.Http" />
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.7" />
   </ItemGroup>

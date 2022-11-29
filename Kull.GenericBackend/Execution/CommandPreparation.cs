@@ -33,7 +33,32 @@ public class CommandPreparation
         this.sPParametersProvider = sPParametersProvider;
     }
 
-    protected DbCommand CreateCommand(DbConnection con, DBObjectType type, DBObjectName name, IReadOnlyCollection<SPParameter>? parameters)
+    /// <summary>
+    /// Throws if the parameter name contains suspicous SQL
+    /// </summary>
+    /// <param name="sqlPrmName">The Sql Prm Name</param>
+    /// <returns>The Sql Prm Name, otherwise throws</returns>
+    protected string ValidateParamterName4Sql(string sqlPrmName)
+    {
+        char[] invalidChars = new char[] { '"', '\'', '\t', '\r', '\n', ' ', '-', '/', '*', '\\', '\0', '\b', (char)26 };
+        foreach (char c in sqlPrmName)
+        {
+            if (invalidChars.Contains(c)) throw new InvalidOperationException("Cannot use that param name");
+        }
+        return sqlPrmName;
+    }
+
+    /// <summary>
+    /// Creates the command object without (user) Parameters added
+    /// </summary>
+    /// <param name="con">The db connection</param>
+    /// <param name="type"></param>
+    /// <param name="name"></param>
+    /// <param name="parameters"></param>
+    /// <param name="parametersOfUser"></param>
+    /// <returns></returns>
+    protected virtual DbCommand CreateCommand(DbConnection con, DBObjectType type, DBObjectName name, IReadOnlyCollection<SPParameter>? parameters,
+        IReadOnlyDictionary<string, object> parametersOfUser)
     {
         if (type == DBObjectType.StoredProcedure)
         {
@@ -43,16 +68,17 @@ public class CommandPreparation
         {
             var cmd = con.CreateCommand();
             cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "SELECT * FROM " + name.ToString(false, true);
+            cmd.CommandText = "SELECT " + GetSelectFromOData(parametersOfUser) + " FROM " + name.ToString(false, true)
+                + GetWhereFromOData(parametersOfUser);
             return cmd;
         }
         else if (type == DBObjectType.TableValuedFunction)
         {
             var cmd = con.CreateCommand();
             cmd.CommandType = CommandType.Text;
-            cmd.CommandText = "SELECT * FROM " + name.ToString(false, true) + "(" +
-               string.Join(", ", (parameters ?? Array.Empty<SPParameter>()).Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => "@" + p.SqlName))
-               + ")";
+            cmd.CommandText = "SELECT " + GetSelectFromOData(parametersOfUser) + " FROM " + name.ToString(false, true) + "(" +
+               string.Join(", ", (parameters ?? Array.Empty<SPParameter>()).Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => "@" + ValidateParamterName4Sql(p.SqlName)))
+               + ")" + GetWhereFromOData(parametersOfUser);
             return cmd;
 
         }
@@ -62,7 +88,7 @@ public class CommandPreparation
             var cmd = con.CreateCommand();
             cmd.CommandType = CommandType.Text;
             cmd.CommandText = "SELECT " + name.ToString(false, true) + "(" +
-                string.Join(", ", (parameters ?? Array.Empty<SPParameter>()).Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => p.SqlName))
+                string.Join(", ", (parameters ?? Array.Empty<SPParameter>()).Where(p => p.ParameterDirection == ParameterDirection.Input).Select(p => "@" + ValidateParamterName4Sql(p.SqlName)))
                 + ")";
             return cmd;
         }
@@ -70,6 +96,16 @@ public class CommandPreparation
         {
             throw new InvalidOperationException("Not supported " + type.ToString());
         }
+    }
+
+    protected string GetWhereFromOData(IReadOnlyDictionary<string, object> parametersOfUser)
+    {
+        return string.Empty;
+    }
+
+    protected string GetSelectFromOData(IReadOnlyDictionary<string, object> parametersOfUser)
+    {
+        return "*";
     }
 
 
@@ -89,7 +125,7 @@ public class CommandPreparation
             DbConnection con,
             Entity ent,
             Method method,
-            Dictionary<string, object> parameterOfUser)
+            IReadOnlyDictionary<string, object> parameterOfUser)
     {
         if (con == null) throw new ArgumentNullException(nameof(con));
         if (ent == null) throw new ArgumentNullException(nameof(ent));
@@ -107,7 +143,7 @@ public class CommandPreparation
         {
             sPParameters = await sPParametersProvider.GetSPParameters(method.DbObject, con);//Always need that parameter
         }
-        var cmd = CreateCommand(con, method.DbObjectType, method.DbObject, sPParameters);
+        var cmd = CreateCommand(con, method.DbObjectType, method.DbObject, sPParameters, parameterOfUser);
         if (method.CommandTimeout != null)
         {
             cmd.CommandTimeout = method.CommandTimeout.Value;
