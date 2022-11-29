@@ -14,17 +14,27 @@ public class SystemParameters : IParameterInterceptor
 
     static readonly Func<HttpContext, object?> noOpAccessor = (c) => null;
 
+    public record struct DefaultImplementationData(Func<HttpContext, object?> ADLogin, 
+        Func<HttpContext, object?> IPAddress,  Func<HttpContext, object?> UserAgent);
+
+    public static readonly  DefaultImplementationData DefaultImplementations = new 
+        (GetUserName, 
+        #if NETFX 
+        c=>c.Request.ServerVariables["REMOTE_ADDR"] 
+        #else 
+        c=>c.Connection?.RemoteIpAddress?.ToString()
+        #endif
+        ,
+        c=>c.Request.Headers["User-Agent"].ToString()
+        );
+
     private Dictionary<string, Func<HttpContext, object?>> getFns = new Dictionary<string, Func<HttpContext, object?>>(
         StringComparer.CurrentCultureIgnoreCase)
         {
-            { "NTLogin", s=> GetUserName(s) },
-            { "ADLogin", s=> GetUserName(s) },
-#if NETFX
-            { "IPAddress", c=>c.Request.ServerVariables["REMOTE_ADDR"] ?? "No ip"},
-#else
-            { "IPAddress", c=>c.Connection?.RemoteIpAddress?.ToString() ?? "No ip"},
-#endif
-            { "UserAgent", c=>c.Request.Headers["User-Agent"].ToString() }
+            { "NTLogin",DefaultImplementations.ADLogin },
+            { "ADLogin",DefaultImplementations.ADLogin},
+            { "IPAddress", DefaultImplementations.IPAddress},
+            { "UserAgent", DefaultImplementations.UserAgent}
         };
 
 
