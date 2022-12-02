@@ -6,6 +6,12 @@ namespace Kull.GenericBackend.OData;
 
 public class ODataFilters : IDocumentFilter
 {
+    private readonly ODataOptions options;
+    public ODataFilters(ODataOptions options)
+    {
+        this.options = options;
+    }
+
     public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
     {
         foreach (var path in swaggerDoc.Paths)
@@ -16,16 +22,31 @@ public class ODataFilters : IDocumentFilter
                 {
                     foreach (var odp in CommandPreparationOData.ODataPatermers)
                     {
-                        op.Value.Parameters.Add(new OpenApiParameter()
+                        if (odp != "expand" && odp != "lambda") // Not yet supported
                         {
-                            Name = "$" + odp,
-                            Schema = new OpenApiSchema()
+                            var prm = new OpenApiParameter()
                             {
-                                Type = "string"
-                            },
-                            Description = "see https://github.com/DynamicODataToSQL/DynamicODataToSQL",
-                            In = ParameterLocation.Query
-                        });
+                                Name = "$" + odp,
+                                Schema = new OpenApiSchema()
+                                {
+                                    Type =
+                                        odp == "top" || odp == "skip" ? "integer" :
+                                         "string",
+                                },
+                                Description = "see https://github.com/DynamicODataToSQL/DynamicODataToSQL",
+                                In = ParameterLocation.Query,
+
+                            };
+                            if (odp == "top")
+                            {
+                                prm.Schema.Minimum = 1;
+                                if (options.DefaultTop != -1)
+                                    prm.Schema.Default = new OpenApiInteger(options.DefaultTop);
+                                if (options.MaxTop != -1)
+                                    prm.Schema.Maximum = options.MaxTop;
+                            }
+                            op.Value.Parameters.Add(prm);
+                        }
                     }
                 }
             }
