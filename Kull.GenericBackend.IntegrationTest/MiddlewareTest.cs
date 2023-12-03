@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Xunit;
@@ -38,8 +39,10 @@ public class MiddlewareTest
         var getContent = await response.Content.ReadAsStringAsync();
         var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
         var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => d[k])).ToArray();
-        Utils.JsonUtils.AssertJsonEquals(new[]
+        if (OperatingSystem.IsWindows())
         {
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
                 new
                 {
                     petId=1,
@@ -53,6 +56,25 @@ public class MiddlewareTest
                     isNice =true
                 }
             }, withoutTs);
+        }
+        else
+        {
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
+                new
+                {
+                    petId=1,
+                    petName="Dog",
+                    isNice=false
+                },
+                new
+                {
+                    petId=2,
+                    petName= "Dog 2 with \" in name \nand a newline ä$¨^ `",
+                    isNice =true
+                }
+            }, withoutTs);
+        }
     }
 
 
@@ -76,8 +98,10 @@ public class MiddlewareTest
             response.Content.Headers.ContentType.MediaType);
         var getContent = await response.Content.ReadAsStringAsync();
         var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(getContent);
-        Utils.JsonUtils.AssertJsonEquals(new[]
+        if (OperatingSystem.IsWindows())
         {
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
                 new
                 {
                     petName="Dog",
@@ -89,6 +113,23 @@ public class MiddlewareTest
                     isNice =true
                 }
             }, asDictList);
+        }
+        else
+        {
+            Utils.JsonUtils.AssertJsonEquals(new[]
+        {
+                new
+                {
+                    petName="Dog",
+                    isNice=false
+                },
+                new
+                {
+                    petName= "Dog 2 with \" in name \nand a newline ä$¨^ `",
+                    isNice =true
+                }
+            }, asDictList);
+        }
     }
 
 
@@ -140,7 +181,9 @@ public class MiddlewareTest
         var getContent = await response.Content.ReadAsStringAsync();
         var asDict = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object>>(getContent);
         var withoutTs = asDict.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => asDict[k]);
-        Utils.JsonUtils.AssertJsonEquals(
+        if (OperatingSystem.IsWindows())
+        {
+            Utils.JsonUtils.AssertJsonEquals(
             new
             {
                 petId = 2,
@@ -148,6 +191,19 @@ public class MiddlewareTest
                 isNice = true
             }
         , withoutTs);
+        }
+        else
+        {
+            Utils.JsonUtils.AssertJsonEquals(
+            new
+            {
+                petId = 2,
+                petName = "Dog 2 with \" in name \nand a newline ä$¨^ `",
+                isNice = true
+            }
+        , withoutTs);
+        }
+
     }
 
     [Theory]

@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-env
+
+WORKDIR /App
+
+COPY ../ ./
+
+WORKDIR /App
+RUN dotnet restore ./Kull.GenericBackend.IntegrationTest/Kull.GenericBackend.IntegrationTest.csproj
+
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+WORKDIR /App
+COPY --from=build-env /App/ .
+
+ENTRYPOINT ["dotnet", "test", "./Kull.GenericBackend.IntegrationTest/Kull.GenericBackend.IntegrationTest.csproj"]
