@@ -1,16 +1,22 @@
 name: CI
-
 on: [push]
 
 jobs:
-  build:
-
+  test:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@master
-    - uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '6.0.x'
-        include-prerelease: true
-    - run: dotnet build Kull.GenericBackend -f net6.0
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Start containers
+        run: |
+          docker-compose -f "docker-compose.yml" up --build --abort-on-container-exit
+          exit_code=$?
+
+          if [ $exit_code -eq 0 ]; then
+            echo "Docker Compose completed successfully."
+          else
+            echo "Docker Compose failed with exit code $exit_code."
+            exit 1
+          fi

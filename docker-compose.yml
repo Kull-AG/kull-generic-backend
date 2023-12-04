@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+  sql-server-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+    ports:
+      - "1433:1433"
+  test-environment:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - sql-server-test

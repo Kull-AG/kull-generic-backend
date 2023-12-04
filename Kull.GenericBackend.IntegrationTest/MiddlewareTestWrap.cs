@@ -45,8 +45,10 @@ public class MiddlewareTestWrap
         var asDictList = Newtonsoft.Json.JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(valueString);
 
         var withoutTs = asDictList.Select(d => d.Keys.Where(k => k != "ts" && k != "description").ToDictionary(k => k, k => d[k])).ToArray();
-        Utils.JsonUtils.AssertJsonEquals(new[]
+        if (OperatingSystem.IsWindows())
         {
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
                 new
                 {
                     petId=1,
@@ -60,6 +62,25 @@ public class MiddlewareTestWrap
                     isNice =true
                 }
             }, withoutTs);
+        }
+        else
+        {
+            Utils.JsonUtils.AssertJsonEquals(new[]
+            {
+                new
+                {
+                    petId=1,
+                    petName="Dog",
+                    isNice=false
+                },
+                new
+                {
+                    petId=2,
+                    petName= "Dog 2 with \" in name \nand a newline ä$¨^ `",
+                    isNice =true
+                }
+            }, withoutTs);
+        }
 
         Console.WriteLine("RAM: " + GC.GetTotalMemory(false).ToString("#,0"));
     }

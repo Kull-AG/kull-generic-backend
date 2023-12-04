@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using System.Linq;
 using System;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace Kull.GenericBackend.IntegrationTest.Utils;
 
@@ -13,7 +14,8 @@ public static class DatabaseUtils
     {
         lock (setupObj)
         {
-            if (System.IO.File.Exists(System.IO.Path.Combine(dataPath, "GenericBackendTest.mdf")))
+
+            if (CheckIfMDFFileExists(System.IO.Path.Combine(dataPath, "GenericBackendTest.mdf")))
             {
                 string testCommand = "SELECT VersionNr FrOM  dbo.TestDbVersion";
                 int version;
@@ -32,7 +34,7 @@ public static class DatabaseUtils
 
                 if (version < expectedVersion)
                 {
-                    using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
+                    using (SqlConnection connection = new SqlConnection(@"Server=sql-server-test,1433;User ID=sa;Password=abcDEF123#;TrustServerCertificate=True;Encrypt=false;"))
                     {
                         connection.Open();
                         var cmdDropCon = new SqlCommand("ALTER DATABASE [GenericBackendTest] SET SINGLE_USER WITH ROLLBACK IMMEDIATE", connection);
@@ -48,7 +50,7 @@ public static class DatabaseUtils
             }
 
 
-            using (SqlConnection connection = new SqlConnection(@"server=(localdb)\MSSQLLocalDB"))
+            using (SqlConnection connection = new SqlConnection(@"Server=sql-server-test,1433;User ID=sa;Password=abcDEF123#;TrustServerCertificate=True;Encrypt=false"))
             {
                 connection.Open();
 
@@ -93,6 +95,30 @@ public static class DatabaseUtils
                 }
             }
         }
+    }
+
+    public static bool CheckIfMDFFileExists(string dataPath)
+    {
+        string testCommand = String.Format(@"
+        DECLARE @result INT
+        EXEC master.dbo.xp_fileexist '{0}', @result OUTPUT
+        SELECT cast(@result as bit)
+        ", dataPath);
+        bool fileExists;
+        using (SqlConnection connection = new SqlConnection(@"Server=sql-server-test,1433;User ID=sa;Password=abcDEF123#;TrustServerCertificate=True;Encrypt=false"))
+        {
+            connection.Open();
+            var cmd = connection.CreateCommand();
+            cmd.CommandType = System.Data.CommandType.Text;
+            cmd.CommandText = testCommand;
+            using (var rdr = cmd.ExecuteReader())
+            {
+                rdr.Read();
+                fileExists = rdr.GetBoolean(0);
+            }
+        }
+        return fileExists;
+
     }
 
 
