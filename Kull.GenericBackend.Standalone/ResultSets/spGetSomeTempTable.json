@@ -1,0 +1,8 @@
+[
+  {
+    "Name": "Nr",
+    "TypeName": "int",
+    "IsNullable": true,
+    "MaxLength": null
+  }
+]

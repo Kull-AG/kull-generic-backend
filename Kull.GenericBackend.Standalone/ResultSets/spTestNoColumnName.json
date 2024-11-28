@@ -1,0 +1,14 @@
+[
+  {
+    "Name": null,
+    "TypeName": "datetime",
+    "IsNullable": false,
+    "MaxLength": null
+  },
+  {
+    "Name": null,
+    "TypeName": "varchar",
+    "IsNullable": false,
+    "MaxLength": 10
+  }
+]

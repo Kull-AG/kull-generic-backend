@@ -1,0 +1,8 @@
+[
+  {
+    "Name": "ZeroException",
+    "TypeName": "int",
+    "IsNullable": true,
+    "MaxLength": null
+  }
+]

@@ -2,6 +2,9 @@ using Microsoft.Data.SqlClient;
 using System.Linq;
 using System;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using DotNet.Testcontainers.Builders;
+using System.Threading.Tasks;
+using Testcontainers.MsSql;
 
 namespace Kull.GenericBackend.IntegrationTest.Utils;
 
@@ -14,8 +17,9 @@ public static class DatabaseUtils
     {
         lock (setupObj)
         {
+            SetUpTestContainer().GetAwaiter().GetResult();
 
-            if (CheckIfMDFFileExists(System.IO.Path.Combine(dataPath, "GenericBackendTest.mdf")))
+            if (CheckIfMDFFileExists("/var/opt/mssql/data/GenericBackendTest.mdf"))
             {
                 string testCommand = "SELECT VersionNr FrOM  dbo.TestDbVersion";
                 int version;
@@ -34,7 +38,7 @@ public static class DatabaseUtils
 
                 if (version < expectedVersion)
                 {
-                    using (SqlConnection connection = new SqlConnection(@"Server=sql-server-test,1433;User ID=sa;Password=abcDEF123#;TrustServerCertificate=True;Encrypt=false;"))
+                    using (SqlConnection connection = new SqlConnection(@"Server=localhost,1433;User ID=sa;Password=abcDEF123;TrustServerCertificate=True;Encrypt=false;"))
                     {
                         connection.Open();
                         var cmdDropCon = new SqlCommand("ALTER DATABASE [GenericBackendTest] SET SINGLE_USER WITH ROLLBACK IMMEDIATE", connection);
@@ -50,7 +54,7 @@ public static class DatabaseUtils
             }
 
 
-            using (SqlConnection connection = new SqlConnection(@"Server=sql-server-test,1433;User ID=sa;Password=abcDEF123#;TrustServerCertificate=True;Encrypt=false"))
+            using (SqlConnection connection = new SqlConnection(@"Server=localhost,1433;User ID=sa;Password=abcDEF123;TrustServerCertificate=True;Encrypt=false"))
             {
                 connection.Open();
 
@@ -59,13 +63,12 @@ public static class DatabaseUtils
             [GenericBackendTest]
         ON PRIMARY (
            NAME=GenericBackendTest,
-           FILENAME = '{0}\GenericBackendTest.mdf'
+           FILENAME = '/var/opt/mssql/data/GenericBackendTest.mdf'
         )
         LOG ON (
             NAME = GenericBackendTest_log,
-            FILENAME = '{0}\GenericBackendTest.ldf'
-        )",
-                    dataPath
+            FILENAME = '/var/opt/mssql/data/GenericBackendTest.ldf'
+        )"
                 );
 
                 SqlCommand command = new SqlCommand(sql, connection);
@@ -105,7 +108,7 @@ public static class DatabaseUtils
         SELECT cast(@result as bit)
         ", dataPath);
         bool fileExists;
-        using (SqlConnection connection = new SqlConnection(@"Server=sql-server-test,1433;User ID=sa;Password=abcDEF123#;TrustServerCertificate=True;Encrypt=false"))
+        using (SqlConnection connection = new SqlConnection(@"Server=localhost,1433;User ID=sa;Password=abcDEF123;TrustServerCertificate=True;Encrypt=false"))
         {
             connection.Open();
             var cmd = connection.CreateCommand();
@@ -119,6 +122,28 @@ public static class DatabaseUtils
         }
         return fileExists;
 
+    }
+
+    private static async Task SetUpTestContainer()
+    {
+        try
+        {
+            var container = new MsSqlBuilder()
+                .WithImage("mcr.microsoft.com/mssql/server:2022-CU15-GDR2-ubuntu-22.04")
+                .WithName("sql-server-test")
+                .WithPortBinding(1433, false)
+                .WithEnvironment("ACCEPT_EULA", "Y")
+                .WithEnvironment("MSSQL_SA_PASSWORD", "abcDEF123")
+                .WithWaitStrategy(
+                    Wait.ForUnixContainer()
+                        .UntilCommandIsCompleted("/opt/mssql-tools18/bin/sqlcmd","-C","-l","60", "-S", "localhost,1433", "-U", "sa", "-P", "abcDEF123","-Q", "SELECT 1;"))
+                .WithReuse(true)
+                .Build();
+            await container.StartAsync();
+        }catch(Exception e)
+        {
+            Console.WriteLine($"Could not start the sql server for testing: message={e.Message} and error={e.ToString()}");
+        }
     }
 
 

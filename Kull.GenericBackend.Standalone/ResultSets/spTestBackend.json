@@ -1,0 +1,14 @@
+[
+  {
+    "Name": "Id",
+    "TypeName": "bigint",
+    "IsNullable": false,
+    "MaxLength": null
+  },
+  {
+    "Name": "Name",
+    "TypeName": "nvarchar",
+    "IsNullable": true,
+    "MaxLength": 1000
+  }
+]

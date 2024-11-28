@@ -9,6 +9,7 @@ using IServiceCollection = Unity.IUnityContainer;
 using Kull.MvcCompat;
 #else 
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -17,6 +18,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using IRouteBuilder = Microsoft.AspNetCore.Routing.IEndpointRouteBuilder;
 #endif
 namespace Kull.GenericBackend;
+
+#if NET9_0 == false 
 
 /// <summary>
 /// Extension method for Swashbuckle
@@ -40,16 +43,26 @@ public static class SwashbuckleExtensions
     public static void AddGenericBackend(this Swashbuckle.AspNetCore.SwaggerGen.SwaggerGenOptions options)
     {
         options.DocumentFilter<DatabaseOperations>();
-
     }
 #endif
 
 }
+#endif
+#if NET9_0
 
-/// <summary>
-/// Extension methods for MVC/Services
-/// </summary>
-public static class GenericBackendExtensions
+public static class OpenApiServiceCollectionExtensions
+{
+    public static void AddGenericBackend(this OpenApiOptions configureOptions)
+    {
+        configureOptions.AddDocumentTransformer<DatabaseOperationOpenAPI>();
+    }
+}
+
+#endif
+    /// <summary>
+    /// Extension methods for MVC/Services
+    /// </summary>
+    public static class GenericBackendExtensions
 {
     public static GenericBackendBuilder AddGenericBackend(this IServiceCollection services)
     {
@@ -82,8 +95,10 @@ public static class GenericBackendExtensions
                 new Middleware.SPMiddlewareOptions();
         services.TryAddSingleton(opts);
         services.TryAddSingleton(swaggerFromSPOptions ?? new SwaggerGeneration.SwaggerFromSPOptions());
-#if NETFX
+#if NETFX && !NET9_0
         services.AddTransient<Swashbuckle.Swagger.IDocumentFilter, DatabaseOperations>();
+#elif NET9_0 
+       services.AddTransient<IOpenApiDocumentTransformer, DatabaseOperationOpenAPI>();
 #endif
         return new GenericBackendBuilder(services);
     }

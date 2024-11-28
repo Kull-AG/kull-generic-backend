@@ -1,0 +1,20 @@
+[
+  {
+    "Name": "ContentType",
+    "TypeName": "varchar",
+    "IsNullable": true,
+    "MaxLength": 1000
+  },
+  {
+    "Name": "FileName",
+    "TypeName": "varchar",
+    "IsNullable": true,
+    "MaxLength": 1000
+  },
+  {
+    "Name": "Content",
+    "TypeName": "varbinary",
+    "IsNullable": true,
+    "MaxLength": null
+  }
+]

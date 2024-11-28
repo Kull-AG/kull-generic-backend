@@ -173,6 +173,92 @@ See [wiki](https://github.com/Kull-AG/kull-generic-backend/wiki/Usage-with-MVC-5
 
 .Net Core is definitely the way to go, .Net 4.8 support is mainly to make porting to .Net Core easier.
 
+# .NET 9
+As Microsoft has decided to abandon the [Swashbuckle project](https://github.com/dotnet/aspnetcore/discussions/58103), we have transitioned to the OpenAPI solution provided by ASP.NET Core.
+This change affects the configuration of your project, and you'll need to adapt your code accordingly. Below, you’ll find the updated configuration examples and additional guidance for implementing this change.
+
+To integrate the new OpenAPI solution, your `ConfigureServices` method should look like this:
+
+```csharp
+public void ConfigureServices(IServiceCollection services)
+{
+    ...
+    services.AddOpenApi(options =>
+    {
+        options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi2_0;
+        options.AddGenericBackend();
+    });
+    ...
+}
+```
+Similarly, update the `Configure` method as follows:
+```csharp
+public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+{
+    ...
+    app.UseRouting();
+    app.UseEndpoints(endpoints =>
+    {
+        endpoints.MapOpenApi("/swagger/v1/swagger.json");
+        app.UseGenericBackend(endpoints);
+        endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+    });
+    ...
+}
+```
+**Important**: Do not include any code related to Swashbuckle or its UI components, as they are no longer necessary.
+## Optional: Adding a Standalone UI
+
+If you wish to include a standalone UI, we recommend [AspNetCore.Scalar](https://github.com/benirave/AspNetCore.Scalar) for its clean interface and advanced features, such as the ability to export requests in different programming languages. You can, however, use any OpenAPI UI tool that suits your needs. Below is an example configuration for using Scalar:
+
+For development purposes, you may enable CORS as follows:
+```csharp
+public void ConfigureServices(IServiceCollection services){
+    ...
+       //ONLY FOR DEV
+       services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", builder =>
+                {
+                    builder.AllowAnyOrigin()
+                           .AllowAnyMethod()
+                           .AllowAnyHeader();
+                });
+            });
+    ...
+}
+```
+The following Configure setup demonstrates how to integrate Scalar:
+```csharp
+ public void Configure(IApplicationBuilder app, IWebHostEnvironment env){
+    //ONLY FOR DEV    
+    app.UseCors("AllowAll");
+
+    ...
+    app.UseScalar(options =>
+    {
+        options.UseSpecUrl("/swagger/v1/swagger.json");
+    });
+    ...
+}
+```
+Once configured, the Scalar UI can be accessed via the relative path `scalar-api-docs`. For example: `https://localhost:44363/scalar-api-docs/`.
+
+# Test
+To run the tests, ensure Docker is installed on your system. The tests are executed using Testcontainers, which simplifies the setup and teardown of containerized dependencies.
+
+## Test Execution
+- **Note**: The integration tests rely on Docker containers, so ensure no conflicting containers are running.
+- After the tests are completed, manually delete the containers to free up resources.
+
+Advantages of Testcontainers
+
+- Environment Isolation: Provides a clean, isolated environment for each test.
+- Simplified Dependency Management: No need to manually install and configure services like databases.
+- Reproducibility: Ensures consistent test results across different machines.
+- Improved Efficiency: Automates setup and teardown of dependencies.
+
+**Important**: The standalone project cannot be executed simultaneously with the integration tests.
 # Performance
 
 The performance should be very good as for the invocation very few Reflection is needed (if at all). Of course as this is IO-Bound/Database-Bound Code in practice the main bottleneck will be the database and the network. Meanwhile the Generic Backend should be as fast as it gets. 

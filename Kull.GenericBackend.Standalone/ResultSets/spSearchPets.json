@@ -1,0 +1,32 @@
+[
+  {
+    "Name": "PetId",
+    "TypeName": "int",
+    "IsNullable": false,
+    "MaxLength": null
+  },
+  {
+    "Name": "PetName",
+    "TypeName": "varchar",
+    "IsNullable": true,
+    "MaxLength": 100
+  },
+  {
+    "Name": "Description",
+    "TypeName": "nvarchar",
+    "IsNullable": true,
+    "MaxLength": null
+  },
+  {
+    "Name": "IsNice",
+    "TypeName": "bit",
+    "IsNullable": true,
+    "MaxLength": null
+  },
+  {
+    "Name": "ts",
+    "TypeName": "timestamp",
+    "IsNullable": false,
+    "MaxLength": 8
+  }
+]

@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using DotNet.Testcontainers.Builders;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Testcontainers.MsSql;
 
 namespace Kull.GenericBackend.Standalone
 {
@@ -19,8 +21,9 @@ namespace Kull.GenericBackend.Standalone
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
                 .ConfigureWebHostDefaults(webBuilder =>
-                {
+                {                  
                     webBuilder.UseStartup<Startup>();
                 });
+
     }
 }

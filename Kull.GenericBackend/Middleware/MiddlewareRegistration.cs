@@ -129,7 +129,7 @@ public class MiddlewareRegistration
                         });
                         break;
                     default:
-                        throw new InvalidOperationException("Only Get, Pust, Post and Delete are allowed");
+                        throw new InvalidOperationException("Only Get, Pust, Post, Patch and Delete are allowed");
                 }
                 if (method.Value.Policies != null || (options.Policies.Count>0))
                 {

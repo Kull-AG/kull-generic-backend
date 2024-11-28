@@ -1,0 +1,8 @@
+[
+  {
+    "Name": "Success",
+    "TypeName": "bit",
+    "IsNullable": true,
+    "MaxLength": null
+  }
+]

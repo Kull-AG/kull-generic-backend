@@ -1,0 +1,14 @@
+[
+  {
+    "Name": "Success",
+    "TypeName": "bit",
+    "IsNullable": true,
+    "MaxLength": null
+  },
+  {
+    "Name": "NewPetId",
+    "TypeName": "int",
+    "IsNullable": false,
+    "MaxLength": null
+  }
+]

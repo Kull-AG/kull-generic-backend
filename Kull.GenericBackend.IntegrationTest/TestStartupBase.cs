@@ -53,10 +53,23 @@ public abstract class TestStartupBase
             {
                 cf.AddSystemParameter("[Procedure with - strange name].ImASpecialParameter", (c) => true);
             });
-        services.AddSwaggerGen(c =>
+        //services.AddSwaggerGen(c =>
+        //{
+        //    c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+        //    c.AddGenericBackend();
+        //});
+
+
+        services.AddOpenApi(options =>
         {
-            c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
-            c.AddGenericBackend();
+            if (this.UseSwaggerV2)
+            {
+                options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi2_0;
+            }
+            else {
+                options.OpenApiVersion = Microsoft.OpenApi.OpenApiSpecVersion.OpenApi3_0;
+            }
+            options.AddGenericBackend();
         });
         if (!DbProviderFactories.TryGetFactory("Microsoft.Data.SqlClient", out var _))
             DbProviderFactories.RegisterFactory("Microsoft.Data.SqlClient", Microsoft.Data.SqlClient.SqlClientFactory.Instance);
@@ -79,13 +92,25 @@ public abstract class TestStartupBase
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app)
     {
+#if !NET9_0
         app.UseSwagger(o =>
         {
                 // For compat with ng-swagger-gen on client. You can use ng-openapi-gen if set to false
                 o.SerializeAsV2 = this.UseSwaggerV2;
         });
+#endif
+#if NET9_0
+        app.UseRouting();
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapOpenApi("/swagger/v1/swagger.json");
 
-#if NETSTD2
+            app.UseGenericBackend(endpoints);
+            endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}");
+        });
+
+
+#elif NETSTD2
         app.UseMvc(routeBuilder =>
         {
             app.UseGenericBackend(routeBuilder);
