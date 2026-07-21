@@ -1,0 +1,46 @@
+{
+  "skill_name": "kull-generic-backend",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "I have a fresh ASP.NET Core 8 project and want to use Kull.GenericBackend to expose a stored procedure dbo.spGetCustomers (no params, returns Id/Name/Email) as GET /api/Customers, and dbo.spAddCustomer (params @Name, @Email) as POST /api/Customers. Walk me through the full setup — NuGet package, Startup wiring, the backendconfig.json, and the SQL connection registration.",
+      "expected_output": "dotnet add package Kull.GenericBackend; Startup/Program.cs registers AddGenericBackend()/ConfigureMiddleware/AddSwaggerGen with c.AddGenericBackend(); a DbConnection is registered via services.AddTransient; app.UseGenericBackend() is added to the pipeline; a backendconfig.json with an Entities.Customers block mapping GET to spGetCustomers and POST to spAddCustomer.",
+      "files": [],
+      "expectations": [
+        "Mentions `dotnet add package Kull.GenericBackend`",
+        "Startup/Program.cs calls services.AddGenericBackend()",
+        "Registers a DbConnection (e.g. services.AddTransient(typeof(DbConnection), ...))",
+        "Calls services.AddSwaggerGen with c.AddGenericBackend() inside the configure callback",
+        "Pipeline includes app.UseGenericBackend()",
+        "backendconfig.json has an Entities.Customers key with GET mapped to spGetCustomers and POST mapped to spAddCustomer",
+        "backendconfig.json entity key does not start with a leading slash"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "In our backendconfig.json we have `\"Orders/{OrderId|int}\": { \"Delete\": \"api.spDeleteOrder\" }`. The stored procedure raises `RAISERROR('Order already shipped', 16, 1, 1)` when it can't be deleted, but the client just sees a generic 500 and we want it to come back as a 409 Conflict with the message. What do we change, in the SQL or the config?",
+      "expected_output": "Explains that RAISERROR/THROW below 50000 is not treated as a user error (hence generic 500); to control the status code, throw with 50000 + status code, i.e. THROW 50409, 'Order already shipped', 1 to get HTTP 409, and no backendconfig.json change is needed for this.",
+      "files": [],
+      "expectations": [
+        "Identifies that only error numbers >= 50000 are treated as user/API errors",
+        "Explains the formula 50000 + HTTP status code",
+        "Gives a concrete corrected example using error number 50409 (50000 + 409) for HTTP 409",
+        "Notes that this is a SQL-side change (RAISERROR/THROW number), not a backendconfig.json change",
+        "Mentions that errors thrown after rows have already started streaming can't reliably set the status code"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We want every stored procedure exposed through Kull.GenericBackend to automatically get the calling user's Windows login and IP address as SQL parameters, without the frontend ever sending them. How do we wire that up, and how would a procedure declare it wants the IP address?",
+      "expected_output": "Explains System Parameters: enable with .AddSystemParameters() on the GenericBackendBuilder at startup; built-in names NTLogin/ADLogin and IPAddress are resolved server-side purely by matching the SQL parameter name (e.g. @IPAddress varchar(100)), no config file entry needed and the parameter is hidden from the OpenAPI schema.",
+      "files": [],
+      "expectations": [
+        "Mentions .AddSystemParameters() called on the builder returned by AddGenericBackend()",
+        "Names IPAddress and NTLogin/ADLogin as the built-in system parameter names",
+        "Explains the match is by SQL parameter name, case-insensitive, no explicit per-procedure config needed",
+        "Shows or describes a SQL parameter declaration like @IPAddress varchar(100) to receive it",
+        "Notes the parameter does not appear in the request body/query string or OpenAPI schema"
+      ]
+    }
+  ]
+}
