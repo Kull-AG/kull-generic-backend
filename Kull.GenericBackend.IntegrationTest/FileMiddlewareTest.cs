@@ -43,9 +43,8 @@ public class FileMiddlewareTest
             // 5.a Receive the response
             message.EnsureSuccessStatusCode();
             var img = await message.Content.ReadAsByteArrayAsync();
-            using var ts = SixLabors.ImageSharp.Image.Load(img);
-            Assert.Equal(360, ts.Height);
-            Assert.Equal(640, ts.Width);
+            var expected = await System.IO.File.ReadAllBytesAsync("sampleImage.jpg");
+            Assert.Equal(expected, img);
         }
 
 
@@ -72,9 +71,8 @@ public class FileMiddlewareTest
             // 5.a Receive the response
             message.EnsureSuccessStatusCode();
             var img = await message.Content.ReadAsByteArrayAsync();
-            using var ts = SixLabors.ImageSharp.Image.Load(img);
-            Assert.Equal(360, ts.Height);
-            Assert.Equal(640, ts.Width);
+            var expected = await System.IO.File.ReadAllBytesAsync("sampleImage.jpg");
+            Assert.Equal(expected, img);
         }
 
 
