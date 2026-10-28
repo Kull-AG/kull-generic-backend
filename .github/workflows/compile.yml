@@ -7,11 +7,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@master
+        uses: actions/checkout@v4
 
       - name: Start containers
         run: |
-          docker-compose -f "docker-compose.yml" up --build --abort-on-container-exit
+          docker compose -f "docker-compose.yml" up --build --abort-on-container-exit
           exit_code=$?
 
           if [ $exit_code -eq 0 ]; then
